@@ -215,3 +215,21 @@ model Settings {
   invoice_branding        Json?
   updated_at              DateTime @updatedAt
 }
+
+/// Stores remembered CSV column-to-field mappings, keyed by a sorted header signature.
+/// Allows re-importing similarly structured CSVs without re-mapping from scratch.
+model CsvMappingTemplate {
+  id                String   @id @default(uuid())
+  /// Sorted, pipe-joined list of all column headers in the CSV (e.g. "Address|Phone|Rating|Shop Name")
+  header_signature  String   @unique
+  /// Friendly name to identify the template (e.g. "Google Maps Export")
+  template_name     String   @default("Saved Mapping")
+  /// JSON map of csvHeader → systemField | "ignore"
+  /// e.g. { "Shop Name": "business_name", "Rating": "ignore" }
+  field_mappings    Json
+  last_used_at      DateTime @default(now())
+  created_at        DateTime @default(now())
+
+  @@index([header_signature])
+}
+

@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import {
@@ -12,18 +12,154 @@ import {
   Loader2,
   Sparkles,
   Database,
+  BookMarked,
+  ChevronRight,
+  Info,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
-interface ColumnMapping {
-  business_name: string;
-  website: string;
-  phone: string;
-  email: string;
-  city: string;
-  niche: string;
-  notes: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/** The system fields a CSV column can map to */
+type SystemField =
+  | "business_name"
+  | "website"
+  | "phone"
+  | "email"
+  | "city"
+  | "niche"
+  | "notes"
+  | "ignore";
+
+const SYSTEM_FIELDS: { value: SystemField; label: string }[] = [
+  { value: "business_name", label: "Business Name (Required)" },
+  { value: "website", label: "Website / Social" },
+  { value: "phone", label: "Phone / WhatsApp" },
+  { value: "email", label: "Email Address" },
+  { value: "city", label: "City / Location" },
+  { value: "niche", label: "Niche / Industry" },
+  { value: "notes", label: "Notes / Context" },
+  { value: "ignore", label: "Don'\''t map — store as extra data only" },
+];
+
+type Confidence = "high" | "suggestion" | "none";
+
+interface ColumnGuess {
+  csvHeader: string;
+  systemField: SystemField;
+  confidence: Confidence;
 }
+
+// ─── Fuzzy guesser ────────────────────────────────────────────────────────────
+
+function guessSystemField(header: string): { field: SystemField; confidence: Confidence } {
+  const h = header.toLowerCase().trim();
+
+  // Business Name
+  if (
+    h === "business name" || h === "business_name" || h === "company" ||
+    h === "company name" || h === "name" || h === "shop name" ||
+    h.includes("shop") || h.includes("business") || h.includes("company")
+  ) {
+    const confidence: Confidence = (h === "business_name" || h === "business name" || h === "company name") ? "high" : "suggestion";
+    return { field: "business_name", confidence };
+  }
+
+  // Website
+  if (
+    h === "website" || h === "url" || h === "web" || h === "website/social" ||
+    h === "social" || h === "social media" || h === "instagram" ||
+    h.includes("website") || h.includes("url") || h.includes("social")
+  ) {
+    const confidence: Confidence = (h === "website" || h === "url") ? "high" : "suggestion";
+    return { field: "website", confidence };
+  }
+
+  // Phone
+  if (
+    h === "phone" || h === "mobile" || h === "tel" || h === "telephone" ||
+    h === "phone number" || h === "whatsapp" ||
+    h.includes("phone") || h.includes("mobile") || h.includes("tel")
+  ) {
+    const confidence: Confidence = (h === "phone" || h === "mobile" || h === "telephone") ? "high" : "suggestion";
+    return { field: "phone", confidence };
+  }
+
+  // Email
+  if (h === "email" || h === "email address" || h.includes("email") || h.includes("mail")) {
+    const confidence: Confidence = h === "email" ? "high" : "suggestion";
+    return { field: "email", confidence };
+  }
+
+  // City / Location
+  if (
+    h === "city" || h === "location" || h === "country" || h === "address" ||
+    h === "service area" || h === "area" || h === "region" ||
+    h.includes("city") || h.includes("location") || h.includes("country") ||
+    h.includes("service area") || h.includes("area")
+  ) {
+    // "address" is ambiguous — give suggestion only
+    const confidence: Confidence =
+      (h === "city" || h === "location" || h === "country") ? "high" : "suggestion";
+    return { field: "city", confidence };
+  }
+
+  // Niche / Industry
+  if (
+    h === "niche" || h === "industry" || h === "category" ||
+    h === "specialization" || h === "specialisation" || h === "sector" ||
+    h === "type" || h === "service type" ||
+    h.includes("niche") || h.includes("industry") || h.includes("special") ||
+    h.includes("category") || h.includes("sector")
+  ) {
+    const confidence: Confidence =
+      (h === "niche" || h === "industry" || h === "category") ? "high" : "suggestion";
+    return { field: "niche", confidence };
+  }
+
+  // Notes
+  if (
+    h === "notes" || h === "note" || h === "comments" || h === "description" ||
+    h === "remarks" || h === "details" ||
+    h.includes("note") || h.includes("comment") || h.includes("desc")
+  ) {
+    const confidence: Confidence = h === "notes" ? "high" : "suggestion";
+    return { field: "notes", confidence };
+  }
+
+  // No match
+  return { field: "ignore", confidence: "none" };
+}
+
+// ─── Header signature ─────────────────────────────────────────────────────────
+
+function buildSignature(headers: string[]): string {
+  return [...headers].sort().join("|");
+}
+
+// ─── Confidence badge ─────────────────────────────────────────────────────────
+
+function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
+  if (confidence === "high")
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+        🟢 High confidence
+      </span>
+    );
+  if (confidence === "suggestion")
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950 text-amber-300 border border-amber-800/60">
+        🟡 Suggestion
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+      ⚪ Unmapped
+    </span>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
 
 export default function CsvImportPage() {
   const router = useRouter();
@@ -33,15 +169,16 @@ export default function CsvImportPage() {
   const [csvData, setCsvData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fileName, setFileName] = useState("");
-  const [mapping, setMapping] = useState<ColumnMapping>({
-    business_name: "",
-    website: "",
-    phone: "",
-    email: "",
-    city: "",
-    niche: "",
-    notes: "",
-  });
+
+  // Column guesses: csvHeader → { systemField, confidence }
+  const [columnGuesses, setColumnGuesses] = useState<ColumnGuess[]>([]);
+
+  // Template memory
+  const [templateName, setTemplateName] = useState("Saved Mapping");
+  const [savedTemplateDetected, setSavedTemplateDetected] = useState(false);
+  const [headerSignature, setHeaderSignature] = useState("");
+
+  // Import settings
   const [generateAiSnapshots, setGenerateAiSnapshots] = useState(true);
   const [importResult, setImportResult] = useState<{
     imported_count: number;
@@ -50,89 +187,146 @@ export default function CsvImportPage() {
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ─── File upload handler ─────────────────────────────────────────────────
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setFileName(file.name);
     setErrorMsg("");
+    setSavedTemplateDetected(false);
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => {
         if (!results.data || results.data.length === 0) {
           setErrorMsg("The uploaded CSV file is empty.");
           return;
         }
 
-        const detectedHeaders = results.meta.fields || Object.keys(results.data[0] || {});
+        const detectedHeaders: string[] = results.meta.fields || Object.keys(results.data[0] || {});
         setHeaders(detectedHeaders);
-        setCsvData(results.data);
+        setCsvData(results.data as any[]);
 
-        // Auto-guess column mapping
-        const autoMap: ColumnMapping = {
-          business_name: "",
-          website: "",
-          phone: "",
-          email: "",
-          city: "",
-          niche: "",
-          notes: "",
-        };
+        const sig = buildSignature(detectedHeaders);
+        setHeaderSignature(sig);
 
-        detectedHeaders.forEach((h) => {
-          const lower = h.toLowerCase();
-          if (lower.includes("name") || lower.includes("company") || lower.includes("business")) {
-            if (!autoMap.business_name) autoMap.business_name = h;
-          } else if (lower.includes("site") || lower.includes("url") || lower.includes("web")) {
-            if (!autoMap.website) autoMap.website = h;
-          } else if (lower.includes("phone") || lower.includes("mobile") || lower.includes("tel")) {
-            if (!autoMap.phone) autoMap.phone = h;
-          } else if (lower.includes("mail")) {
-            if (!autoMap.email) autoMap.email = h;
-          } else if (lower.includes("city") || lower.includes("country") || lower.includes("location") || lower.includes("address")) {
-            if (!autoMap.city) autoMap.city = h;
-          } else if (lower.includes("niche") || lower.includes("industry") || lower.includes("category")) {
-            if (!autoMap.niche) autoMap.niche = h;
-          } else if (lower.includes("note") || lower.includes("desc") || lower.includes("comment")) {
-            if (!autoMap.notes) autoMap.notes = h;
+        // Try to load saved template from DB
+        let savedMappings: Record<string, SystemField> | null = null;
+        let savedName = "Saved Mapping";
+        try {
+          const res = await fetch(`/api/csv-mapping-templates?signature=${encodeURIComponent(sig)}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.template) {
+              savedMappings = json.template.field_mappings as Record<string, SystemField>;
+              savedName = json.template.template_name;
+              setSavedTemplateDetected(true);
+            }
           }
-        });
-
-        // Default business_name to first column if not guessed
-        if (!autoMap.business_name && detectedHeaders.length > 0) {
-          autoMap.business_name = detectedHeaders[0];
+        } catch (_) {
+          // If network fails, fall through to auto-guess
         }
 
-        setMapping(autoMap);
+        setTemplateName(savedName);
+
+        // Build column guesses — use saved template if available, else fuzzy-guess
+        const guesses: ColumnGuess[] = detectedHeaders.map((h) => {
+          if (savedMappings && h in savedMappings) {
+            return {
+              csvHeader: h,
+              systemField: savedMappings[h],
+              confidence: "high" as Confidence, // Came from saved template
+            };
+          }
+          const { field, confidence } = guessSystemField(h);
+          return { csvHeader: h, systemField: field, confidence };
+        });
+
+        setColumnGuesses(guesses);
         setStep("map");
       },
       error: (err) => {
         setErrorMsg(`Failed to parse CSV: ${err.message}`);
       },
     });
+  }, []);
+
+  // ─── Update a single column''s mapping ────────────────────────────────────
+
+  const updateMapping = (csvHeader: string, newField: SystemField) => {
+    setColumnGuesses((prev) =>
+      prev.map((g) =>
+        g.csvHeader === csvHeader
+          ? { ...g, systemField: newField, confidence: g.confidence === "none" && newField !== "ignore" ? "high" : g.confidence }
+          : g
+      )
+    );
   };
+
+  // ─── Derived helpers ─────────────────────────────────────────────────────
+
+  /** The CSV header mapped to a given system field (first one wins) */
+  const getMappedHeader = (field: SystemField): string | null => {
+    const match = columnGuesses.find((g) => g.systemField === field);
+    return match?.csvHeader ?? null;
+  };
+
+  const businessNameHeader = getMappedHeader("business_name");
+  const canProceed = !!businessNameHeader;
+
+  // ─── Execute import ───────────────────────────────────────────────────────
 
   const executeImport = async () => {
     setStep("importing");
     setErrorMsg("");
 
-    try {
-      // Map rows according to user's selections
-      const mappedRows = csvData.map((row) => {
-        return {
-          business_name: row[mapping.business_name] || "Untitled Lead",
-          website: mapping.website ? row[mapping.website] : null,
-          phone: mapping.phone ? row[mapping.phone] : null,
-          email: mapping.email ? row[mapping.email] : null,
-          city: mapping.city ? row[mapping.city] : null,
-          niche: mapping.niche ? row[mapping.niche] : null,
-          notes: mapping.notes ? row[mapping.notes] : null,
-          source_csv_row: row, // Immutable raw data stored in DB
-        };
-      });
+    // Build final mapping map
+    const fieldMap: Record<string, SystemField> = {};
+    columnGuesses.forEach((g) => {
+      fieldMap[g.csvHeader] = g.systemField;
+    });
 
+    // Save template to DB
+    try {
+      await fetch("/api/csv-mapping-templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          header_signature: headerSignature,
+          template_name: templateName,
+          field_mappings: fieldMap,
+        }),
+      });
+    } catch (_) {
+      // Non-fatal — proceed with import even if save fails
+    }
+
+    // Map rows
+    const mappedRows = csvData.map((row) => {
+      const nameHeader = getMappedHeader("business_name");
+      const websiteHeader = getMappedHeader("website");
+      const phoneHeader = getMappedHeader("phone");
+      const emailHeader = getMappedHeader("email");
+      const cityHeader = getMappedHeader("city");
+      const nicheHeader = getMappedHeader("niche");
+      const notesHeader = getMappedHeader("notes");
+
+      return {
+        business_name: (nameHeader && row[nameHeader]) || "Untitled Lead",
+        website: websiteHeader ? row[websiteHeader] || null : null,
+        phone: phoneHeader ? row[phoneHeader] || null : null,
+        email: emailHeader ? row[emailHeader] || null : null,
+        city: cityHeader ? row[cityHeader] || null : null,
+        niche: nicheHeader ? row[nicheHeader] || null : null,
+        notes: notesHeader ? row[notesHeader] || null : null,
+        source_csv_row: row, // Full raw row — no data lost
+      };
+    });
+
+    try {
       const res = await fetch("/api/leads/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -144,7 +338,7 @@ export default function CsvImportPage() {
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Import failed");
+        throw new Error((errJson as any).error || "Import failed");
       }
 
       const result = await res.json();
@@ -155,6 +349,21 @@ export default function CsvImportPage() {
       setStep("preview");
     }
   };
+
+  // ─── Preview rows ─────────────────────────────────────────────────────────
+
+  const previewRows = csvData.slice(0, 10).map((row) => ({
+    business_name: getMappedHeader("business_name") ? row[getMappedHeader("business_name")!] : "—",
+    niche: getMappedHeader("niche") ? row[getMappedHeader("niche")!] : "—",
+    city: getMappedHeader("city") ? row[getMappedHeader("city")!] : "—",
+    phone: getMappedHeader("phone") ? row[getMappedHeader("phone")!] : "—",
+    website: getMappedHeader("website") ? row[getMappedHeader("website")!] : "—",
+    extraKeys: columnGuesses
+      .filter((g) => g.systemField === "ignore")
+      .map((g) => g.csvHeader),
+  }));
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -175,7 +384,7 @@ export default function CsvImportPage() {
         </div>
       )}
 
-      {/* Step 1: Upload */}
+      {/* ── Step 1: Upload ── */}
       {step === "upload" && (
         <div className="p-8 rounded-xl bg-[#141417] border border-[#26262e] text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
@@ -185,68 +394,120 @@ export default function CsvImportPage() {
             <h2 className="text-base font-semibold text-zinc-200">Select or drop your CSV file</h2>
             <p className="text-xs text-zinc-400 max-w-md mx-auto mt-1">
               Supports lead lists from Google Maps, Apollo, LinkedIn, or manual spreadsheets.
+              Any column format is accepted — you will map columns manually before import.
             </p>
           </div>
 
           <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-sm font-semibold cursor-pointer transition">
             <FileSpreadsheet className="w-4 h-4" />
             <span>Choose CSV File</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
+            <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
           </label>
         </div>
       )}
 
-      {/* Step 2: Column Mapping */}
+      {/* ── Step 2: Column Mapping ── */}
       {step === "map" && (
         <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-zinc-200">Map Columns ({fileName})</h2>
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-zinc-200">
+                Map Columns — {fileName}
+              </h2>
               <p className="text-xs text-zinc-400">
-                Match CSV column headers to ClientPulse system fields. Unmapped columns are safely stored in raw data.
+                For each column in your CSV, choose what system field it maps to.
+                Columns set to &quot;Don&apos;t map&quot; are still saved in full — nothing is lost.
               </p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-zinc-300">
-              {csvData.length} records found
+            <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded bg-zinc-800 text-zinc-300">
+              {csvData.length} records
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { key: "business_name", label: "Business Name * (Required)", required: true },
-              { key: "website", label: "Website URL" },
-              { key: "phone", label: "Phone / WhatsApp" },
-              { key: "email", label: "Email Address" },
-              { key: "city", label: "City / Country / Location" },
-              { key: "niche", label: "Niche / Industry" },
-              { key: "notes", label: "Notes / Context" },
-            ].map(({ key, label, required }) => (
-              <div key={key} className="space-y-1">
-                <label className="text-xs font-medium text-zinc-300">{label}</label>
-                <select
-                  value={(mapping as any)[key]}
-                  onChange={(e) =>
-                    setMapping({ ...mapping, [key]: e.target.value })
-                  }
-                  className="w-full bg-[#1b1b22] border border-[#2c2c36] rounded-lg px-3 py-2 text-sm text-zinc-200 outline-none focus:border-amber-500 transition"
-                >
-                  <option value="">-- Do Not Map --</option>
-                  {headers.map((h) => (
-                    <option key={h} value={h}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+          {/* Saved template banner */}
+          {savedTemplateDetected && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-xs text-emerald-300">
+              <BookMarked className="w-4 h-4 flex-shrink-0" />
+              <span>
+                <strong>Remembered mapping from a previous import</strong> — review each row and confirm before proceeding.
+              </span>
+            </div>
+          )}
+
+          {/* Legend */}
+          <div className="flex flex-wrap gap-3 text-[11px] text-zinc-400 pb-1">
+            <span className="flex items-center gap-1"><span>🟢</span> High confidence — near-exact match</span>
+            <span className="flex items-center gap-1"><span>🟡</span> Suggestion — fuzzy match, please verify</span>
+            <span className="flex items-center gap-1"><span>⚪</span> Unmapped — no guess, data stored as extra</span>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+          {/* Per-column mapping rows */}
+          <div className="space-y-3">
+            {columnGuesses.map((guess) => {
+              const previewVal = csvData[0]?.[guess.csvHeader];
+              return (
+                <div
+                  key={guess.csvHeader}
+                  className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3 p-3 rounded-lg bg-[#191922] border border-zinc-800/60"
+                >
+                  {/* Left: CSV column info */}
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-zinc-200 truncate">{guess.csvHeader}</div>
+                    {previewVal !== undefined && previewVal !== "" && (
+                      <div className="text-[11px] text-zinc-500 truncate mt-0.5">
+                        e.g. &ldquo;{String(previewVal).slice(0, 60)}&rdquo;
+                      </div>
+                    )}
+                    <div className="mt-1">
+                      <ConfidenceBadge confidence={guess.confidence} />
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <ChevronRight className="w-4 h-4 text-zinc-600 hidden md:block flex-shrink-0" />
+
+                  {/* Right: System field dropdown */}
+                  <select
+                    value={guess.systemField}
+                    onChange={(e) => updateMapping(guess.csvHeader, e.target.value as SystemField)}
+                    className="w-full bg-[#1b1b22] border border-[#2c2c36] rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500 transition"
+                  >
+                    {SYSTEM_FIELDS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Validation notice if Business Name unmapped */}
+          {!canProceed && (
+            <div className="flex items-center gap-2 text-xs text-red-400 p-3 rounded-lg bg-red-950/30 border border-red-800/40">
+              <Info className="w-4 h-4 flex-shrink-0" />
+              <span>You must map at least one column to <strong>Business Name</strong> before proceeding.</span>
+            </div>
+          )}
+
+          {/* Template name */}
+          <div className="space-y-1 pt-2 border-t border-zinc-800">
+            <label className="text-xs font-medium text-zinc-400">
+              Template name (saved to database for future imports)
+            </label>
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="e.g. Google Maps Export, Apollo Beauty Leads..."
+              className="w-full bg-[#1b1b22] border border-[#2c2c36] rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500 transition"
+            />
+          </div>
+
+          {/* Nav buttons */}
+          <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setStep("upload")}
               className="px-4 py-2 text-xs text-zinc-400 hover:text-zinc-200"
@@ -255,7 +516,7 @@ export default function CsvImportPage() {
             </button>
             <button
               onClick={() => setStep("preview")}
-              disabled={!mapping.business_name}
+              disabled={!canProceed}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold disabled:opacity-50 transition"
             >
               <span>Next: Preview Data</span>
@@ -265,15 +526,13 @@ export default function CsvImportPage() {
         </div>
       )}
 
-      {/* Step 3: Preview (First 10 Rows) */}
+      {/* ── Step 3: Preview ── */}
       {step === "preview" && (
         <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-semibold text-zinc-200">Preview First 10 Rows</h2>
-              <p className="text-xs text-zinc-400">
-                Confirm your column alignment before creating records.
-              </p>
+              <p className="text-xs text-zinc-400">Confirm your column alignment before creating records.</p>
             </div>
             <span className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-zinc-300">
               Total to import: {csvData.length}
@@ -285,29 +544,25 @@ export default function CsvImportPage() {
               <thead className="bg-[#1b1b22] text-zinc-400 border-b border-[#26262e]">
                 <tr>
                   <th className="p-2.5">Business Name</th>
-                  <th className="p-2.5">Niche</th>
-                  <th className="p-2.5">City</th>
+                  <th className="p-2.5">Niche / Industry</th>
+                  <th className="p-2.5">City / Location</th>
                   <th className="p-2.5">Phone</th>
-                  <th className="p-2.5">Email</th>
+                  <th className="p-2.5">Website / Social</th>
+                  <th className="p-2.5 text-zinc-600">Extra Data (stored)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60">
-                {csvData.slice(0, 10).map((row, idx) => (
+                {previewRows.map((row, idx) => (
                   <tr key={idx} className="hover:bg-zinc-800/30">
-                    <td className="p-2.5 font-medium text-zinc-200">
-                      {row[mapping.business_name] || "Untitled"}
-                    </td>
-                    <td className="p-2.5 text-zinc-400">
-                      {mapping.niche ? row[mapping.niche] : "—"}
-                    </td>
-                    <td className="p-2.5 text-zinc-400">
-                      {mapping.city ? row[mapping.city] : "—"}
-                    </td>
-                    <td className="p-2.5 text-zinc-400">
-                      {mapping.phone ? row[mapping.phone] : "—"}
-                    </td>
-                    <td className="p-2.5 text-zinc-400">
-                      {mapping.email ? row[mapping.email] : "—"}
+                    <td className="p-2.5 font-medium text-zinc-200">{row.business_name || "Untitled"}</td>
+                    <td className="p-2.5 text-zinc-400">{row.niche || "—"}</td>
+                    <td className="p-2.5 text-zinc-400">{row.city || "—"}</td>
+                    <td className="p-2.5 text-zinc-400">{row.phone || "—"}</td>
+                    <td className="p-2.5 text-zinc-400 max-w-[150px] truncate">{row.website || "—"}</td>
+                    <td className="p-2.5 text-zinc-600 text-[11px]">
+                      {row.extraKeys.length > 0
+                        ? row.extraKeys.join(", ")
+                        : <span className="text-zinc-700">none</span>}
                     </td>
                   </tr>
                 ))}
@@ -315,6 +570,7 @@ export default function CsvImportPage() {
             </table>
           </div>
 
+          {/* AI snapshot toggle */}
           <div className="p-4 rounded-lg bg-[#191922] border border-amber-500/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Sparkles className="w-5 h-5 text-amber-400" />
@@ -353,18 +609,18 @@ export default function CsvImportPage() {
         </div>
       )}
 
-      {/* Step 4: In Progress */}
+      {/* ── Step 4: Importing ── */}
       {step === "importing" && (
         <div className="p-12 rounded-xl bg-[#141417] border border-[#26262e] text-center space-y-4">
           <Loader2 className="w-10 h-10 text-amber-400 animate-spin mx-auto" />
           <h2 className="text-base font-semibold text-zinc-200">Importing leads and running duplicate check...</h2>
           <p className="text-xs text-zinc-400">
-            Writing verified records to PostgreSQL database and generating intelligence snapshots.
+            Writing verified records to PostgreSQL and saving mapping template for future imports.
           </p>
         </div>
       )}
 
-      {/* Step 5: Done */}
+      {/* ── Step 5: Done ── */}
       {step === "done" && importResult && (
         <div className="p-8 rounded-xl bg-[#141417] border border-emerald-900/50 text-center space-y-6">
           <div className="w-16 h-16 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center mx-auto">
@@ -381,6 +637,9 @@ export default function CsvImportPage() {
                 </span>
               )}
             </p>
+            <p className="text-xs text-emerald-400 mt-2">
+              ✓ Column mapping saved to database — next import with the same CSV format will pre-fill automatically.
+            </p>
           </div>
 
           <div className="flex items-center justify-center gap-4">
@@ -388,6 +647,9 @@ export default function CsvImportPage() {
               onClick={() => {
                 setStep("upload");
                 setCsvData([]);
+                setHeaders([]);
+                setColumnGuesses([]);
+                setSavedTemplateDetected(false);
               }}
               className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium"
             >

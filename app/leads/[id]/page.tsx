@@ -23,6 +23,9 @@ import {
   Plus,
   Loader2,
   X,
+  ChevronDown,
+  ChevronRight,
+  Database,
 } from "lucide-react";
 import { FactBadge } from "@/components/ui/FactBadge";
 import { GateBadge } from "@/components/ui/GateBadge";
@@ -114,6 +117,7 @@ export default function LeadDetailPage() {
     reasoning: string;
   } | null>(null);
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
+  const [showRawData, setShowRawData] = useState(false);
 
   const fetchLead = async () => {
     setLoading(true);
@@ -501,6 +505,54 @@ export default function LeadDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Full Imported Data (Raw CSV Record) */}
+      {lead.source_csv_row && Object.keys(lead.source_csv_row).length > 0 && (
+        <div className="rounded-xl bg-[#141417] border border-[#26262e] overflow-hidden">
+          <button
+            onClick={() => setShowRawData((p) => !p)}
+            className="w-full flex items-center justify-between px-6 py-4 hover:bg-[#1b1b22] transition text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Database className="w-4 h-4 text-zinc-500" />
+              <span className="text-sm font-semibold text-zinc-300">Full Imported Data</span>
+              <span className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400">
+                Raw CSV Record — {Object.keys(lead.source_csv_row).length} columns
+              </span>
+            </div>
+            {showRawData ? (
+              <ChevronDown className="w-4 h-4 text-zinc-500" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-zinc-500" />
+            )}
+          </button>
+
+          {showRawData && (
+            <div className="px-6 pb-6 space-y-2">
+              <p className="text-[11px] text-zinc-500 pb-2 border-b border-zinc-800">
+                Every column from the original CSV is preserved here, including unmapped fields. This is the immutable source of truth for this lead.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {Object.entries(lead.source_csv_row as Record<string, unknown>).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex gap-2 p-2.5 rounded-lg bg-[#191922] border border-zinc-800/50"
+                  >
+                    <span className="text-[11px] font-medium text-zinc-400 shrink-0 min-w-[100px] max-w-[140px] truncate">
+                      {key}
+                    </span>
+                    <span className="text-[11px] text-zinc-200 break-words min-w-0">
+                      {value !== null && value !== undefined && String(value) !== ""
+                        ? String(value)
+                        : <span className="text-zinc-600 italic">empty</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MODAL: Gate 1 Contact Outreach Drafter */}
       {isContactModalOpen && (
