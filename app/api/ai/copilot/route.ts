@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
     if (enrichedBrain.active_screen_type === "dashboard") {
       const targetCount = await db.lead.count({ where: { is_today_target: true } });
       const pendingApprovals = await db.proposal.count({ where: { status: "Draft" } });
-      const unpaidInvoices = await db.invoice.count({ where: { status: { in: ["Sent", "Pending", "Overdue"] } } });
+      const unpaidInvoices = await db.invoice.count({
+        where: { status: { in: ["Sent", "Pending", "Overdue"] } },
+      });
       const overdueTasks = await db.task.count({ where: { status: "Overdue" } });
 
       enrichedBrain.system_metrics = {
@@ -41,6 +43,7 @@ export async function POST(req: NextRequest) {
           industry: fullLead.niche_industry,
           website: fullLead.website,
           phone: fullLead.phone,
+          city_country: fullLead.city_country,
           status: fullLead.status,
           is_today_target: fullLead.is_today_target,
           recent_interactions: fullLead.interactions.map((i) => ({
@@ -54,14 +57,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const reply = await answerCopilotQuery({
+    const result = await answerCopilotQuery({
       business_brain: enrichedBrain,
       user_query,
     });
 
     return NextResponse.json({
       success: true,
-      reply,
+      reply: result.text,
+      is_web_search: result.isWebSearch,
+      sources: result.sources,
     });
   } catch (error: any) {
     console.error("Error handling Copilot query:", error);

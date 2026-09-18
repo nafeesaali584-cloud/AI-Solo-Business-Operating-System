@@ -1,8 +1,8 @@
 import React from "react";
-import { Sparkles, Database, HelpCircle } from "lucide-react";
+import { Sparkles, Database, HelpCircle, Globe } from "lucide-react";
 
 interface FactBadgeProps {
-  type: "fact" | "inference" | "unknown";
+  type: "fact" | "inference" | "web" | "unknown";
   label?: string;
   className?: string;
 }
@@ -28,6 +28,18 @@ export const FactBadge: React.FC<FactBadgeProps> = ({ type, label, className = "
       >
         <Sparkles className="w-3 h-3 text-amber-400" />
         {label || "AI Inference"}
+      </span>
+    );
+  }
+
+  if (type === "web") {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-cyan-950/70 text-cyan-300 border border-cyan-700/60 ${className}`}
+        title="Live public data retrieved via Google Search grounding"
+      >
+        <Globe className="w-3 h-3 text-cyan-400" />
+        {label || "Live Web Data"}
       </span>
     );
   }

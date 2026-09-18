@@ -1,15 +1,19 @@
-import { generateGeminiContent } from "./gemini";
+import { generateGeminiContent, generateCopilotWithSearch, GenerateResult } from "./gemini";
 
 const CORE_SYSTEM_INSTRUCTION = `
 You are the AI Engine inside "ClientPulse", an operating system for solo service businesses.
 You operate strictly under these non-negotiable rules:
-1. FACT vs INFERENCE vs UNKNOWN:
-   - Fact: Taken verbatim from verified data.
-   - Inference: Interpretation built ONLY from facts. Never invent numbers, statistics, revenue figures, or details not present.
-   - Unknown: If a detail is not in the source data, you must explicitly output "Not available" — NEVER guess or hallucinate.
-2. BOUNDARY RULE:
-   - You are purely assistive (researcher, analyzer, writer, suggester).
+
+1. DATA TIERS (FACT vs INFERENCE vs LIVE WEB DATA vs UNKNOWN):
+   - Fact: Taken verbatim from verified internal data (CSV, CRM records).
+   - AI Inference: Interpretations built strictly from verified facts. Never invent numbers, statistics, revenue figures, or details not present.
+   - Live Web Data: Real-world public information retrieved online via Google Search (website details, services, business presence, reviews). When asked about public information not in our database, use your live search capabilities rather than guessing or refusing. Clearly cite findings.
+   - Unknown: If an internal detail is not in the source data and not verifiable online, explicitly state "Not available" — NEVER guess or hallucinate.
+
+2. BOUNDARY & INTEGRITY RULES:
+   - You are strictly an assistive layer (researcher, analyzer, drafter, organizer).
    - You NEVER execute actions, send messages, change payment statuses, or alter database records directly.
+   - Information retrieved via live search is supplementary and conversational only. You must NEVER claim you updated or altered any database record.
 `;
 
 export interface LeadSnapshotResult {
@@ -172,7 +176,19 @@ Return ONLY a JSON object:
 export async function answerCopilotQuery(params: {
   business_brain: any;
   user_query: string;
-}): Promise<string> {
+}): Promise<GenerateResult> {
+  const queryLower = params.user_query.toLowerCase();
+  const requiresSearch =
+    queryLower.includes("search") ||
+    queryLower.includes("online") ||
+    queryLower.includes("website") ||
+    queryLower.includes("find out") ||
+    queryLower.includes("worth") ||
+    queryLower.includes("google") ||
+    queryLower.includes("reviews") ||
+    queryLower.includes("competitors") ||
+    queryLower.includes("social");
+
   const prompt = `
 CURRENT "BUSINESS BRAIN" CONTEXT:
 ${JSON.stringify(params.business_brain, null, 2)}
@@ -181,11 +197,10 @@ USER QUESTION:
 "${params.user_query}"
 
 INSTRUCTIONS:
-Answer the question directly, concisely, and helpfully using ONLY the data in the Business Brain.
-If asked for actions ("What should I do next?"), suggest specific prioritized actions.
-Never invent metrics, financial numbers, or dates not in the context. If missing, say "Not available in current records".
-Do not claim you executed any action — remind the user they can click the appropriate button on screen.
+1. If the question asks for external public information (e.g., searching online for this business, website content, market presence, reviews), utilize live search grounding to provide accurate, up-to-date public findings with citations.
+2. If the question is about internal priorities ("What should I do next?", "Show unpaid invoices"), answer using the Business Brain records.
+3. Be concise, structured, and helpful. Never fabricate metrics or numbers not supported by facts or live search data.
 `;
 
-  return await generateGeminiContent(prompt, CORE_SYSTEM_INSTRUCTION);
+  return await generateCopilotWithSearch(prompt, CORE_SYSTEM_INSTRUCTION, requiresSearch);
 }
