@@ -1,0 +1,217 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Lead {
+  id                    String        @id @default(uuid())
+  business_name         String
+  website               String?
+  phone                 String?
+  email                 String?
+  city_country          String?
+  niche_industry        String?
+  source_csv_row        Json          // Raw imported row, immutable source of truth
+  ai_summary            String?       // AI generated, tagged inference
+  ai_opportunity        String?       // AI generated, tagged inference
+  ai_recommended_angle  String?       // AI generated outreach angle
+  status                String        @default("Imported") // Imported, Qualified, Target Today, Contacted, Replied, Booking, Proposal, Won, Lost
+  is_today_target       Boolean       @default(false)
+  converted_client_id   String?
+  created_at            DateTime      @default(now())
+  updated_at            DateTime      @updatedAt
+
+  contacts              Contact[]
+  interactions          Interaction[]
+  deals                 Deal[]
+  proposals             Proposal[]
+
+  @@index([status])
+  @@index([is_today_target])
+}
+
+model Contact {
+  id          String    @id @default(uuid())
+  lead_id     String?
+  client_id   String?
+  name        String
+  role        String?
+  phone       String?
+  email       String?
+  whatsapp    String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  lead        Lead?     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  client      Client?   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id])
+  @@index([client_id])
+}
+
+model Interaction {
+  id              String    @id @default(uuid())
+  lead_id         String?
+  client_id       String?
+  channel         String    // WhatsApp, Email, Call, Note
+  direction       String    // Outgoing, Incoming
+  content         String
+  ai_generated    Boolean   @default(false)
+  confirmed_sent  Boolean   @default(false) // GATE 1: only true after manual confirmation
+  created_at      DateTime  @default(now())
+
+  lead            Lead?     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  client          Client?   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id])
+  @@index([client_id])
+  @@index([confirmed_sent])
+}
+
+model Task {
+  id                    String    @id @default(uuid())
+  related_type          String    // Lead, Client, Proposal, Invoice, Onboarding
+  related_id            String
+  type                  String    // Follow-up, Booking Confirm, Proposal Prep, Onboarding Step
+  title                 String
+  ai_suggested_tactic   String?
+  due_date              DateTime?
+  status                String    @default("Open") // Open, Done, Overdue
+  bucket                String    @default("Follow-up") // Action Required, Follow-up, Waiting, Completed
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  @@index([related_id])
+  @@index([bucket])
+  @@index([status])
+}
+
+model Deal {
+  id          String    @id @default(uuid())
+  lead_id     String
+  stage       String    @default("Booking") // Booking, Proposal, Won, Lost
+  value       Decimal?
+  lost_reason String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  lead        Lead      @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+
+  @@index([lead_id])
+  @@index([stage])
+}
+
+model Client {
+  id              String        @id @default(uuid())
+  lead_id         String?       @unique
+  business_name   String
+  primary_contact String?
+  email           String?
+  phone           String?
+  stage           String        @default("Proposal") // Proposal, Invoice, Paid, Onboarding, Active
+  payment_status  String        @default("Pending") // Pending, Paid, Overdue
+  last_activity   DateTime      @default(now())
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  contacts        Contact[]
+  interactions    Interaction[]
+  proposals       Proposal[]
+  invoices        Invoice[]
+  onboarding      Onboarding?
+
+  @@index([stage])
+  @@index([payment_status])
+}
+
+model Proposal {
+  id                  String    @id @default(uuid())
+  lead_id             String?
+  client_id           String?
+  services            Json      // [{ name, description, price }]
+  scope               String?
+  deliverables        String?
+  timeline            String?
+  terms               String?
+  total_investment    Decimal   @default(0)
+  document_url        String?
+  status              String    @default("Draft") // Draft, Approved, Sent, Accepted, Rejected
+  approved_at         DateTime? // GATE 2
+  sent_confirmed_at   DateTime? // GATE 3: manual only
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  lead                Lead?     @relation(fields: [lead_id], references: [id], onDelete: SetNull)
+  client              Client?   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  invoices            Invoice[]
+
+  @@index([lead_id])
+  @@index([client_id])
+  @@index([status])
+}
+
+model Invoice {
+  id                    String    @id @default(uuid())
+  client_id             String
+  proposal_id           String?
+  invoice_number        String    @unique
+  line_items            Json      // [{ description, quantity, unit_price, total }]
+  amount                Decimal   @default(0)
+  due_date              DateTime
+  payment_instructions  String?
+  notes                 String?
+  status                String    @default("Draft") // Draft, Sent, Paid, Pending, Overdue
+  sent_confirmed_at     DateTime? // GATE 4
+  paid_confirmed_at     DateTime? // GATE 5 - never auto-set
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  client                Client    @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  proposal              Proposal? @relation(fields: [proposal_id], references: [id], onDelete: SetNull)
+
+  @@index([client_id])
+  @@index([status])
+}
+
+model Onboarding {
+  id            String    @id @default(uuid())
+  client_id     String    @unique
+  checklist     Json      // [{ item, status: "pending" | "done" }]
+  status        String    @default("In Progress") // In Progress, Completed
+  started_at    DateTime  @default(now()) // auto-created when invoice.paid_confirmed_at set
+  completed_at  DateTime?
+
+  client        Client    @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([status])
+}
+
+model Document {
+  id            String    @id @default(uuid())
+  related_type  String    // Lead, Client, Proposal, Invoice
+  related_id    String
+  type          String    // Proposal PDF, Invoice PDF, Onboarding Form, Other
+  title         String
+  file_url      String
+  created_at    DateTime  @default(now())
+
+  @@index([related_id])
+  @@index([related_type])
+}
+
+model Settings {
+  id                      String   @id @default("default")
+  daily_target_quota      Int      @default(3)
+  follow_up_cadence_days  Int      @default(4)
+  tone_preference         String   @default("Professional, concise, and value-oriented")
+  message_templates       Json?
+  proposal_templates      Json?
+  invoice_branding        Json?
+  updated_at              DateTime @updatedAt
+}
