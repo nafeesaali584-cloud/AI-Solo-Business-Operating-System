@@ -10,8 +10,8 @@ function getApiKey(): string {
   return apiKey;
 }
 
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
-const FALLBACK_MODEL = "gemini-3.6-flash";
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const FALLBACK_MODELS = ["gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3.6-flash"];
 
 export interface GenerateOptions {
   enableSearchGrounding?: boolean;
@@ -36,7 +36,7 @@ export async function generateGeminiContent(
   const apiKey = getApiKey();
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  const modelsToTry = [modelName, PRIMARY_MODEL, FALLBACK_MODEL].filter(
+  const modelsToTry = [modelName, PRIMARY_MODEL, ...FALLBACK_MODELS].filter(
     (m, i, arr) => arr.indexOf(m) === i
   );
 
@@ -56,8 +56,16 @@ export async function generateGeminiContent(
       return response.text();
     } catch (err: any) {
       lastError = err;
-      // If 404 (model deprecated) or 503 (temporary capacity spike), try the next model
-      if (err.message?.includes("404") || err.message?.includes("503")) {
+      // If 404 (deprecated), 503 (demand spike), 429 (quota exhausted), or 500, try next model
+      const msg = err.message || "";
+      if (
+        msg.includes("404") ||
+        msg.includes("503") ||
+        msg.includes("429") ||
+        msg.includes("500") ||
+        msg.includes("RESOURCE_EXHAUSTED") ||
+        msg.includes("UNAVAILABLE")
+      ) {
         continue;
       }
       throw err;
@@ -77,7 +85,7 @@ export async function generateCopilotWithSearch(
   enableSearch: boolean = true
 ): Promise<GenerateResult> {
   const apiKey = getApiKey();
-  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+  const modelsToTry = [PRIMARY_MODEL, ...FALLBACK_MODELS];
 
   // If search is requested, try REST API with Google Search grounding tool
   if (enableSearch) {
