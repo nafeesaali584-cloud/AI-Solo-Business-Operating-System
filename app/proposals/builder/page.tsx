@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { jsPDF } from "jspdf";
 import {
   FileText,
   Plus,
@@ -15,9 +14,17 @@ import {
   ThumbsDown,
   Loader2,
   AlertCircle,
+  Palette,
+  ExternalLink,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
+import { BRAND } from "@/lib/brand/config";
+import {
+  generateProposalPdf,
+  loadProfileImageDataUrl,
+  PdfTemplate,
+} from "@/lib/brand/pdf-templates";
 
 interface ServiceItem {
   name: string;
@@ -54,6 +61,8 @@ function ProposalBuilderContent() {
   const [status, setStatus] = useState<"Draft" | "Approved" | "Sent" | "Accepted" | "Rejected">("Draft");
   const [approvedAt, setApprovedAt] = useState<string | null>(null);
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   // Load existing proposal or prefill client data
   useEffect(() => {
@@ -275,63 +284,34 @@ function ProposalBuilderContent() {
     }
   };
 
-  // Download PDF using jsPDF
-  const handleDownloadPdf = () => {
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("CLIENT SERVICE PROPOSAL", 20, 25);
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Prepared for: ${clientName}`, 20, 38);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 45);
-    doc.text(`Status: ${status}`, 20, 52);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, 56, 190, 56);
-
-    let y = 66;
-    doc.setFont("helvetica", "bold");
-    doc.text("Services & Deliverables:", 20, y);
-    y += 8;
-
-    doc.setFont("helvetica", "normal");
-    services.forEach((s) => {
-      doc.text(`• ${s.name} - $${s.price}`, 25, y);
-      y += 6;
-      if (s.description) {
-        doc.setFontSize(10);
-        doc.text(`  ${s.description.slice(0, 80)}`, 25, y);
-        doc.setFontSize(12);
-        y += 6;
-      }
-    });
-
-    y += 6;
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total Investment: $${totalInvestment.toLocaleString()}`, 20, y);
-    y += 12;
-
-    if (scope) {
-      doc.text("Scope of Work:", 20, y);
-      y += 7;
-      doc.setFont("helvetica", "normal");
-      const splitScope = doc.splitTextToSize(scope, 165);
-      doc.text(splitScope, 20, y);
-      y += splitScope.length * 6 + 6;
+  // Download PDF using Brand Kit & Selected Template
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const profileDataUrl = await loadProfileImageDataUrl();
+      const doc = generateProposalPdf(
+        selectedTemplate,
+        {
+          clientName: clientName || "Client Prospect",
+          date: new Date().toLocaleDateString(),
+          status,
+          services,
+          totalInvestment,
+          scope,
+          deliverables,
+          timeline,
+          terms,
+          proposalNumber: id ? `PROP-${id.slice(0, 8).toUpperCase()}` : undefined,
+        },
+        profileDataUrl
+      );
+      doc.save(`Proposal_${(clientName || "Client").replace(/\s+/g, "_")}_Template_${selectedTemplate}.pdf`);
+    } catch (err: any) {
+      console.error("Failed to generate PDF:", err);
+      setActionMessage({ text: "Failed to generate branded PDF: " + (err.message || ""), type: "error" });
+    } finally {
+      setDownloadingPdf(false);
     }
-
-    if (terms) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Payment Terms:", 20, y);
-      y += 7;
-      doc.setFont("helvetica", "normal");
-      const splitTerms = doc.splitTextToSize(terms, 165);
-      doc.text(splitTerms, 20, y);
-    }
-
-    doc.save(`Proposal_${clientName.replace(/\s+/g, "_")}.pdf`);
   };
 
   if (loading) {
@@ -403,6 +383,135 @@ function ProposalBuilderContent() {
             {generatingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span>Generate Draft (AI)</span>
           </button>
+        </div>
+      </div>
+
+      {/* Brand Kit & PDF Template Selector */}
+      <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND.profileImage}
+                alt={BRAND.ownerName}
+                className="w-10 h-10 rounded-full object-cover border-2 border-[#DA4D01] shadow-md shadow-[#DA4D01]/20"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-zinc-100 font-['Space_Grotesk']">{BRAND.ownerName}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#DA4D01]/20 text-[#DA4D01] border border-[#DA4D01]/40">
+                  Brand Kit Active
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                {BRAND.contact.website.replace("https://", "")} • WhatsApp: {BRAND.contact.waDisplay} • LinkedIn
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <Palette className="w-3.5 h-3.5 text-[#DA4D01]" />
+            <span className="text-[11px]">Primary Accent:</span>
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-200 bg-[#1c1c24] px-2 py-0.5 rounded border border-zinc-800">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#DA4D01]" />
+              #DA4D01
+            </span>
+          </div>
+        </div>
+
+        {/* 3 Template Selection Options */}
+        <div>
+          <label className="text-xs font-semibold text-zinc-300 block mb-2">
+            Select Proposal PDF Direction (All 3 use your verified brand colors &amp; typography):
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Template B - Bold Creative (Default) */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("B")}
+              className={`p-3.5 rounded-lg border text-left transition relative ${
+                selectedTemplate === "B"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template B: Bold Creative
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#DA4D01] text-white">
+                  Brand Default
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Matches <strong className="text-zinc-300">nafeesaali.com</strong> directly: dark obsidian (#09090b), bold orange (#DA4D01) header, Space Grotesk headline, and pill-style service badges.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Dark Theme</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#DA4D01]/20 text-[#DA4D01]">Site Match</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Pill Badges</span>
+              </div>
+            </button>
+
+            {/* Template A - Minimal Modern */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("A")}
+              className={`p-3.5 rounded-lg border text-left transition ${
+                selectedTemplate === "A"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template A: Minimal Modern
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                  Light
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Crisp white background with a signature #DA4D01 orange sidebar accent. Ideal for clients who prefer printing on paper.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Print Friendly</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Clean Accent</span>
+              </div>
+            </button>
+
+            {/* Template C - Corporate Classic */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("C")}
+              className={`p-3.5 rounded-lg border text-left transition ${
+                selectedTemplate === "C"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template C: Corporate Classic
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                  Light
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Formal two-column letterhead with orange divider rules, alternating table rows, and structured payment breakdown.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Corporate</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Tabular</span>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -531,10 +640,15 @@ function ProposalBuilderContent() {
           </button>
           <button
             onClick={handleDownloadPdf}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-300 text-xs font-medium border border-zinc-700 transition"
+            disabled={downloadingPdf}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download PDF</span>
+            {downloadingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 text-[#DA4D01] animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-[#DA4D01]" />
+            )}
+            <span>Export Branded PDF ({selectedTemplate})</span>
           </button>
         </div>
 

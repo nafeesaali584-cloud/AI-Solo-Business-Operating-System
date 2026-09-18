@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { jsPDF } from "jspdf";
 import {
   Receipt,
   Plus,
@@ -15,9 +14,16 @@ import {
   Calendar,
   DollarSign,
   AlertCircle,
+  Palette,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
+import { BRAND } from "@/lib/brand/config";
+import {
+  generateInvoicePdf,
+  loadProfileImageDataUrl,
+  PdfTemplate,
+} from "@/lib/brand/pdf-templates";
 
 interface LineItem {
   description: string;
@@ -57,6 +63,8 @@ function InvoiceBuilderContent() {
   const [status, setStatus] = useState<"Draft" | "Sent" | "Paid" | "Pending" | "Overdue">("Draft");
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
   const [paidConfirmedAt, setPaidConfirmedAt] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -264,63 +272,32 @@ function InvoiceBuilderContent() {
     }
   };
 
-  // Download PDF
-  const handleDownloadPdf = () => {
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("INVOICE", 20, 25);
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Invoice #: ${invoiceNumber}`, 140, 25);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 31);
-    doc.text(`Due Date: ${dueDate}`, 140, 37);
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Billed To:", 20, 42);
-    doc.setFont("helvetica", "normal");
-    doc.text(clientName, 20, 48);
-
-    doc.setDrawColor(200, 200, 200);
-    doc.line(20, 56, 190, 56);
-
-    let y = 66;
-    doc.setFont("helvetica", "bold");
-    doc.text("Item Description", 20, y);
-    doc.text("Qty", 120, y);
-    doc.text("Price", 145, y);
-    doc.text("Total", 170, y);
-    y += 8;
-
-    doc.setFont("helvetica", "normal");
-    lineItems.forEach((item) => {
-      doc.text(item.description.slice(0, 45), 20, y);
-      doc.text(String(item.quantity), 120, y);
-      doc.text(`$${item.unit_price}`, 145, y);
-      doc.text(`$${item.total}`, 170, y);
-      y += 8;
-    });
-
-    y += 8;
-    doc.line(20, y, 190, y);
-    y += 8;
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total Amount Due: $${totalAmount.toLocaleString()}`, 120, y);
-    y += 14;
-
-    if (paymentInstructions) {
-      doc.setFont("helvetica", "bold");
-      doc.text("Payment Details:", 20, y);
-      y += 6;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      const splitInstr = doc.splitTextToSize(paymentInstructions, 165);
-      doc.text(splitInstr, 20, y);
+  // Download PDF using Brand Kit & Selected Template
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const profileDataUrl = await loadProfileImageDataUrl();
+      const doc = generateInvoicePdf(
+        selectedTemplate,
+        {
+          clientName: clientName || "Client",
+          invoiceNumber,
+          date: new Date().toLocaleDateString(),
+          dueDate,
+          lineItems,
+          totalAmount,
+          paymentInstructions,
+          notes,
+        },
+        profileDataUrl
+      );
+      doc.save(`${invoiceNumber}_${(clientName || "Client").replace(/\s+/g, "_")}_Template_${selectedTemplate}.pdf`);
+    } catch (err: any) {
+      console.error("Failed to generate invoice PDF:", err);
+      setActionMessage({ text: "Failed to generate branded invoice PDF: " + (err.message || ""), type: "error" });
+    } finally {
+      setDownloadingPdf(false);
     }
-
-    doc.save(`${invoiceNumber}_${clientName.replace(/\s+/g, "_")}.pdf`);
   };
 
   if (loading) {
@@ -394,6 +371,135 @@ function InvoiceBuilderContent() {
             onChange={(e) => setDueDate(e.target.value)}
             className="w-full bg-[#1b1b22] border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-200 outline-none focus:border-amber-500 mt-1"
           />
+        </div>
+      </div>
+
+      {/* Brand Kit & PDF Template Selector */}
+      <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND.profileImage}
+                alt={BRAND.ownerName}
+                className="w-10 h-10 rounded-full object-cover border-2 border-[#DA4D01] shadow-md shadow-[#DA4D01]/20"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-zinc-100 font-['Space_Grotesk']">{BRAND.ownerName}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#DA4D01]/20 text-[#DA4D01] border border-[#DA4D01]/40">
+                  Brand Kit Active
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400">
+                {BRAND.contact.website.replace("https://", "")} • WhatsApp: {BRAND.contact.waDisplay} • LinkedIn
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+            <Palette className="w-3.5 h-3.5 text-[#DA4D01]" />
+            <span className="text-[11px]">Primary Accent:</span>
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-200 bg-[#1c1c24] px-2 py-0.5 rounded border border-zinc-800">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#DA4D01]" />
+              #DA4D01
+            </span>
+          </div>
+        </div>
+
+        {/* 3 Template Selection Options */}
+        <div>
+          <label className="text-xs font-semibold text-zinc-300 block mb-2">
+            Select Invoice PDF Direction (All 3 use your verified brand colors &amp; typography):
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Template B - Bold Creative (Default) */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("B")}
+              className={`p-3.5 rounded-lg border text-left transition relative ${
+                selectedTemplate === "B"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template B: Bold Creative
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#DA4D01] text-white">
+                  Brand Default
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Matches <strong className="text-zinc-300">nafeesaali.com</strong> directly: dark background (#09090b), bold solid orange (#DA4D01) header, Space Grotesk headline, and dark item rows.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Dark Theme</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#DA4D01]/20 text-[#DA4D01]">Site Match</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Bold Accent</span>
+              </div>
+            </button>
+
+            {/* Template A - Minimal Modern */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("A")}
+              className={`p-3.5 rounded-lg border text-left transition ${
+                selectedTemplate === "A"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template A: Minimal Modern
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                  Light
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Clean light background with an orange sidebar accent line. High readability and easy to print for accounting records.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Print Friendly</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Clean Accent</span>
+              </div>
+            </button>
+
+            {/* Template C - Corporate Classic */}
+            <button
+              type="button"
+              onClick={() => setSelectedTemplate("C")}
+              className={`p-3.5 rounded-lg border text-left transition ${
+                selectedTemplate === "C"
+                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
+                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                  Template C: Corporate Classic
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                  Light
+                </span>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+                Formal corporate invoice with orange horizontal divider, alternating striped table rows, and clean payment memo box.
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Corporate</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Tabular</span>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -500,10 +606,15 @@ function InvoiceBuilderContent() {
           </button>
           <button
             onClick={handleDownloadPdf}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-300 text-xs font-medium border border-zinc-700 transition"
+            disabled={downloadingPdf}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition disabled:opacity-50"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download PDF</span>
+            {downloadingPdf ? (
+              <Loader2 className="w-3.5 h-3.5 text-[#DA4D01] animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-[#DA4D01]" />
+            )}
+            <span>Export Branded PDF ({selectedTemplate})</span>
           </button>
         </div>
 
