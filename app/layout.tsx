@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { BusinessBrainProvider } from "@/context/BusinessBrainContext";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { AppShell } from "@/components/layout/AppShell";
 
 const spaceGrotesk = Space_Grotesk({
@@ -30,14 +31,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${spaceGrotesk.variable} ${inter.variable} bg-[#0c0c0e] text-zinc-100 antialiased selection:bg-amber-500 selection:text-zinc-950`}
-        style={{ fontFamily: "var(--font-inter), sans-serif" }}
+        className={`${spaceGrotesk.variable} ${inter.variable} font-body antialiased`}
       >
-        <BusinessBrainProvider>
-          <AppShell>{children}</AppShell>
-        </BusinessBrainProvider>
+        <ThemeProvider>
+          <BusinessBrainProvider>
+            <AppShell>{children}</AppShell>
+          </BusinessBrainProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

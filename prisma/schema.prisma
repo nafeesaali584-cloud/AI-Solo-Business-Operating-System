@@ -214,6 +214,7 @@ model Settings {
   daily_target_quota      Int      @default(3)
   follow_up_cadence_days  Int      @default(4)
   tone_preference         String   @default("Professional, concise, and value-oriented")
+  theme_preference        String   @default("dark")
   message_templates       Json?
   proposal_templates      Json?
   invoice_branding        Json?

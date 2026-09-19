@@ -172,26 +172,26 @@ export const CopilotDrawer: React.FC = () => {
 
   return (
     <aside
-      className="fixed inset-y-0 right-0 z-40 w-full sm:w-[440px] bg-[#121215] border-l border-[#26262c] shadow-2xl flex flex-col transition-all duration-300"
+      className="fixed inset-y-0 right-0 z-40 w-full sm:w-[440px] bg-[var(--surface)] border-l border-[var(--border)] shadow-2xl flex flex-col transition-all duration-300"
       aria-label="AI Copilot Drawer"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#232329] bg-[#16161b]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--surface)]">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-1.5">
+            <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)] flex items-center gap-1.5">
               ClientPulse Copilot
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-800/40">
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
                 Advisory
               </span>
             </h2>
-            <div className="text-[11px] text-zinc-400 flex items-center gap-1">
-              <BrainCircuit className="w-3 h-3 text-amber-400" />
+            <div className="text-[11px] text-[var(--text-muted)] flex items-center gap-1">
+              <BrainCircuit className="w-3 h-3 text-[var(--accent)]" />
               <span>Loaded: </span>
-              <span className="text-zinc-200 font-medium truncate max-w-[200px]">
+              <span className="text-[var(--text-primary)] font-medium truncate max-w-[200px]">
                 {activeEntity.name || activeEntity.type}
               </span>
             </div>
@@ -199,15 +199,15 @@ export const CopilotDrawer: React.FC = () => {
         </div>
         <button
           onClick={() => setIsCopilotOpen(false)}
-          className="p-1.5 text-zinc-400 hover:text-zinc-200 rounded hover:bg-zinc-800 transition"
+          className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--surface-hover)] transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Safety Notice */}
-      <div className="px-3 py-1.5 bg-[#181510] border-b border-amber-950 text-[11px] text-amber-400/90 flex items-center gap-1.5">
-        <ShieldAlert className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+      <div className="px-3 py-1.5 bg-[var(--accent-soft)] border-b border-[var(--accent-border)] text-[11px] text-[var(--accent)] flex items-center gap-1.5">
+        <ShieldAlert className="w-3.5 h-3.5 text-[var(--accent)] flex-shrink-0" />
         <span>
           <strong>Hard Guardrail Active:</strong> Copilot advises &amp; drafts only. It cannot send messages or change payment statuses.
         </span>
@@ -222,7 +222,7 @@ export const CopilotDrawer: React.FC = () => {
               msg.role === "user" ? "items-end" : "items-start"
             }`}
           >
-            <div className="flex items-center gap-1.5 mb-1 text-[11px] text-zinc-500">
+            <div className="flex items-center gap-1.5 mb-1 text-[11px] text-[var(--text-dim)]">
               {msg.role === "user" ? (
                 <>
                   <span>You</span>
@@ -230,8 +230,8 @@ export const CopilotDrawer: React.FC = () => {
                 </>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Bot className="w-3 h-3 text-amber-400" />
-                  <span className="text-amber-300">Gemini Copilot</span>
+                  <Bot className="w-3 h-3 text-[var(--accent)]" />
+                  <span className="text-[var(--accent)]">Gemini Copilot</span>
                   {msg.isWebData && <FactBadge type="web" label="Live Web Data" />}
                 </div>
               )}
@@ -239,16 +239,16 @@ export const CopilotDrawer: React.FC = () => {
             <div
               className={`relative group max-w-[92%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
                 msg.role === "user"
-                  ? "bg-amber-600 text-white font-medium"
-                  : "bg-[#1a1a20] text-zinc-200 border border-[#2c2c36]"
+                  ? "bg-[var(--accent)] text-white font-medium"
+                  : "bg-[var(--surface-hover)] text-[var(--text-primary)] border border-[var(--border)]"
               }`}
             >
               <div className="whitespace-pre-wrap">{msg.content}</div>
 
               {/* Source Citations for Web Grounding */}
               {msg.sources && msg.sources.length > 0 && (
-                <div className="mt-3 pt-2.5 border-t border-zinc-800/80 space-y-1">
-                  <div className="text-[11px] font-semibold text-cyan-400 flex items-center gap-1">
+                <div className="mt-3 pt-2.5 border-t border-[var(--border)] space-y-1">
+                  <div className="text-[11px] font-semibold text-[var(--info)] flex items-center gap-1">
                     <Globe className="w-3 h-3" />
                     <span>Verified Web Sources:</span>
                   </div>
@@ -259,7 +259,7 @@ export const CopilotDrawer: React.FC = () => {
                         href={s.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-cyan-950/60 text-cyan-300 hover:text-cyan-200 border border-cyan-800/50 hover:border-cyan-600 transition"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[var(--info-soft)] text-[var(--info)] hover:text-[var(--text-primary)] border border-[var(--info-border)] hover:border-[var(--info)] transition-colors"
                       >
                         <span className="truncate max-w-[140px]">{s.title}</span>
                         <ExternalLink className="w-2.5 h-2.5" />
@@ -271,27 +271,27 @@ export const CopilotDrawer: React.FC = () => {
 
               {/* Action Toolbar for Assistant Response */}
               {msg.role === "assistant" && (
-                <div className="mt-2.5 pt-2 border-t border-zinc-800/50 flex items-center justify-between text-xs">
+                <div className="mt-2.5 pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     {/* Manual Save to Record Action */}
                     {activeEntity.id && (activeEntity.type === "lead" || activeEntity.type === "client") && (
                       <button
                         onClick={() => handleSaveToRecord(msg)}
                         disabled={msg.savedToRecord || savingNoteId === msg.id}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border transition ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${
                           msg.savedToRecord
-                            ? "bg-emerald-950/60 text-emerald-300 border-emerald-800"
-                            : "bg-[#23232c] hover:bg-[#2c2c36] text-zinc-300 hover:text-amber-300 border-zinc-700"
+                            ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-border)]"
+                            : "bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--accent)] border-[var(--border-hover)]"
                         }`}
                       >
                         {msg.savedToRecord ? (
                           <>
-                            <Check className="w-3 h-3 text-emerald-400" />
+                            <Check className="w-3 h-3 text-[var(--success)]" />
                             <span>Saved to Notes</span>
                           </>
                         ) : savingNoteId === msg.id ? (
                           <>
-                            <Loader2 className="w-3 h-3 animate-spin text-amber-400" />
+                            <Loader2 className="w-3 h-3 animate-spin text-[var(--accent)]" />
                             <span>Saving...</span>
                           </>
                         ) : (
@@ -307,10 +307,10 @@ export const CopilotDrawer: React.FC = () => {
                   <button
                     onClick={() => copyToClipboard(msg.content, msg.id)}
                     title="Copy response"
-                    className="p-1 bg-zinc-800/80 hover:bg-zinc-700 rounded text-zinc-400 hover:text-zinc-200 transition"
+                    className="p-1 bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     {copiedId === msg.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-[var(--success)]" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
@@ -321,8 +321,8 @@ export const CopilotDrawer: React.FC = () => {
           </div>
         ))}
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-amber-400/80 italic p-2.5 bg-[#18181f] rounded-lg border border-zinc-800 w-fit">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+          <div className="flex items-center gap-2 text-xs text-[var(--accent)] italic p-2.5 bg-[var(--surface-hover)] rounded-lg border border-[var(--border)] w-fit">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
             Analyzing with Google Gemini (checking online sources)...
           </div>
         )}
@@ -330,13 +330,13 @@ export const CopilotDrawer: React.FC = () => {
       </div>
 
       {/* Suggested Quick Prompts */}
-      <div className="px-3 py-2 border-t border-[#232328] bg-[#141418] flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+      <div className="px-3 py-2 border-t border-[var(--border)] bg-[var(--surface)] flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
         {quickPrompts.map((prompt, idx) => (
           <button
             key={idx}
             onClick={() => handleSend(prompt)}
             disabled={loading}
-            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#1e1e24] hover:bg-[#282832] text-zinc-300 hover:text-amber-300 text-[11px] border border-zinc-700/60 transition disabled:opacity-50"
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-secondary)] hover:text-[var(--accent)] text-[11px] border border-[var(--border-hover)] transition-colors disabled:opacity-50"
           >
             {prompt}
           </button>
@@ -349,7 +349,7 @@ export const CopilotDrawer: React.FC = () => {
           e.preventDefault();
           handleSend();
         }}
-        className="p-3 border-t border-[#232328] bg-[#16161b] flex items-center gap-2"
+        className="p-3 border-t border-[var(--border)] bg-[var(--surface)] flex items-center gap-2"
       >
         <input
           type="text"
@@ -357,12 +357,12 @@ export const CopilotDrawer: React.FC = () => {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask Copilot or say 'search this business online'..."
           disabled={loading}
-          className="flex-1 bg-[#1a1a20] border border-[#2f2f38] focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition disabled:opacity-50"
+          className="flex-1 bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--accent)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none transition-colors disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="p-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="p-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
         </button>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { ThemeMode } from "@/lib/brand/tokens";
@@ -82,18 +82,18 @@ export function DocumentPreviewShowcase({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#000000] text-zinc-100 py-8 px-3 sm:px-6 flex flex-col items-center select-none font-sans">
+    <div className="w-full min-h-screen bg-[var(--bg)] text-[var(--text-primary)] py-8 px-3 sm:px-6 flex flex-col items-center select-none font-sans">
       {/* ── Top Navigation Bar: Document Switcher ── */}
       <div className="w-full max-w-[840px] flex flex-col items-center gap-4 mb-6">
         {/* Document Tab Toggle */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-[#121212] border border-[#2a2a2a] w-full max-w-md shadow-lg">
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-[var(--surface)] border border-[var(--border)] w-full max-w-md shadow-lg">
           <button
             type="button"
             onClick={() => setActiveDoc("proposal")}
-            className={`py-2 px-4 rounded-lg text-xs font-semibold transition-all duration-200 ${
+            className={`py-2 px-4 rounded-lg text-xs font-semibold transition-colors duration-200 ${
               activeDoc === "proposal"
-                ? "bg-[#1f1a17] text-white border border-[#da4d01] shadow-md shadow-[#da4d01]/10"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent-soft)] text-white border border-[var(--accent)] shadow-md shadow-[var(--accent)]/10"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Proposal Design
@@ -101,10 +101,10 @@ export function DocumentPreviewShowcase({
           <button
             type="button"
             onClick={() => setActiveDoc("invoice")}
-            className={`py-2 px-4 rounded-lg text-xs font-semibold transition-all duration-200 ${
+            className={`py-2 px-4 rounded-lg text-xs font-semibold transition-colors duration-200 ${
               activeDoc === "invoice"
-                ? "bg-[#1f1a17] text-white border border-[#da4d01] shadow-md shadow-[#da4d01]/10"
-                : "text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent-soft)] text-white border border-[var(--accent)] shadow-md shadow-[var(--accent)]/10"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             Invoice Design
@@ -114,16 +114,16 @@ export function DocumentPreviewShowcase({
         {/* Sub-bar: Theme Selector & Export Button */}
         <div className="flex flex-wrap items-center justify-between w-full gap-3 pt-1">
           {/* Left: Preview Mode Toggles */}
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
-            <span className="text-[11px] font-medium text-zinc-500">Preview:</span>
-            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[#141414] border border-[#262626]">
+          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+            <span className="text-[11px] font-medium text-[var(--text-dim)]">Preview:</span>
+            <div className="flex items-center gap-1.5 p-1 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => setThemeMode("dark")}
-                className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+                className={`px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
                   themeMode === "dark"
-                    ? "bg-[#242424] text-white font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[var(--surface-hover)] text-[var(--text-primary)] font-semibold shadow-sm"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Screen (dark)
@@ -131,10 +131,10 @@ export function DocumentPreviewShowcase({
               <button
                 type="button"
                 onClick={() => setThemeMode("light")}
-                className={`px-3 py-1 rounded-md text-[11px] font-medium transition-all ${
+                className={`px-3 py-1 rounded-md text-[11px] font-medium transition-colors ${
                   themeMode === "light"
                     ? "bg-[#f6f4ef] text-zinc-900 font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Print (light)
@@ -147,7 +147,7 @@ export function DocumentPreviewShowcase({
             type="button"
             onClick={handleExportPdf}
             disabled={downloading}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#1a1411] text-[#da4d01] hover:bg-[#261914] border border-[#da4d01]/40 transition active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent-soft)] border border-[var(--accent-border)] transition-colors active:scale-95 disabled:opacity-50"
           >
             {downloading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -171,7 +171,7 @@ export function DocumentPreviewShowcase({
       </div>
 
       {/* ── Bottom Caption matching screenshot ── */}
-      <p className="text-[11px] text-zinc-500 text-center max-w-xl pb-10">
+      <p className="text-[11px] text-[var(--text-dim)] text-center max-w-xl pb-10">
         Brand-matched design using your real photo, brand colors (#DA4D01), Space Grotesk + Inter.
         Toggle &ldquo;Print (light)&rdquo; for a paper-friendly version of each document.
       </p>

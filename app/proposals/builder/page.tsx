@@ -322,8 +322,8 @@ function ProposalBuilderContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-        <p className="text-xs text-zinc-400">Loading Proposal Builder...</p>
+        <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+        <p className="text-xs text-[var(--text-muted)]">Loading Proposal Builder...</p>
       </div>
     );
   }
@@ -331,12 +331,12 @@ function ProposalBuilderContent() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#202026]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             <span>S7 — Proposal Builder (Workspace B)</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
             Craft, approve, and track professional client proposals with verified hard approval gates.
           </p>
         </div>
@@ -359,8 +359,8 @@ function ProposalBuilderContent() {
         <div
           className={`p-3.5 rounded-lg border text-xs flex items-center gap-2 ${
             actionMessage.type === "success"
-              ? "bg-emerald-950/70 border-emerald-800 text-emerald-300"
-              : "bg-red-950/70 border-red-800 text-red-300"
+              ? "bg-[var(--success-soft)] border-[var(--success-border)] text-[var(--success)]"
+              : "bg-[var(--danger-soft)] border-[var(--danger-border)] text-[var(--danger)]"
           }`}
         >
           {actionMessage.type === "success" ? (
@@ -373,15 +373,15 @@ function ProposalBuilderContent() {
       )}
 
       {/* View Switcher: Document Preview vs Form Editor */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#141417] border border-[#26262e]">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveView("preview")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               activeView === "preview"
-                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
-                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                : "bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             <span>Document Preview</span>
@@ -389,10 +389,10 @@ function ProposalBuilderContent() {
           <button
             type="button"
             onClick={() => setActiveView("editor")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               activeView === "editor"
-                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
-                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                : "bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             <span>Edit Proposal Fields</span>
@@ -401,18 +401,18 @@ function ProposalBuilderContent() {
 
         {activeView === "preview" && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[11px] text-zinc-500 font-medium">Theme:</span>
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#1a1a24] border border-[#2c2c36]">
+            <span className="text-[11px] text-[var(--text-dim)] font-medium">Theme:</span>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => {
                   setPreviewTheme("dark");
                   setSelectedTemplate("B");
                 }}
-                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   previewTheme === "dark"
-                    ? "bg-[#282834] text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[var(--surface-raised)] text-white font-semibold"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Screen (dark)
@@ -423,10 +423,10 @@ function ProposalBuilderContent() {
                   setPreviewTheme("light");
                   setSelectedTemplate("A");
                 }}
-                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   previewTheme === "light"
                     ? "bg-[#f6f4ef] text-zinc-900 font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Print (light)
@@ -437,7 +437,7 @@ function ProposalBuilderContent() {
 
         <Link
           href="/documents/preview"
-          className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium ml-auto"
+          className="flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium ml-auto transition-colors"
         >
           <span>Fullscreen Showcase</span>
           <ExternalLink className="w-3.5 h-3.5" />
@@ -462,17 +462,17 @@ function ProposalBuilderContent() {
       ) : (
         <div className="space-y-6">
           {/* Target Client Bar */}
-          <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
         <div>
-          <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Client Prospect</span>
-          <div className="text-lg font-bold text-zinc-100">{clientName || "Direct Proposal Draft"}</div>
+          <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Client Prospect</span>
+          <div className="text-lg font-bold text-[var(--text-primary)]">{clientName || "Direct Proposal Draft"}</div>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={handleGenerateAiDraft}
             disabled={generatingAi}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-border)] text-[var(--accent)] text-xs font-semibold border border-[var(--accent-border)] transition-colors disabled:opacity-50"
           >
             {generatingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             <span>Generate Draft (AI)</span>
@@ -481,15 +481,15 @@ function ProposalBuilderContent() {
       </div>
 
       {/* Brand Kit & PDF Template Selector */}
-      <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+      <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-3">
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={BRAND.profileImage}
                 alt={BRAND.ownerName}
-                className="w-10 h-10 rounded-full object-cover border-2 border-[#DA4D01] shadow-md shadow-[#DA4D01]/20"
+                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--accent)] shadow-md shadow-[var(--accent)]/20"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = "none";
                 }}
@@ -497,22 +497,22 @@ function ProposalBuilderContent() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-zinc-100 font-['Space_Grotesk']">{BRAND.ownerName}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#DA4D01]/20 text-[#DA4D01] border border-[#DA4D01]/40">
+                <span className="text-sm font-bold text-[var(--text-primary)] font-heading">{BRAND.ownerName}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
                   Brand Kit Active
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 {BRAND.contact.website.replace("https://", "")} • WhatsApp: {BRAND.contact.waDisplay} • LinkedIn
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <Palette className="w-3.5 h-3.5 text-[#DA4D01]" />
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+            <Palette className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span className="text-[11px]">Primary Accent:</span>
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-200 bg-[#1c1c24] px-2 py-0.5 rounded border border-zinc-800">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#DA4D01]" />
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--text-primary)] bg-[var(--surface-hover)] px-2 py-0.5 rounded border border-[var(--border)]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
               #DA4D01
             </span>
           </div>
@@ -520,7 +520,7 @@ function ProposalBuilderContent() {
 
         {/* 3 Template Selection Options */}
         <div>
-          <label className="text-xs font-semibold text-zinc-300 block mb-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-2">
             Select Proposal PDF Direction (All 3 use your verified brand colors &amp; typography):
           </label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -528,27 +528,27 @@ function ProposalBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("B")}
-              className={`p-3.5 rounded-lg border text-left transition relative ${
+              className={`p-3.5 rounded-lg border text-left transition-colors relative ${
                 selectedTemplate === "B"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template B: Bold Creative
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#DA4D01] text-white">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent)] text-white">
                   Brand Default
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
-                Matches <strong className="text-zinc-300">nafeesaali.com</strong> directly: dark obsidian (#09090b), bold orange (#DA4D01) header, Space Grotesk headline, and pill-style service badges.
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
+                Matches <strong className="text-[var(--text-secondary)]">nafeesaali.com</strong> directly: dark obsidian (#09090b), bold orange (#DA4D01) header, Space Grotesk headline, and pill-style service badges.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Dark Theme</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#DA4D01]/20 text-[#DA4D01]">Site Match</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Pill Badges</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Dark Theme</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]">Site Match</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Pill Badges</span>
               </div>
             </button>
 
@@ -556,26 +556,26 @@ function ProposalBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("A")}
-              className={`p-3.5 rounded-lg border text-left transition ${
+              className={`p-3.5 rounded-lg border text-left transition-colors ${
                 selectedTemplate === "A"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template A: Minimal Modern
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                   Light
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
                 Crisp white background with a signature #DA4D01 orange sidebar accent. Ideal for clients who prefer printing on paper.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Print Friendly</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Clean Accent</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Print Friendly</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Clean Accent</span>
               </div>
             </button>
 
@@ -583,26 +583,26 @@ function ProposalBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("C")}
-              className={`p-3.5 rounded-lg border text-left transition ${
+              className={`p-3.5 rounded-lg border text-left transition-colors ${
                 selectedTemplate === "C"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template C: Corporate Classic
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                   Light
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
                 Formal two-column letterhead with orange divider rules, alternating table rows, and structured payment breakdown.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Corporate</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Tabular</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Corporate</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Tabular</span>
               </div>
             </button>
           </div>
@@ -610,12 +610,12 @@ function ProposalBuilderContent() {
       </div>
 
       {/* Services Line Items */}
-      <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-200">Services &amp; Pricing Breakdown</h2>
+      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+          <h2 className="font-heading text-sm font-semibold text-[var(--text-primary)]">Services &amp; Pricing Breakdown</h2>
           <button
             onClick={addServiceItem}
-            className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium"
+            className="flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Service</span>
@@ -626,7 +626,7 @@ function ProposalBuilderContent() {
           {services.map((item, index) => (
             <div
               key={index}
-              className="p-3 rounded-lg bg-[#181820] border border-zinc-800/80 space-y-2 relative group"
+              className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-2 relative group"
             >
               <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <div className="md:col-span-3">
@@ -635,17 +635,17 @@ function ProposalBuilderContent() {
                     value={item.name}
                     onChange={(e) => updateServiceItem(index, "name", e.target.value)}
                     placeholder="Service name (e.g. Workflow Automation)"
-                    className="w-full bg-[#1e1e26] border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                    className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                   />
                 </div>
                 <div className="relative">
-                  <span className="absolute left-2 top-1.5 text-xs text-zinc-500">$</span>
+                  <span className="absolute left-2 top-1.5 text-xs text-[var(--text-dim)]">$</span>
                   <input
                     type="number"
                     value={item.price}
                     onChange={(e) => updateServiceItem(index, "price", parseFloat(e.target.value) || 0)}
                     placeholder="Price"
-                    className="w-full bg-[#1e1e26] border border-zinc-700 rounded pl-6 pr-2.5 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                    className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded pl-6 pr-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                   />
                 </div>
               </div>
@@ -654,12 +654,12 @@ function ProposalBuilderContent() {
                 value={item.description}
                 onChange={(e) => updateServiceItem(index, "description", e.target.value)}
                 placeholder="Scope details and deliverables for this item..."
-                className="w-full bg-[#1e1e26] border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-300 outline-none focus:border-amber-500"
+                className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded px-2.5 py-1.5 text-xs text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
               />
               {services.length > 1 && (
                 <button
                   onClick={() => removeServiceItem(index)}
-                  className="absolute -top-2 -right-2 p-1 rounded-full bg-zinc-800 text-zinc-400 hover:text-red-400 border border-zinc-700 opacity-0 group-hover:opacity-100 transition"
+                  className="absolute -top-2 -right-2 p-1 rounded-full bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--danger)] border border-[var(--border-hover)] opacity-0 group-hover:opacity-100 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </button>
@@ -668,56 +668,56 @@ function ProposalBuilderContent() {
           ))}
         </div>
 
-        <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-sm font-semibold">
-          <span className="text-zinc-400">Total Investment (Auto-summed):</span>
-          <span className="text-lg text-amber-400">${totalInvestment.toLocaleString()}</span>
+        <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm font-semibold">
+          <span className="text-[var(--text-muted)]">Total Investment (Auto-summed):</span>
+          <span className="text-lg text-[var(--accent)] font-bold">${totalInvestment.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Scope & Deliverables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Project Scope</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Project Scope</label>
           <textarea
             rows={5}
             value={scope}
             onChange={(e) => setScope(e.target.value)}
             placeholder="Comprehensive description of the engagement..."
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500 leading-relaxed"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] leading-relaxed"
           />
         </div>
 
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Tangible Deliverables</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Tangible Deliverables</label>
           <textarea
             rows={5}
             value={deliverables}
             onChange={(e) => setDeliverables(e.target.value)}
             placeholder="Itemized deliverables..."
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500 leading-relaxed"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] leading-relaxed"
           />
         </div>
       </div>
 
       {/* Timeline & Terms */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Timeline &amp; Milestones</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Timeline &amp; Milestones</label>
           <input
             type="text"
             value={timeline}
             onChange={(e) => setTimeline(e.target.value)}
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </div>
 
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Payment Terms</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Payment Terms</label>
           <input
             type="text"
             value={terms}
             onChange={(e) => setTerms(e.target.value)}
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </div>
       </div>
@@ -725,24 +725,24 @@ function ProposalBuilderContent() {
   )}
 
       {/* Action Toolbar & Approval Gates (Gates 2 & 3) */}
-      <div className="p-5 rounded-xl bg-[#16161c] border border-[#26262e] flex flex-wrap items-center justify-between gap-3">
+      <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={handleSaveProposal}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition"
+            className="px-4 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors"
           >
             {saving ? "Saving..." : "Save Draft"}
           </button>
           <button
             onClick={handleDownloadPdf}
             disabled={downloadingPdf}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors disabled:opacity-50"
           >
             {downloadingPdf ? (
-              <Loader2 className="w-3.5 h-3.5 text-[#DA4D01] animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin" />
             ) : (
-              <Download className="w-3.5 h-3.5 text-[#DA4D01]" />
+              <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
             )}
             <span>Export Branded PDF ({selectedTemplate})</span>
           </button>
@@ -754,7 +754,7 @@ function ProposalBuilderContent() {
           <button
             onClick={handleApproveGate2}
             disabled={status === "Approved" || status === "Sent" || status === "Accepted"}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold shadow transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Approve Proposal (Gate 2)</span>
@@ -765,7 +765,7 @@ function ProposalBuilderContent() {
             onClick={handleMarkSentGate3}
             disabled={!approvedAt || status === "Sent" || status === "Accepted"}
             title={!approvedAt ? "Locked until Gate 2 (Approve) is cleared" : "Confirm manual dispatch"}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Mark as Sent (Gate 3)</span>
@@ -773,17 +773,17 @@ function ProposalBuilderContent() {
 
           {/* Client Decision buttons */}
           {status === "Sent" && (
-            <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-700">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-[var(--border-hover)]">
               <button
                 onClick={() => handleStatusChange("Accepted")}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800 text-xs font-medium transition"
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--success-soft)] text-[var(--success)] hover:bg-[var(--success-border)] border border-[var(--success-border)] text-xs font-medium transition-colors"
               >
                 <ThumbsUp className="w-3.5 h-3.5" />
                 <span>Mark Accepted</span>
               </button>
               <button
                 onClick={() => handleStatusChange("Rejected")}
-                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-red-950 text-red-300 hover:bg-red-900 border border-red-800 text-xs font-medium transition"
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-[var(--danger-border)] border border-[var(--danger-border)] text-xs font-medium transition-colors"
               >
                 <ThumbsDown className="w-3.5 h-3.5" />
                 <span>Mark Rejected</span>
@@ -801,8 +801,8 @@ export default function ProposalBuilderPage() {
     <Suspense
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-xs text-zinc-400">Loading Proposal Builder...</p>
+          <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+          <p className="text-xs text-[var(--text-muted)]">Loading Proposal Builder...</p>
         </div>
       }
     >

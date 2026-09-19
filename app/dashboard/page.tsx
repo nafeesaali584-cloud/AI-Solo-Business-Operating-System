@@ -16,6 +16,9 @@ import {
   Loader2,
   Briefcase,
   Users,
+  Inbox,
+  ArrowUpRight,
+  Check,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
@@ -74,6 +77,132 @@ interface DashboardData {
   };
 }
 
+// ─── Empty state component ───────────────────────────────────────────────────
+
+function EmptyState({
+  icon: Icon,
+  message,
+  cta,
+  ctaHref,
+}: {
+  icon: React.ElementType;
+  message: string;
+  cta?: string;
+  ctaHref?: string;
+}) {
+  return (
+    <div className="p-5 rounded-lg bg-[var(--bg)] border border-dashed border-[var(--border)] text-center space-y-2">
+      <div className="flex justify-center">
+        <div className="w-10 h-10 rounded-full bg-[var(--surface-hover)] flex items-center justify-center">
+          <Icon className="w-5 h-5 text-[var(--text-dim)]" />
+        </div>
+      </div>
+      <p className="text-xs text-[var(--text-muted)]">{message}</p>
+      {cta && ctaHref && (
+        <Link
+          href={ctaHref}
+          className="inline-flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
+        >
+          {cta}
+          <ArrowRight className="w-3 h-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ─── Stat badge (dominant number) ────────────────────────────────────────────
+
+function StatBadge({
+  value,
+  label,
+  variant = "accent",
+}: {
+  value: string | number;
+  label?: string;
+  variant?: "accent" | "danger" | "success" | "info" | "neutral";
+}) {
+  const variantMap = {
+    accent: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent-border)]",
+    danger: "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-border)]",
+    success: "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-border)]",
+    info: "bg-[var(--info-soft)] text-[var(--info)] border-[var(--info-border)]",
+    neutral: "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)]",
+  };
+  return (
+    <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${variantMap[variant]}`}>
+      {value}
+      {label ? ` ${label}` : ""}
+    </span>
+  );
+}
+
+// ─── Dashboard card wrapper ──────────────────────────────────────────────────
+
+function DashCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 flex flex-col justify-between
+        hover:border-[var(--accent-border)] transition-colors ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── Card header ─────────────────────────────────────────────────────────────
+
+function CardHeader({
+  icon: Icon,
+  title,
+  iconColor,
+  rightSlot,
+}: {
+  icon: React.ElementType;
+  title: string;
+  iconColor: string;
+  rightSlot?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2.5">
+        <div
+          className="p-2 rounded-lg border"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${iconColor} 12%, transparent)`,
+            borderColor: `color-mix(in srgb, ${iconColor} 25%, transparent)`,
+            color: iconColor,
+          }}
+        >
+          <Icon className="w-5 h-5" />
+        </div>
+        <h2 className="font-heading text-base text-[var(--text-primary)]">{title}</h2>
+      </div>
+      {rightSlot}
+    </div>
+  );
+}
+
+// ─── Card footer ─────────────────────────────────────────────────────────────
+
+function CardFooter({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pt-4 mt-4 border-t border-[var(--border)] text-xs text-[var(--text-dim)]">
+      {children}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export default function DashboardPage() {
   const router = useRouter();
   const { setActiveEntity, openCopilotWithPrompt } = useBusinessBrain();
@@ -107,8 +236,8 @@ export default function DashboardPage() {
   if (loading && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-        <p className="text-sm text-zinc-400">Loading daily priorities and tasks...</p>
+        <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+        <p className="text-sm text-[var(--text-muted)]">Loading daily priorities and tasks...</p>
       </div>
     );
   }
@@ -125,13 +254,13 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      {/* Top Welcome Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#202026]">
+      {/* ── Top Welcome Bar ── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2.5">
-            <span>Daily &quot;MY WORK&quot; Dashboard</span>
+          <h1 className="font-heading text-2xl tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
+            Daily &quot;MY WORK&quot; Dashboard
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-sm text-[var(--text-muted)] mt-1">
             Focus strictly on today&apos;s actionable priorities. No rigid hourly scheduling.
           </p>
         </div>
@@ -140,13 +269,13 @@ export default function DashboardPage() {
           <button
             onClick={fetchDashboard}
             title="Refresh dashboard data"
-            className="p-2 rounded-lg bg-[#18181f] hover:bg-[#22222b] border border-[#272730] text-zinc-400 hover:text-zinc-200 transition"
+            className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => openCopilotWithPrompt("What should I do next?")}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 text-sm font-semibold shadow-lg shadow-amber-900/20 transition"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold shadow-lg shadow-[var(--accent)]/20 transition-colors"
           >
             <Sparkles className="w-4 h-4" />
             <span>Ask Copilot: &quot;What should I do next?&quot;</span>
@@ -154,53 +283,53 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Grid of 5 Main Focus Cards */}
+      {/* ── Grid of Focus Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* CARD 1: New Targets Today (Quota x/3) */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
+        {/* CARD 1: New Targets Today */}
+        <DashCard>
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  <Target className="w-5 h-5" />
-                </div>
-                <h2 className="font-semibold text-zinc-200 text-base">New Targets</h2>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950/80 text-amber-300 border border-amber-800/60">
-                {quota.current} / {quota.max} today
-              </span>
-            </div>
+            <CardHeader
+              icon={Target}
+              title="New Targets"
+              iconColor="var(--accent)"
+              rightSlot={
+                <StatBadge
+                  value={`${quota.current} / ${quota.max}`}
+                  label="today"
+                  variant="accent"
+                />
+              }
+            />
 
-            <p className="text-xs text-zinc-400 mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Your daily outreach quota. Focus on high-value prospects.
             </p>
 
             {quota.targets.length === 0 ? (
-              <div className="p-4 rounded-lg bg-[#191920] border border-dashed border-zinc-800 text-center">
-                <p className="text-xs text-zinc-400 mb-2">No targets selected yet for today.</p>
-                <Link
-                  href="/leads"
-                  className="text-xs text-amber-400 hover:text-amber-300 font-medium inline-flex items-center gap-1"
-                >
-                  Pick 3 targets from Lead Engine <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
+              <EmptyState
+                icon={Target}
+                message="No targets selected yet for today."
+                cta="Pick 3 targets from Lead Engine"
+                ctaHref="/leads"
+              />
             ) : (
               <div className="space-y-2">
                 {quota.targets.map((target) => (
                   <div
                     key={target.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-[#1a1a20] border border-zinc-800/80 hover:border-zinc-700 transition"
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
                   >
-                    <div>
-                      <div className="text-sm font-medium text-zinc-200 truncate max-w-[170px]">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[170px]">
                         {target.business_name}
                       </div>
-                      <div className="text-[11px] text-zinc-500">{target.niche_industry || "Lead"}</div>
+                      <div className="text-[11px] text-[var(--text-dim)]">
+                        {target.niche_industry || "Lead"}
+                      </div>
                     </div>
                     <Link
                       href={`/leads/${target.id}`}
-                      className="px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30 flex items-center gap-1 transition"
+                      className="px-2 py-1 rounded bg-[var(--accent-soft)] hover:bg-[var(--accent-border)] text-[var(--accent)] text-xs font-medium border border-[var(--accent-border)] flex items-center gap-1 transition-colors"
                     >
                       <span>Open</span>
                       <ExternalLink className="w-3 h-3" />
@@ -211,54 +340,58 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 flex items-center justify-between text-xs">
-            <span className="text-zinc-500">Max {quota.max} active</span>
-            <Link href="/leads" className="text-amber-400 hover:underline">
-              Browse all leads &rarr;
-            </Link>
-          </div>
-        </div>
+          <CardFooter>
+            <div className="flex items-center justify-between">
+              <span>Max {quota.max} active</span>
+              <Link href="/leads" className="text-[var(--accent)] hover:underline">
+                Browse all leads &rarr;
+              </Link>
+            </div>
+          </CardFooter>
+        </DashCard>
 
         {/* CARD 2: Follow-ups Due */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
+        <DashCard>
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <h2 className="font-semibold text-zinc-200 text-base">Follow-ups Due</h2>
-              </div>
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-300">
-                {followUps.length} pending
-              </span>
-            </div>
+            <CardHeader
+              icon={Clock}
+              title="Follow-ups Due"
+              iconColor="var(--info)"
+              rightSlot={
+                <StatBadge
+                  value={followUps.length}
+                  label="pending"
+                  variant={followUps.length > 0 ? "info" : "neutral"}
+                />
+              }
+            />
 
-            <p className="text-xs text-zinc-400 mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Scheduled check-ins and outreach touchpoints.
             </p>
 
             {followUps.length === 0 ? (
-              <div className="p-4 rounded-lg bg-[#191920] border border-dashed border-zinc-800 text-center">
-                <p className="text-xs text-zinc-400">All follow-ups are up to date.</p>
-              </div>
+              <EmptyState
+                icon={Check}
+                message="All follow-ups are up to date. Great work!"
+              />
             ) : (
               <div className="space-y-2">
                 {followUps.slice(0, 3).map((task) => (
                   <div
                     key={task.id}
-                    className="p-2.5 rounded-lg bg-[#1a1a20] border border-zinc-800/80"
+                    className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-zinc-200 truncate max-w-[180px]">
+                      <span className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[180px]">
                         {task.title}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-900/50">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--info-soft)] text-[var(--info)] border border-[var(--info-border)]">
                         {task.type}
                       </span>
                     </div>
                     {task.ai_suggested_tactic && (
-                      <p className="text-[11px] text-amber-300/90 italic line-clamp-1">
+                      <p className="text-[11px] text-[var(--accent)] italic line-clamp-1">
                         AI Tactic: {task.ai_suggested_tactic}
                       </p>
                     )}
@@ -268,27 +401,28 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 text-xs text-zinc-500">
+          <CardFooter>
             Cadence rule: 4 days without reply flags follow-up
-          </div>
-        </div>
+          </CardFooter>
+        </DashCard>
 
-        {/* CARD 3: Waiting for You (Approvals & Gate Confirmations) */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
+        {/* CARD 3: Waiting for You */}
+        <DashCard>
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
-                  <Hourglass className="w-5 h-5" />
-                </div>
-                <h2 className="font-semibold text-zinc-200 text-base">Waiting for You</h2>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-950/80 text-red-300 border border-red-800/60">
-                {waiting.total} action items
-              </span>
-            </div>
+            <CardHeader
+              icon={Hourglass}
+              title="Waiting for You"
+              iconColor="var(--danger)"
+              rightSlot={
+                <StatBadge
+                  value={waiting.total}
+                  label="action items"
+                  variant={waiting.total > 0 ? "danger" : "neutral"}
+                />
+              }
+            />
 
-            <p className="text-xs text-zinc-400 mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Hard Approval Gates requiring your explicit confirmation.
             </p>
 
@@ -296,17 +430,17 @@ export default function DashboardPage() {
               {waiting.proposals.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-[#1e1717] border border-red-900/40"
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] hover:bg-[color-mix(in_srgb,var(--danger)_8%,transparent)] transition-colors"
                 >
                   <div>
-                    <div className="text-xs font-semibold text-zinc-200">
+                    <div className="text-xs font-semibold text-[var(--text-primary)]">
                       Proposal: {p.client?.business_name || p.lead?.business_name || "Prospect"}
                     </div>
-                    <div className="text-[11px] text-zinc-400">Needs Gate 2 Approval</div>
+                    <div className="text-[11px] text-[var(--text-muted)]">Needs Gate 2 Approval</div>
                   </div>
                   <Link
                     href={`/proposals/builder?id=${p.id}`}
-                    className="px-2 py-1 rounded bg-red-950 hover:bg-red-900 text-red-300 text-xs font-medium border border-red-800/60"
+                    className="px-2 py-1 rounded bg-[var(--danger-soft)] hover:bg-[var(--danger-border)] text-[var(--danger)] text-xs font-medium border border-[var(--danger-border)]"
                   >
                     Review
                   </Link>
@@ -316,17 +450,17 @@ export default function DashboardPage() {
               {waiting.invoices.map((inv) => (
                 <div
                   key={inv.id}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-[#1a1a20] border border-zinc-800"
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors"
                 >
                   <div>
-                    <div className="text-xs font-semibold text-zinc-200">
+                    <div className="text-xs font-semibold text-[var(--text-primary)]">
                       Invoice {inv.invoice_number} ({inv.client.business_name})
                     </div>
-                    <div className="text-[11px] text-zinc-400">Status: {inv.status}</div>
+                    <div className="text-[11px] text-[var(--text-muted)]">Status: {inv.status}</div>
                   </div>
                   <Link
                     href={`/invoices/builder?id=${inv.id}`}
-                    className="px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-medium border border-amber-500/30"
+                    className="px-2 py-1 rounded bg-[var(--accent-soft)] hover:bg-[var(--accent-border)] text-[var(--accent)] text-xs font-medium border border-[var(--accent-border)]"
                   >
                     Open
                   </Link>
@@ -334,50 +468,53 @@ export default function DashboardPage() {
               ))}
 
               {waiting.total === 0 && (
-                <div className="p-4 rounded-lg bg-[#191920] border border-dashed border-zinc-800 text-center text-xs text-zinc-400">
-                  No approval gates currently waiting.
-                </div>
+                <EmptyState
+                  icon={CheckCircle2}
+                  message="No approval gates currently waiting."
+                />
               )}
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 text-xs text-zinc-500">
+          <CardFooter>
             Rule: AI never approves or marks sent automatically
-          </div>
-        </div>
+          </CardFooter>
+        </DashCard>
 
-        {/* CARD 4: Overdue Items */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
+        {/* CARD 4: Overdue Tasks */}
+        <DashCard>
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
-                <h2 className="font-semibold text-zinc-200 text-base">Overdue Tasks</h2>
-              </div>
-              <span className="px-2 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-300">
-                {overdue.length} items
-              </span>
-            </div>
+            <CardHeader
+              icon={AlertTriangle}
+              title="Overdue Tasks"
+              iconColor="var(--warning)"
+              rightSlot={
+                <StatBadge
+                  value={overdue.length}
+                  label="items"
+                  variant={overdue.length > 0 ? "danger" : "neutral"}
+                />
+              }
+            />
 
-            <p className="text-xs text-zinc-400 mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Tasks past due date requiring immediate attention.
             </p>
 
             {overdue.length === 0 ? (
-              <div className="p-4 rounded-lg bg-[#191920] border border-dashed border-zinc-800 text-center text-xs text-zinc-400">
-                Zero overdue tasks. You are on track!
-              </div>
+              <EmptyState
+                icon={CheckCircle2}
+                message="Zero overdue tasks. You are on track!"
+              />
             ) : (
               <div className="space-y-2">
                 {overdue.slice(0, 3).map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 rounded-lg bg-[#1d1614] border border-orange-900/40"
+                    className="p-2.5 rounded-lg bg-[var(--warning-soft)] border border-[var(--warning-border)] hover:bg-[color-mix(in_srgb,var(--warning)_8%,transparent)] transition-colors"
                   >
-                    <div className="text-xs font-semibold text-zinc-200">{item.title}</div>
-                    <div className="text-[11px] text-orange-400">
+                    <div className="text-xs font-semibold text-[var(--text-primary)]">{item.title}</div>
+                    <div className="text-[11px] text-[var(--warning)]">
                       Due: {new Date(item.due_date).toLocaleDateString()}
                     </div>
                   </div>
@@ -386,34 +523,36 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 text-xs text-zinc-500">
+          <CardFooter>
             Day-level scheduling avoiding micro-management
-          </div>
-        </div>
+          </CardFooter>
+        </DashCard>
 
         {/* CARD 5: Onboarding Pending */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
+        <DashCard>
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <CheckCircle2 className="w-5 h-5" />
-                </div>
-                <h2 className="font-semibold text-zinc-200 text-base">Onboarding Pending</h2>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/50">
-                {onboarding.pending_checklist_items} open tasks
-              </span>
-            </div>
+            <CardHeader
+              icon={CheckCircle2}
+              title="Onboarding Pending"
+              iconColor="var(--success)"
+              rightSlot={
+                <StatBadge
+                  value={onboarding.pending_checklist_items}
+                  label="open tasks"
+                  variant={onboarding.pending_checklist_items > 0 ? "success" : "neutral"}
+                />
+              }
+            />
 
-            <p className="text-xs text-zinc-400 mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Post-payment delivery checklists auto-created from Gate 5.
             </p>
 
             {onboarding.records.length === 0 ? (
-              <div className="p-4 rounded-lg bg-[#191920] border border-dashed border-zinc-800 text-center text-xs text-zinc-400">
-                No active onboardings in progress.
-              </div>
+              <EmptyState
+                icon={Inbox}
+                message="No active onboardings in progress."
+              />
             ) : (
               <div className="space-y-2">
                 {onboarding.records.map((onb) => {
@@ -421,19 +560,19 @@ export default function DashboardPage() {
                   return (
                     <div
                       key={onb.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg bg-[#141d17] border border-emerald-900/40"
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] hover:bg-[color-mix(in_srgb,var(--success)_8%,transparent)] transition-colors"
                     >
                       <div>
-                        <div className="text-xs font-semibold text-zinc-200">
+                        <div className="text-xs font-semibold text-[var(--text-primary)]">
                           {onb.client?.business_name}
                         </div>
-                        <div className="text-[11px] text-emerald-400">
+                        <div className="text-[11px] text-[var(--success)]">
                           {pendingCount} checklist items left
                         </div>
                       </div>
                       <Link
                         href={`/onboarding/${onb.id}`}
-                        className="px-2 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-xs font-medium border border-emerald-800/50"
+                        className="px-2 py-1 rounded bg-[var(--success-soft)] hover:bg-[var(--success-border)] text-[var(--success)] text-xs font-medium border border-[var(--success-border)]"
                       >
                         Checklist
                       </Link>
@@ -444,56 +583,52 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 flex items-center justify-between text-xs">
-            <span className="text-zinc-500">{onboarding.active_count} clients in onboarding</span>
-            <Link href="/clients" className="text-emerald-400 hover:underline">
-              Clients &rarr;
-            </Link>
-          </div>
-        </div>
-
-        {/* CARD 6: System Quick Actions */}
-        <div className="rounded-xl bg-[#141417] border border-[#26262e] p-5 flex flex-col justify-between hover:border-amber-500/40 transition">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Briefcase className="w-5 h-5" />
-              </div>
-              <h2 className="font-semibold text-zinc-200 text-base">Quick Shortcuts</h2>
+          <CardFooter>
+            <div className="flex items-center justify-between">
+              <span>{onboarding.active_count} clients in onboarding</span>
+              <Link href="/clients" className="text-[var(--success)] hover:underline">
+                Clients &rarr;
+              </Link>
             </div>
-            <p className="text-xs text-zinc-400 mb-4">
+          </CardFooter>
+        </DashCard>
+
+        {/* CARD 6: Quick Shortcuts */}
+        <DashCard>
+          <div>
+            <CardHeader
+              icon={Briefcase}
+              title="Quick Shortcuts"
+              iconColor="var(--accent)"
+            />
+            <p className="text-xs text-[var(--text-muted)] mb-4">
               Direct access to engine pipelines.
             </p>
 
             <div className="space-y-2 text-sm">
-              <Link
-                href="/import"
-                className="flex items-center justify-between p-2.5 rounded-lg bg-[#1a1a20] hover:bg-[#22222a] border border-zinc-800 transition"
-              >
-                <span>📥 Import new CSV leads</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-              <Link
-                href="/leads"
-                className="flex items-center justify-between p-2.5 rounded-lg bg-[#1a1a20] hover:bg-[#22222a] border border-zinc-800 transition"
-              >
-                <span>🔍 Open Lead Engine</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-              <Link
-                href="/proposals/builder"
-                className="flex items-center justify-between p-2.5 rounded-lg bg-[#1a1a20] hover:bg-[#22222a] border border-zinc-800 transition"
-              >
-                <span>📝 Create new Proposal</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
+              {[
+                { emoji: "📥", label: "Import new CSV leads", href: "/import" },
+                { emoji: "🔍", label: "Open Lead Engine", href: "/leads" },
+                { emoji: "📝", label: "Create new Proposal", href: "/proposals/builder" },
+              ].map((shortcut) => (
+                <Link
+                  key={shortcut.href}
+                  href={shortcut.href}
+                  className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--bg)] hover:bg-[var(--surface-hover)] border border-[var(--border)] hover:border-[var(--border-hover)] transition-colors group"
+                >
+                  <span>
+                    {shortcut.emoji} {shortcut.label}
+                  </span>
+                  <ArrowUpRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--accent)] transition-colors" />
+                </Link>
+              ))}
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-zinc-800/60 text-xs text-zinc-500">
+          <CardFooter>
             Central database synchronized across both workspaces
-          </div>
-        </div>
+          </CardFooter>
+        </DashCard>
       </div>
     </div>
   );

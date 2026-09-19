@@ -26,15 +26,15 @@ export const GateBadge: React.FC<GateBadgeProps> = ({
     <span
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold uppercase tracking-wider ${
         isUnlocked
-          ? "bg-emerald-950/70 text-emerald-300 border border-emerald-700/60"
-          : "bg-red-950/70 text-red-300 border border-red-800/60"
+          ? "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]"
+          : "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-border)]"
       } ${className}`}
       title={gateDescriptions[gateNumber]}
     >
       {isUnlocked ? (
-        <ShieldCheck className="w-3 h-3 text-emerald-400" />
+        <ShieldCheck className="w-3 h-3 text-[var(--success)]" />
       ) : (
-        <Lock className="w-3 h-3 text-red-400" />
+        <Lock className="w-3 h-3 text-[var(--danger)]" />
       )}
       <span>{label || `GATE ${gateNumber}`}</span>
     </span>

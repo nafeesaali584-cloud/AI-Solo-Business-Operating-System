@@ -74,12 +74,12 @@ export default function ClientListPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#202026]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             <span>S5 — Client List (Workspace B)</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
             Client Conversion &amp; Delivery Engine. Tracking won deals from proposal through delivery and active status.
           </p>
         </div>
@@ -87,14 +87,14 @@ export default function ClientListPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/proposals/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
           >
             <FileText className="w-3.5 h-3.5" />
             <span>New Proposal</span>
           </Link>
           <Link
             href="/invoices/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1c1c24] hover:bg-[#262632] text-zinc-200 text-xs font-medium border border-zinc-700 transition"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors"
           >
             <Receipt className="w-3.5 h-3.5" />
             <span>New Invoice</span>
@@ -103,39 +103,39 @@ export default function ClientListPage() {
       </div>
 
       {/* Search Bar */}
-      <div className="p-3.5 rounded-xl bg-[#141417] border border-[#26262e] flex items-center justify-between">
+      <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
         <div className="relative w-full max-w-sm">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2.5" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter clients by name, contact, stage..."
-            className="w-full bg-[#1b1b22] border border-[#2d2d38] rounded-lg pl-9 pr-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 outline-none focus:border-amber-500 transition"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
-        <span className="text-xs text-zinc-400">{filtered.length} total client(s)</span>
+        <span className="text-xs text-[var(--text-muted)]">{filtered.length} total client(s)</span>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl bg-[#141417] border border-[#26262e] overflow-hidden">
+      <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-zinc-400 space-y-2">
-            <Loader2 className="w-8 h-8 text-amber-500 animate-spin mx-auto" />
+          <div className="p-12 text-center text-[var(--text-muted)] space-y-2">
+            <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin mx-auto" />
             <p className="text-xs">Loading client portfolio...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-zinc-500 space-y-3">
-            <Briefcase className="w-10 h-10 mx-auto text-zinc-600" />
+          <div className="p-12 text-center text-[var(--text-dim)] space-y-3">
+            <Briefcase className="w-10 h-10 mx-auto text-[var(--text-dim)]" />
             <p className="text-sm">No clients in conversion pipeline yet.</p>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-[var(--text-dim)]">
               When a lead in Workspace A reaches agreement, click &quot;Move to Proposal&quot; on their Lead Card.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#18181f] text-zinc-400 border-b border-[#26262e]">
+              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)]">
                 <tr>
                   <th className="p-3.5">Business Name</th>
                   <th className="p-3.5">Primary Contact</th>
@@ -145,32 +145,32 @@ export default function ClientListPage() {
                   <th className="p-3.5 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y divide-[var(--border)]">
                 {filtered.map((client) => (
                   <tr
                     key={client.id}
                     onClick={() => router.push(`/clients/${client.id}`)}
-                    className="hover:bg-[#1a1a21] cursor-pointer transition group"
+                    className="hover:bg-[var(--surface-hover)] cursor-pointer transition-colors group"
                   >
-                    <td className="p-3.5 font-medium text-zinc-100 group-hover:text-amber-400 transition">
+                    <td className="p-3.5 font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
                       <div>{client.business_name}</div>
-                      {client.email && <div className="text-[11px] text-zinc-500">{client.email}</div>}
+                      {client.email && <div className="text-[11px] text-[var(--text-dim)]">{client.email}</div>}
                     </td>
-                    <td className="p-3.5 text-zinc-300">
-                      {client.primary_contact || <span className="text-zinc-600">—</span>}
+                    <td className="p-3.5 text-[var(--text-secondary)]">
+                      {client.primary_contact || <span className="text-[var(--text-dim)]">—</span>}
                     </td>
                     <td className="p-3.5">
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
                           client.stage === "Active"
-                            ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                            ? "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]"
                             : client.stage === "Onboarding"
-                            ? "bg-blue-950 text-blue-300 border border-blue-800"
+                            ? "bg-[var(--info-soft)] text-[var(--info)] border border-[var(--info-border)]"
                             : client.stage === "Paid"
-                            ? "bg-teal-950 text-teal-300 border border-teal-800"
+                            ? "bg-[color-mix(in_srgb,#14b8a6_12%,transparent)] text-[#2dd4bf] border border-[color-mix(in_srgb,#14b8a6_30%,transparent)]"
                             : client.stage === "Invoice"
-                            ? "bg-purple-950 text-purple-300 border border-purple-800"
-                            : "bg-amber-950 text-amber-300 border border-amber-800"
+                            ? "bg-[color-mix(in_srgb,#8b5cf6_12%,transparent)] text-[#a78bfa] border border-[color-mix(in_srgb,#8b5cf6_30%,transparent)]"
+                            : "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]"
                         }`}
                       >
                         {client.stage}
@@ -180,22 +180,22 @@ export default function ClientListPage() {
                       <span
                         className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-semibold ${
                           client.payment_status === "Paid"
-                            ? "bg-emerald-950 text-emerald-400 border border-emerald-800/60"
+                            ? "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]"
                             : client.payment_status === "Overdue"
-                            ? "bg-red-950 text-red-400 border border-red-800/60"
-                            : "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                            ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-border)]"
+                            : "bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border-hover)]"
                         }`}
                       >
                         {client.payment_status}
                       </span>
                     </td>
-                    <td className="p-3.5 text-zinc-400">
+                    <td className="p-3.5 text-[var(--text-muted)]">
                       {new Date(client.last_activity).toLocaleDateString()}
                     </td>
                     <td className="p-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                       <Link
                         href={`/clients/${client.id}`}
-                        className="px-2.5 py-1 rounded bg-[#1e1e26] hover:bg-amber-500/20 text-zinc-300 hover:text-amber-300 border border-zinc-700/60 transition inline-flex items-center gap-1"
+                        className="px-2.5 py-1 rounded bg-[var(--surface-raised)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] hover:border-[var(--accent-border)] transition-colors inline-flex items-center gap-1"
                       >
                         <span>Timeline</span>
                         <ExternalLink className="w-3 h-3" />

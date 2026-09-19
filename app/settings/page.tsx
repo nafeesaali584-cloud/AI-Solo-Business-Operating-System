@@ -109,8 +109,8 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-        <p className="text-xs text-zinc-400">Loading settings...</p>
+        <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+        <p className="text-xs text-[var(--text-muted)]">Loading settings...</p>
       </div>
     );
   }
@@ -118,37 +118,37 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div className="pb-4 border-b border-[#202026]">
-        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+      <div className="pb-4 border-b border-[var(--border)]">
+        <h1 className="text-2xl font-bold font-heading text-[var(--text-primary)] tracking-tight flex items-center gap-2">
           <span>S12 — System Settings &amp; Approval Gates</span>
         </h1>
-        <p className="text-sm text-zinc-400 mt-0.5">
+        <p className="text-sm text-[var(--text-muted)] mt-0.5">
           Configure cadence parameters, AI starting templates, and audit active hard approval guardrails.
         </p>
       </div>
 
       {successMsg && (
-        <div className="p-3.5 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
+        <div className="p-3.5 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] text-[var(--success)] text-xs flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* SECTION 1: Approval Gate Safety Log (Read-only) */}
-      <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-sm font-semibold text-zinc-200">
+            <ShieldCheck className="w-5 h-5 text-[var(--success)]" />
+            <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)]">
               Approval Gate Safety Log (Permanent Enforcements)
             </h2>
           </div>
-          <span className="text-[11px] px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50 font-bold uppercase">
+          <span className="text-[11px] px-2.5 py-0.5 rounded bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)] font-bold uppercase">
             IMMUTABLE
           </span>
         </div>
 
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-[var(--text-muted)]">
           In accordance with the ClientPulse core security philosophy, these 5 gates are hard-coded at the API and database levels. They <strong>cannot be toggled off or bypassed</strong> by AI or background jobs.
         </p>
 
@@ -182,16 +182,16 @@ export default function SettingsPage() {
           ].map((g) => (
             <div
               key={g.gate}
-              className="p-3 rounded-lg bg-[#181820] border border-zinc-800/80 flex items-start justify-between gap-3"
+              className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] flex items-start justify-between gap-3"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <GateBadge gateNumber={g.gate as any} isUnlocked={true} label={`GATE ${g.gate}`} />
-                  <span className="text-xs font-semibold text-zinc-200">{g.title}</span>
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">{g.title}</span>
                 </div>
-                <p className="text-[11px] text-zinc-400 pl-1 leading-relaxed">{g.rule}</p>
+                <p className="text-[11px] text-[var(--text-muted)] pl-1 leading-relaxed">{g.rule}</p>
               </div>
-              <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-mono bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+              <div className="flex items-center gap-1 text-[11px] text-[var(--success)] font-mono bg-[var(--success-soft)] px-2 py-0.5 rounded border border-[var(--success-border)]">
                 <Lock className="w-3 h-3" />
                 <span>LOCKED</span>
               </div>
@@ -203,15 +203,15 @@ export default function SettingsPage() {
       {/* SECTION 2: Configurable Parameters */}
       <form onSubmit={handleSave} className="space-y-6">
         {/* Daily Quota & Cadence */}
-        <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-            <Target className="w-4 h-4 text-amber-400" />
+        <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+          <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)] flex items-center gap-2">
+            <Target className="w-4 h-4 text-[var(--accent)]" />
             <span>Daily Quota &amp; Follow-up Rules</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Daily Focus Target Quota (Default: 3)
               </label>
               <input
@@ -220,15 +220,15 @@ export default function SettingsPage() {
                 max="10"
                 value={dailyQuota}
                 onChange={(e) => setDailyQuota(parseInt(e.target.value) || 3)}
-                className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-[var(--text-dim)]">
                 Caps how many active leads can be flagged as today&apos;s priority targets simultaneously.
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Follow-up Cadence (Days Without Reply)
               </label>
               <input
@@ -237,60 +237,60 @@ export default function SettingsPage() {
                 max="30"
                 value={cadenceDays}
                 onChange={(e) => setCadenceDays(parseInt(e.target.value) || 4)}
-                className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
-              <p className="text-[11px] text-zinc-500">
+              <p className="text-[11px] text-[var(--text-dim)]">
                 Number of days of client silence before the system automatically flags a follow-up task.
               </p>
             </div>
           </div>
 
           <div className="space-y-1.5 pt-2">
-            <label className="text-xs font-medium text-zinc-300">AI Tone Preference</label>
+            <label className="text-xs font-medium text-[var(--text-secondary)]">AI Tone Preference</label>
             <input
               type="text"
               value={tonePreference}
               onChange={(e) => setTonePreference(e.target.value)}
-              className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+              className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
             />
           </div>
         </div>
 
         {/* Templates */}
-        <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-amber-400" />
+        <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+          <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)] flex items-center gap-2">
+            <MessageSquare className="w-4 h-4 text-[var(--accent)]" />
             <span>AI Starting Templates</span>
           </h2>
 
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">WhatsApp Outreach Template</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">WhatsApp Outreach Template</label>
               <textarea
                 rows={3}
                 value={whatsappTemplate}
                 onChange={(e) => setWhatsappTemplate(e.target.value)}
-                className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500 font-mono text-[11px]"
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] font-mono text-[11px]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">Email Outreach Template</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Email Outreach Template</label>
               <textarea
                 rows={4}
                 value={emailTemplate}
                 onChange={(e) => setEmailTemplate(e.target.value)}
-                className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500 font-mono text-[11px]"
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] font-mono text-[11px]"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-300">Default Proposal Terms</label>
+              <label className="text-xs font-medium text-[var(--text-secondary)]">Default Proposal Terms</label>
               <input
                 type="text"
                 value={defaultTerms}
                 onChange={(e) => setDefaultTerms(e.target.value)}
-                className="w-full bg-[#1b1b22] border border-zinc-700 rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold shadow transition disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             <span>Save Settings</span>

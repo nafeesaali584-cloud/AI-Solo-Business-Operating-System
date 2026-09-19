@@ -308,8 +308,8 @@ function InvoiceBuilderContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-        <p className="text-xs text-zinc-400">Loading Invoice Builder...</p>
+        <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+        <p className="text-xs text-[var(--text-muted)]">Loading Invoice Builder...</p>
       </div>
     );
   }
@@ -317,12 +317,12 @@ function InvoiceBuilderContent() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#202026]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             <span>S8 — Invoice Builder (Workspace B)</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-0.5">
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">
             Strict human approval gates for sending and payment settlement.
           </p>
         </div>
@@ -345,8 +345,8 @@ function InvoiceBuilderContent() {
         <div
           className={`p-3.5 rounded-lg border text-xs flex items-center gap-2 ${
             actionMessage.type === "success"
-              ? "bg-emerald-950/70 border-emerald-800 text-emerald-300"
-              : "bg-red-950/70 border-red-800 text-red-300"
+              ? "bg-[var(--success-soft)] border-[var(--success-border)] text-[var(--success)]"
+              : "bg-[var(--danger-soft)] border-[var(--danger-border)] text-[var(--danger)]"
           }`}
         >
           {actionMessage.type === "success" ? (
@@ -359,15 +359,15 @@ function InvoiceBuilderContent() {
       )}
 
       {/* View Switcher: Document Preview vs Form Editor */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#141417] border border-[#26262e]">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveView("preview")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               activeView === "preview"
-                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
-                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                : "bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             <span>Document Preview</span>
@@ -375,10 +375,10 @@ function InvoiceBuilderContent() {
           <button
             type="button"
             onClick={() => setActiveView("editor")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               activeView === "editor"
-                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
-                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+                ? "bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
+                : "bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             }`}
           >
             <span>Edit Invoice Fields</span>
@@ -387,18 +387,18 @@ function InvoiceBuilderContent() {
 
         {activeView === "preview" && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-[11px] text-zinc-500 font-medium">Theme:</span>
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#1a1a24] border border-[#2c2c36]">
+            <span className="text-[11px] text-[var(--text-dim)] font-medium">Theme:</span>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => {
                   setPreviewTheme("dark");
                   setSelectedTemplate("B");
                 }}
-                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   previewTheme === "dark"
-                    ? "bg-[#282834] text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[var(--surface-raised)] text-white font-semibold"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Screen (dark)
@@ -409,10 +409,10 @@ function InvoiceBuilderContent() {
                   setPreviewTheme("light");
                   setSelectedTemplate("A");
                 }}
-                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
                   previewTheme === "light"
                     ? "bg-[#f6f4ef] text-zinc-900 font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 }`}
               >
                 Print (light)
@@ -423,7 +423,7 @@ function InvoiceBuilderContent() {
 
         <Link
           href="/documents/preview"
-          className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium ml-auto"
+          className="flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium ml-auto transition-colors"
         >
           <span>Fullscreen Showcase</span>
           <ExternalLink className="w-3.5 h-3.5" />
@@ -454,36 +454,36 @@ function InvoiceBuilderContent() {
       ) : (
         <div className="space-y-6">
           {/* Invoice Meta Bar */}
-          <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Client</span>
-          <div className="text-base font-bold text-zinc-100">{clientName || "Direct Client Invoice"}</div>
+          <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Client</span>
+          <div className="text-base font-bold text-[var(--text-primary)]">{clientName || "Direct Client Invoice"}</div>
         </div>
         <div>
-          <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Invoice Number</span>
-          <div className="text-base font-mono font-bold text-amber-400">{invoiceNumber}</div>
+          <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Invoice Number</span>
+          <div className="text-base font-mono font-bold text-[var(--accent)]">{invoiceNumber}</div>
         </div>
         <div>
-          <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Due Date</span>
+          <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Due Date</span>
           <input
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full bg-[#1b1b22] border border-zinc-700 rounded px-2.5 py-1 text-xs text-zinc-200 outline-none focus:border-amber-500 mt-1"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded px-2.5 py-1 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] mt-1"
           />
         </div>
       </div>
 
       {/* Brand Kit & PDF Template Selector */}
-      <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
+      <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-3">
             <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={BRAND.profileImage}
                 alt={BRAND.ownerName}
-                className="w-10 h-10 rounded-full object-cover border-2 border-[#DA4D01] shadow-md shadow-[#DA4D01]/20"
+                className="w-10 h-10 rounded-full object-cover border-2 border-[var(--accent)] shadow-md shadow-[var(--accent)]/20"
                 onError={(e) => {
                   (e.currentTarget as HTMLElement).style.display = "none";
                 }}
@@ -491,22 +491,22 @@ function InvoiceBuilderContent() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-zinc-100 font-['Space_Grotesk']">{BRAND.ownerName}</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#DA4D01]/20 text-[#DA4D01] border border-[#DA4D01]/40">
+                <span className="text-sm font-bold text-[var(--text-primary)] font-heading">{BRAND.ownerName}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
                   Brand Kit Active
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 {BRAND.contact.website.replace("https://", "")} • WhatsApp: {BRAND.contact.waDisplay} • LinkedIn
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <Palette className="w-3.5 h-3.5 text-[#DA4D01]" />
+          <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+            <Palette className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span className="text-[11px]">Primary Accent:</span>
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-200 bg-[#1c1c24] px-2 py-0.5 rounded border border-zinc-800">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#DA4D01]" />
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--text-primary)] bg-[var(--surface-hover)] px-2 py-0.5 rounded border border-[var(--border)]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
               #DA4D01
             </span>
           </div>
@@ -514,7 +514,7 @@ function InvoiceBuilderContent() {
 
         {/* 3 Template Selection Options */}
         <div>
-          <label className="text-xs font-semibold text-zinc-300 block mb-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-2">
             Select Invoice PDF Direction (All 3 use your verified brand colors &amp; typography):
           </label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -522,27 +522,27 @@ function InvoiceBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("B")}
-              className={`p-3.5 rounded-lg border text-left transition relative ${
+              className={`p-3.5 rounded-lg border text-left transition-colors relative ${
                 selectedTemplate === "B"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template B: Bold Creative
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#DA4D01] text-white">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent)] text-white">
                   Brand Default
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
-                Matches <strong className="text-zinc-300">nafeesaali.com</strong> directly: dark background (#09090b), bold solid orange (#DA4D01) header, Space Grotesk headline, and dark item rows.
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
+                Matches <strong className="text-[var(--text-secondary)]">nafeesaali.com</strong> directly: dark background (#09090b), bold solid orange (#DA4D01) header, Space Grotesk headline, and dark item rows.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Dark Theme</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#DA4D01]/20 text-[#DA4D01]">Site Match</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Bold Accent</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Dark Theme</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]">Site Match</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Bold Accent</span>
               </div>
             </button>
 
@@ -550,26 +550,26 @@ function InvoiceBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("A")}
-              className={`p-3.5 rounded-lg border text-left transition ${
+              className={`p-3.5 rounded-lg border text-left transition-colors ${
                 selectedTemplate === "A"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template A: Minimal Modern
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                   Light
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
                 Clean light background with an orange sidebar accent line. High readability and easy to print for accounting records.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Print Friendly</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Clean Accent</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Print Friendly</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Clean Accent</span>
               </div>
             </button>
 
@@ -577,26 +577,26 @@ function InvoiceBuilderContent() {
             <button
               type="button"
               onClick={() => setSelectedTemplate("C")}
-              className={`p-3.5 rounded-lg border text-left transition ${
+              className={`p-3.5 rounded-lg border text-left transition-colors ${
                 selectedTemplate === "C"
-                  ? "bg-[#181822] border-[#DA4D01] shadow-lg shadow-[#DA4D01]/10"
-                  : "bg-[#16161c] border-zinc-800/80 hover:border-zinc-700"
+                  ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
+                  : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
               }`}
             >
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-zinc-100 font-['Space_Grotesk']">
+                <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
                   Template C: Corporate Classic
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
                   Light
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed mb-2">
                 Formal corporate invoice with orange horizontal divider, alternating striped table rows, and clean payment memo box.
               </p>
               <div className="flex flex-wrap gap-1">
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Corporate</span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Tabular</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Corporate</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">Tabular</span>
               </div>
             </button>
           </div>
@@ -604,12 +604,12 @@ function InvoiceBuilderContent() {
       </div>
 
       {/* Line Items */}
-      <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
-          <h2 className="text-sm font-semibold text-zinc-200">Invoice Items</h2>
+      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+          <h2 className="font-heading text-sm font-semibold text-[var(--text-primary)]">Invoice Items</h2>
           <button
             onClick={addLineItem}
-            className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium"
+            className="flex items-center gap-1 text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Item</span>
@@ -620,7 +620,7 @@ function InvoiceBuilderContent() {
           {lineItems.map((item, index) => (
             <div
               key={index}
-              className="p-3 rounded-lg bg-[#181820] border border-zinc-800/80 grid grid-cols-1 md:grid-cols-12 gap-2 items-center"
+              className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] grid grid-cols-1 md:grid-cols-12 gap-2 items-center"
             >
               <div className="md:col-span-6">
                 <input
@@ -628,7 +628,7 @@ function InvoiceBuilderContent() {
                   value={item.description}
                   onChange={(e) => updateLineItem(index, "description", e.target.value)}
                   placeholder="Item description"
-                  className="w-full bg-[#1e1e26] border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                  className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="md:col-span-2">
@@ -638,7 +638,7 @@ function InvoiceBuilderContent() {
                   value={item.quantity}
                   onChange={(e) => updateLineItem(index, "quantity", parseInt(e.target.value) || 1)}
                   placeholder="Qty"
-                  className="w-full bg-[#1e1e26] border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                  className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="md:col-span-2">
@@ -647,15 +647,15 @@ function InvoiceBuilderContent() {
                   value={item.unit_price}
                   onChange={(e) => updateLineItem(index, "unit_price", parseFloat(e.target.value) || 0)}
                   placeholder="Unit Price"
-                  className="w-full bg-[#1e1e26] border border-zinc-700 rounded px-2.5 py-1.5 text-xs text-zinc-200 outline-none focus:border-amber-500"
+                  className="w-full bg-[var(--surface-raised)] border border-[var(--border-hover)] rounded px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div className="md:col-span-2 flex items-center justify-between pl-2">
-                <span className="text-xs font-semibold text-zinc-200">${item.total.toLocaleString()}</span>
+                <span className="text-xs font-semibold text-[var(--text-primary)]">${item.total.toLocaleString()}</span>
                 {lineItems.length > 1 && (
                   <button
                     onClick={() => removeLineItem(index)}
-                    className="p-1 rounded text-zinc-500 hover:text-red-400"
+                    className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--danger)] transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -665,31 +665,31 @@ function InvoiceBuilderContent() {
           ))}
         </div>
 
-        <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-sm font-semibold">
-          <span className="text-zinc-400">Total Amount Due:</span>
-          <span className="text-xl text-amber-400 font-bold">${totalAmount.toLocaleString()}</span>
+        <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm font-semibold">
+          <span className="text-[var(--text-muted)]">Total Amount Due:</span>
+          <span className="text-xl text-[var(--accent)] font-bold">${totalAmount.toLocaleString()}</span>
         </div>
       </div>
 
       {/* Payment Instructions & Notes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Payment Instructions</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Payment Instructions</label>
           <textarea
             rows={4}
             value={paymentInstructions}
             onChange={(e) => setPaymentInstructions(e.target.value)}
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500 font-mono text-[11px]"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] font-mono text-[11px]"
           />
         </div>
 
-        <div className="p-5 rounded-xl bg-[#141417] border border-[#26262e] space-y-2">
-          <label className="text-xs font-semibold text-zinc-300">Invoice Notes</label>
+        <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-2">
+          <label className="text-xs font-semibold text-[var(--text-secondary)]">Invoice Notes</label>
           <textarea
             rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full bg-[#181820] border border-zinc-700 rounded-lg p-3 text-xs text-zinc-200 outline-none focus:border-amber-500"
+            className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-3 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
         </div>
       </div>
@@ -697,24 +697,24 @@ function InvoiceBuilderContent() {
   )}
 
       {/* Action Toolbar & Hard Gates (Gates 4 & 5) */}
-      <div className="p-5 rounded-xl bg-[#16161c] border border-[#26262e] flex flex-wrap items-center justify-between gap-3">
+      <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
             onClick={handleSaveInvoice}
             disabled={saving}
-            className="px-4 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition"
+            className="px-4 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors"
           >
             {saving ? "Saving..." : "Save Invoice"}
           </button>
           <button
             onClick={handleDownloadPdf}
             disabled={downloadingPdf}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#202028] hover:bg-[#2a2a36] text-zinc-200 text-xs font-medium border border-zinc-700 transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors disabled:opacity-50"
           >
             {downloadingPdf ? (
-              <Loader2 className="w-3.5 h-3.5 text-[#DA4D01] animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin" />
             ) : (
-              <Download className="w-3.5 h-3.5 text-[#DA4D01]" />
+              <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
             )}
             <span>Export Branded PDF ({selectedTemplate})</span>
           </button>
@@ -726,7 +726,7 @@ function InvoiceBuilderContent() {
           <button
             onClick={handleMarkSentGate4}
             disabled={status === "Sent" || status === "Paid"}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Mark Invoice as Sent (Gate 4)</span>
@@ -736,7 +736,7 @@ function InvoiceBuilderContent() {
           <button
             onClick={handleConfirmPaymentGate5}
             disabled={status === "Paid"}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition disabled:opacity-50"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Confirm Payment Received (Gate 5)</span>
@@ -745,7 +745,7 @@ function InvoiceBuilderContent() {
           {status !== "Paid" && (
             <button
               onClick={handleMarkOverdue}
-              className="px-3 py-2 rounded-lg bg-[#1a1414] hover:bg-red-950 text-red-400 text-xs border border-red-900/40"
+              className="px-3 py-2 rounded-lg bg-[var(--danger-soft)] hover:bg-[var(--danger-border)] text-[var(--danger)] text-xs border border-[var(--danger-border)] transition-colors"
             >
               Mark Overdue
             </button>
@@ -761,8 +761,8 @@ export default function InvoiceBuilderPage() {
     <Suspense
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-xs text-zinc-400">Loading Invoice Builder...</p>
+          <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin" />
+          <p className="text-xs text-[var(--text-muted)]">Loading Invoice Builder...</p>
         </div>
       }
     >

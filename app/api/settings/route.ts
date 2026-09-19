@@ -59,6 +59,7 @@ export async function PATCH(req: NextRequest) {
       daily_target_quota,
       follow_up_cadence_days,
       tone_preference,
+      theme_preference,
       message_templates,
       proposal_templates,
       invoice_branding,
@@ -71,6 +72,7 @@ export async function PATCH(req: NextRequest) {
         follow_up_cadence_days:
           follow_up_cadence_days !== undefined ? Number(follow_up_cadence_days) : undefined,
         tone_preference: tone_preference !== undefined ? tone_preference : undefined,
+        theme_preference: theme_preference !== undefined ? theme_preference : undefined,
         message_templates: message_templates !== undefined ? message_templates : undefined,
         proposal_templates: proposal_templates !== undefined ? proposal_templates : undefined,
         invoice_branding: invoice_branding !== undefined ? invoice_branding : undefined,
@@ -80,6 +82,7 @@ export async function PATCH(req: NextRequest) {
         daily_target_quota: Number(daily_target_quota) || 3,
         follow_up_cadence_days: Number(follow_up_cadence_days) || 4,
         tone_preference: tone_preference || "Professional, concise, and value-oriented",
+        theme_preference: theme_preference || "dark",
         message_templates,
         proposal_templates,
         invoice_branding,

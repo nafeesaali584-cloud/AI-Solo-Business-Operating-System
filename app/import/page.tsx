@@ -181,25 +181,25 @@ function buildSignature(headers: string[]): string {
 function ConfidenceBadge({ confidence, isIgnore }: { confidence: Confidence; isIgnore?: boolean }) {
   if (isIgnore) {
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--surface-hover)] text-[var(--text-muted)] border border-[var(--border-hover)]">
         ⚪ Extra Data (Stored in Raw Data)
       </span>
     );
   }
   if (confidence === "high")
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800/60">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]">
         🟢 High confidence
       </span>
     );
   if (confidence === "suggestion")
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950 text-amber-300 border border-amber-800/60">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
         🟡 Suggestion
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--surface-hover)] text-[var(--text-muted)] border border-[var(--border-hover)]">
       ⚪ Extra Data (Stored in Raw Data)
     </span>
   );
@@ -300,7 +300,7 @@ export default function CsvImportPage() {
     });
   }, []);
 
-  // ─── Update a single column''s mapping ────────────────────────────────────
+  // ─── Update a single column's mapping ────────────────────────────────────
 
   const updateMapping = (csvHeader: string, newField: SystemField) => {
     setColumnGuesses((prev) =>
@@ -432,17 +432,17 @@ export default function CsvImportPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Screen Header */}
-      <div className="pb-4 border-b border-[#202026]">
-        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-2">
+      <div className="pb-4 border-b border-[var(--border)]">
+        <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
           <span>S2 — CSV Import (Lead Engine)</span>
         </h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <p className="text-sm text-[var(--text-muted)] mt-1">
           Bring raw lead data in safely. Raw rows remain immutable as the factual source of truth.
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-red-950/60 border border-red-800/80 text-red-300 text-sm flex items-center gap-3">
+        <div className="p-4 rounded-xl bg-[var(--danger-soft)] border border-[var(--danger-border)] text-[var(--danger)] text-sm flex items-center gap-3">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
@@ -450,19 +450,19 @@ export default function CsvImportPage() {
 
       {/* ── Step 1: Upload ── */}
       {step === "upload" && (
-        <div className="p-8 rounded-xl bg-[#141417] border border-[#26262e] text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
+        <div className="p-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] flex items-center justify-center mx-auto">
             <UploadCloud className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-zinc-200">Select or drop your CSV file</h2>
-            <p className="text-xs text-zinc-400 max-w-md mx-auto mt-1">
+            <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">Select or drop your CSV file</h2>
+            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto mt-1">
               Supports lead lists from Google Maps, Apollo, LinkedIn, or manual spreadsheets.
               Any column format is accepted — you will map columns manually before import.
             </p>
           </div>
 
-          <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-sm font-semibold cursor-pointer transition">
+          <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold cursor-pointer transition-colors">
             <FileSpreadsheet className="w-4 h-4" />
             <span>Choose CSV File</span>
             <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
@@ -472,26 +472,26 @@ export default function CsvImportPage() {
 
       {/* ── Step 2: Column Mapping ── */}
       {step === "map" && (
-        <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-6">
+        <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-6">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-base font-semibold text-zinc-200">
+              <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">
                 Map Columns — {fileName}
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 For each column in your CSV, choose what system field it maps to.
                 Columns set to &quot;Don&apos;t map&quot; are still saved in full — nothing is lost.
               </p>
             </div>
-            <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded bg-zinc-800 text-zinc-300">
+            <span className="flex-shrink-0 text-xs px-2.5 py-1 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
               {csvData.length} records
             </span>
           </div>
 
           {/* Saved template banner */}
           {savedTemplateDetected && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/50 text-xs text-emerald-300">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] text-xs text-[var(--success)]">
               <BookMarked className="w-4 h-4 flex-shrink-0" />
               <span>
                 <strong>Remembered mapping from a previous import</strong> — review each row and confirm before proceeding.
@@ -500,7 +500,7 @@ export default function CsvImportPage() {
           )}
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-3 text-[11px] text-zinc-400 pb-1">
+          <div className="flex flex-wrap gap-3 text-[11px] text-[var(--text-muted)] pb-1">
             <span className="flex items-center gap-1"><span>🟢</span> High confidence — near-exact match</span>
             <span className="flex items-center gap-1"><span>🟡</span> Suggestion — fuzzy match, please verify</span>
             <span className="flex items-center gap-1"><span>⚪</span> Unmapped — no guess, data stored as extra</span>
@@ -513,13 +513,13 @@ export default function CsvImportPage() {
               return (
                 <div
                   key={guess.csvHeader}
-                  className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3 p-3 rounded-lg bg-[#191922] border border-zinc-800/60"
+                  className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3 p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)]"
                 >
                   {/* Left: CSV column info */}
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-zinc-200 truncate">{guess.csvHeader}</div>
+                    <div className="text-xs font-semibold text-[var(--text-primary)] truncate">{guess.csvHeader}</div>
                     {previewVal !== undefined && previewVal !== "" && (
-                      <div className="text-[11px] text-zinc-500 truncate mt-0.5">
+                      <div className="text-[11px] text-[var(--text-dim)] truncate mt-0.5">
                         e.g. &ldquo;{String(previewVal).slice(0, 60)}&rdquo;
                       </div>
                     )}
@@ -529,13 +529,13 @@ export default function CsvImportPage() {
                   </div>
 
                   {/* Arrow */}
-                  <ChevronRight className="w-4 h-4 text-zinc-600 hidden md:block flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-[var(--text-dim)] hidden md:block flex-shrink-0" />
 
                   {/* Right: System field dropdown */}
                   <select
                     value={guess.systemField}
                     onChange={(e) => updateMapping(guess.csvHeader, e.target.value as SystemField)}
-                    className="w-full bg-[#1b1b22] border border-[#2c2c36] rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500 transition"
+                    className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
                   >
                     {SYSTEM_FIELDS.map(({ value, label }) => (
                       <option key={value} value={value}>
@@ -550,15 +550,15 @@ export default function CsvImportPage() {
 
           {/* Validation notice if Business Name unmapped */}
           {!canProceed && (
-            <div className="flex items-center gap-2 text-xs text-red-400 p-3 rounded-lg bg-red-950/30 border border-red-800/40">
+            <div className="flex items-center gap-2 text-xs text-[var(--danger)] p-3 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)]">
               <Info className="w-4 h-4 flex-shrink-0" />
               <span>You must map at least one column to <strong>Business Name</strong> before proceeding.</span>
             </div>
           )}
 
           {/* Template name */}
-          <div className="space-y-1 pt-2 border-t border-zinc-800">
-            <label className="text-xs font-medium text-zinc-400">
+          <div className="space-y-1 pt-2 border-t border-[var(--border)]">
+            <label className="text-xs font-medium text-[var(--text-muted)]">
               Template name (saved to database for future imports)
             </label>
             <input
@@ -566,7 +566,7 @@ export default function CsvImportPage() {
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
               placeholder="e.g. Google Maps Export, Apollo Beauty Leads..."
-              className="w-full bg-[#1b1b22] border border-[#2c2c36] rounded-lg px-3 py-2 text-xs text-zinc-200 outline-none focus:border-amber-500 transition"
+              className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] transition-colors"
             />
           </div>
 
@@ -574,14 +574,14 @@ export default function CsvImportPage() {
           <div className="flex items-center justify-between pt-2">
             <button
               onClick={() => setStep("upload")}
-              className="px-4 py-2 text-xs text-zinc-400 hover:text-zinc-200"
+              className="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               Back
             </button>
             <button
               onClick={() => setStep("preview")}
               disabled={!canProceed}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold disabled:opacity-50 transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold disabled:opacity-50 transition-colors"
             >
               <span>Next: Preview Data</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -592,20 +592,20 @@ export default function CsvImportPage() {
 
       {/* ── Step 3: Preview ── */}
       {step === "preview" && (
-        <div className="p-6 rounded-xl bg-[#141417] border border-[#26262e] space-y-6">
+        <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-zinc-200">Preview First 10 Rows</h2>
-              <p className="text-xs text-zinc-400">Confirm your column alignment before creating records.</p>
+              <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">Preview First 10 Rows</h2>
+              <p className="text-xs text-[var(--text-muted)]">Confirm your column alignment before creating records.</p>
             </div>
-            <span className="text-xs px-2.5 py-1 rounded bg-zinc-800 text-zinc-300">
+            <span className="text-xs px-2.5 py-1 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
               Total to import: {csvData.length}
             </span>
           </div>
 
-          <div className="overflow-x-auto border border-[#26262e] rounded-lg">
-            <table className="w-full text-left text-xs text-zinc-300">
-              <thead className="bg-[#1b1b22] text-zinc-400 border-b border-[#26262e]">
+          <div className="overflow-x-auto border border-[var(--border)] rounded-lg">
+            <table className="w-full text-left text-xs text-[var(--text-secondary)]">
+              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)]">
                 <tr>
                   <th className="p-2.5">Business Name</th>
                   <th className="p-2.5">Niche / Services</th>
@@ -613,28 +613,28 @@ export default function CsvImportPage() {
                   <th className="p-2.5">City / Location</th>
                   <th className="p-2.5">Phone</th>
                   <th className="p-2.5">Website / Social</th>
-                  <th className="p-2.5 text-zinc-600">Extra Data (stored)</th>
+                  <th className="p-2.5 text-[var(--text-dim)]">Extra Data (stored)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-800/60">
+              <tbody className="divide-y divide-[var(--border)]">
                 {previewRows.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-zinc-800/30">
-                    <td className="p-2.5 font-medium text-zinc-200">{row.business_name || "Untitled"}</td>
-                    <td className="p-2.5 text-zinc-400">{row.niche || "—"}</td>
-                    <td className="p-2.5 text-amber-400 font-medium">
+                  <tr key={idx} className="hover:bg-[var(--surface-hover)]">
+                    <td className="p-2.5 font-medium text-[var(--text-primary)]">{row.business_name || "Untitled"}</td>
+                    <td className="p-2.5 text-[var(--text-muted)]">{row.niche || "—"}</td>
+                    <td className="p-2.5 text-[var(--accent)] font-medium">
                       {row.rating ? (
                         <span>⭐ {row.rating} {row.review_count ? `(${row.review_count})` : ""}</span>
                       ) : (
-                        <span className="text-zinc-600">—</span>
+                        <span className="text-[var(--text-dim)]">—</span>
                       )}
                     </td>
-                    <td className="p-2.5 text-zinc-400">{row.city || "—"}</td>
-                    <td className="p-2.5 text-zinc-400">{row.phone || "—"}</td>
-                    <td className="p-2.5 text-zinc-400 max-w-[150px] truncate">{row.website || "—"}</td>
-                    <td className="p-2.5 text-zinc-600 text-[11px]">
+                    <td className="p-2.5 text-[var(--text-muted)]">{row.city || "—"}</td>
+                    <td className="p-2.5 text-[var(--text-muted)]">{row.phone || "—"}</td>
+                    <td className="p-2.5 text-[var(--text-muted)] max-w-[150px] truncate">{row.website || "—"}</td>
+                    <td className="p-2.5 text-[var(--text-dim)] text-[11px]">
                       {row.extraKeys.length > 0
                         ? row.extraKeys.join(", ")
-                        : <span className="text-zinc-700">none</span>}
+                        : <span className="text-[var(--text-dim)]">none</span>}
                     </td>
                   </tr>
                 ))}
@@ -643,14 +643,14 @@ export default function CsvImportPage() {
           </div>
 
           {/* AI snapshot toggle */}
-          <div className="p-4 rounded-lg bg-[#191922] border border-amber-500/20 flex items-center justify-between">
+          <div className="p-4 rounded-lg bg-[var(--surface-hover)] border border-[var(--accent-border)] flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-amber-400" />
+              <Sparkles className="w-5 h-5 text-[var(--accent)]" />
               <div>
-                <div className="text-xs font-semibold text-zinc-200">
+                <div className="text-xs font-semibold text-[var(--text-primary)]">
                   Generate AI Business Snapshot for imported leads
                 </div>
-                <div className="text-[11px] text-zinc-400">
+                <div className="text-[11px] text-[var(--text-muted)]">
                   Extracts facts and strategic angles in the background without slowing down import.
                 </div>
               </div>
@@ -659,20 +659,20 @@ export default function CsvImportPage() {
               type="checkbox"
               checked={generateAiSnapshots}
               onChange={(e) => setGenerateAiSnapshots(e.target.checked)}
-              className="w-4 h-4 accent-amber-500 cursor-pointer"
+              className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+          <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">
             <button
               onClick={() => setStep("map")}
-              className="px-4 py-2 text-xs text-zinc-400 hover:text-zinc-200"
+              className="px-4 py-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               Change Mapping
             </button>
             <button
               onClick={executeImport}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-950/40 transition"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-[var(--success)]/20 transition-colors"
             >
               <Database className="w-3.5 h-3.5" />
               <span>Confirm Import ({csvData.length} Leads)</span>
@@ -683,10 +683,10 @@ export default function CsvImportPage() {
 
       {/* ── Step 4: Importing ── */}
       {step === "importing" && (
-        <div className="p-12 rounded-xl bg-[#141417] border border-[#26262e] text-center space-y-4">
-          <Loader2 className="w-10 h-10 text-amber-400 animate-spin mx-auto" />
-          <h2 className="text-base font-semibold text-zinc-200">Importing leads and running duplicate check...</h2>
-          <p className="text-xs text-zinc-400">
+        <div className="p-12 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-center space-y-4">
+          <Loader2 className="w-10 h-10 text-[var(--accent)] animate-spin mx-auto" />
+          <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">Importing leads and running duplicate check...</h2>
+          <p className="text-xs text-[var(--text-muted)]">
             Writing verified records to PostgreSQL and saving mapping template for future imports.
           </p>
         </div>
@@ -694,22 +694,22 @@ export default function CsvImportPage() {
 
       {/* ── Step 5: Done ── */}
       {step === "done" && importResult && (
-        <div className="p-8 rounded-xl bg-[#141417] border border-emerald-900/50 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/60 flex items-center justify-center mx-auto">
+        <div className="p-8 rounded-xl bg-[var(--surface)] border border-[var(--success-border)] text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)] flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-zinc-100">Import Completed Successfully!</h2>
-            <p className="text-sm text-zinc-400 mt-1">
+            <h2 className="font-heading text-xl font-bold text-[var(--text-primary)]">Import Completed Successfully!</h2>
+            <p className="text-sm text-[var(--text-muted)] mt-1">
               {importResult.imported_count} new leads were added with status <strong>Imported</strong>.
               {importResult.duplicate_count > 0 && (
-                <span className="text-amber-400 block mt-1">
+                <span className="text-[var(--accent)] block mt-1">
                   ({importResult.duplicate_count} duplicates were skipped based on matching website/phone/email).
                 </span>
               )}
             </p>
-            <p className="text-xs text-emerald-400 mt-2">
+            <p className="text-xs text-[var(--success)] mt-2">
               ✓ Column mapping saved to database — next import with the same CSV format will pre-fill automatically.
             </p>
           </div>
@@ -723,13 +723,13 @@ export default function CsvImportPage() {
                 setColumnGuesses([]);
                 setSavedTemplateDetected(false);
               }}
-              className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium"
+              className="px-4 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text-primary)] text-xs font-medium transition-colors"
             >
               Import Another File
             </button>
             <button
               onClick={() => router.push("/leads")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-semibold"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
             >
               <span>Go to Lead Engine</span>
               <ArrowRight className="w-3.5 h-3.5" />
