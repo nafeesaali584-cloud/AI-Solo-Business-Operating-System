@@ -12,10 +12,11 @@ import {
   AlertTriangle,
   Loader2,
   Calendar,
-  DollarSign,
-  AlertCircle,
   Palette,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { BRAND } from "@/lib/brand/config";
@@ -24,6 +25,8 @@ import {
   loadProfileImageDataUrl,
   PdfTemplate,
 } from "@/lib/brand/pdf-templates";
+import { InvoiceDocument } from "@/components/brand/InvoiceDocument";
+import { ThemeMode } from "@/lib/brand/tokens";
 
 interface LineItem {
   description: string;
@@ -65,6 +68,8 @@ function InvoiceBuilderContent() {
   const [paidConfirmedAt, setPaidConfirmedAt] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [activeView, setActiveView] = useState<"preview" | "editor">("preview");
+  const [previewTheme, setPreviewTheme] = useState<ThemeMode>("dark");
 
   useEffect(() => {
     async function loadData() {
@@ -353,8 +358,103 @@ function InvoiceBuilderContent() {
         </div>
       )}
 
-      {/* Invoice Meta Bar */}
-      <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* View Switcher: Document Preview vs Form Editor */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#141417] border border-[#26262e]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveView("preview")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeView === "preview"
+                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
+                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <span>Document Preview</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView("editor")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeView === "editor"
+                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
+                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <span>Edit Invoice Fields</span>
+          </button>
+        </div>
+
+        {activeView === "preview" && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[11px] text-zinc-500 font-medium">Theme:</span>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#1a1a24] border border-[#2c2c36]">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewTheme("dark");
+                  setSelectedTemplate("B");
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                  previewTheme === "dark"
+                    ? "bg-[#282834] text-white font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Screen (dark)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewTheme("light");
+                  setSelectedTemplate("A");
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                  previewTheme === "light"
+                    ? "bg-[#f6f4ef] text-zinc-900 font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Print (light)
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Link
+          href="/documents/preview"
+          className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium ml-auto"
+        >
+          <span>Fullscreen Showcase</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {activeView === "preview" ? (
+        <div className="py-2">
+          <InvoiceDocument
+            mode={previewTheme}
+            clientName={clientName || "Miss Al Reem Beauty Centre"}
+            clientAddress="Ajman, UAE"
+            clientPhone="+971 50 xxx xxxx"
+            invoiceNumber={invoiceNumber || "#INV-0118"}
+            relatedProposalNumber={proposalId ? `#PRP-${proposalId.slice(0, 4).toUpperCase()}` : "#PRP-0042"}
+            issueDate={new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+            dueDate={dueDate ? new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "25 Sep 2026"}
+            status={status === "Paid" ? "Paid" : "Awaiting payment"}
+            lineItems={lineItems}
+            subtotal={totalAmount}
+            depositPaid={totalAmount > 2000 ? Math.round(totalAmount * 0.5) : 0}
+            amountDue={totalAmount > 2000 ? Math.round(totalAmount * 0.5) : totalAmount}
+            currency="AED"
+            bankDetails={paymentInstructions}
+            referenceNumber={invoiceNumber.replace("#", "")}
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Invoice Meta Bar */}
+          <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Client</span>
           <div className="text-base font-bold text-zinc-100">{clientName || "Direct Client Invoice"}</div>
@@ -593,6 +693,8 @@ function InvoiceBuilderContent() {
           />
         </div>
       </div>
+    </div>
+  )}
 
       {/* Action Toolbar & Hard Gates (Gates 4 & 5) */}
       <div className="p-5 rounded-xl bg-[#16161c] border border-[#26262e] flex flex-wrap items-center justify-between gap-3">

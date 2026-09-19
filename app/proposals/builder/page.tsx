@@ -17,6 +17,7 @@ import {
   Palette,
   ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { BRAND } from "@/lib/brand/config";
@@ -25,6 +26,8 @@ import {
   loadProfileImageDataUrl,
   PdfTemplate,
 } from "@/lib/brand/pdf-templates";
+import { ProposalDocument } from "@/components/brand/ProposalDocument";
+import { ThemeMode } from "@/lib/brand/tokens";
 
 interface ServiceItem {
   name: string;
@@ -63,6 +66,8 @@ function ProposalBuilderContent() {
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [activeView, setActiveView] = useState<"preview" | "editor">("preview");
+  const [previewTheme, setPreviewTheme] = useState<ThemeMode>("dark");
 
   // Load existing proposal or prefill client data
   useEffect(() => {
@@ -367,8 +372,97 @@ function ProposalBuilderContent() {
         </div>
       )}
 
-      {/* Target Client Bar */}
-      <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] flex items-center justify-between">
+      {/* View Switcher: Document Preview vs Form Editor */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#141417] border border-[#26262e]">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveView("preview")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeView === "preview"
+                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
+                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <span>Document Preview</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveView("editor")}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeView === "editor"
+                ? "bg-[#DA4D01] text-white shadow-md shadow-[#DA4D01]/20"
+                : "bg-[#1d1d26] text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <span>Edit Proposal Fields</span>
+          </button>
+        </div>
+
+        {activeView === "preview" && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[11px] text-zinc-500 font-medium">Theme:</span>
+            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#1a1a24] border border-[#2c2c36]">
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewTheme("dark");
+                  setSelectedTemplate("B");
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                  previewTheme === "dark"
+                    ? "bg-[#282834] text-white font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Screen (dark)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewTheme("light");
+                  setSelectedTemplate("A");
+                }}
+                className={`px-3 py-1 rounded text-xs font-medium transition ${
+                  previewTheme === "light"
+                    ? "bg-[#f6f4ef] text-zinc-900 font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+              >
+                Print (light)
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Link
+          href="/documents/preview"
+          className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium ml-auto"
+        >
+          <span>Fullscreen Showcase</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      {activeView === "preview" ? (
+        <div className="py-2">
+          <ProposalDocument
+            mode={previewTheme}
+            clientName={clientName || "Miss Al Reem Beauty Centre"}
+            proposalNumber={id ? `#PRP-${id.slice(0, 4).toUpperCase()}` : "#PRP-0042"}
+            date={new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            validUntil={new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+            headline="A website that works while you sleep."
+            subtitle={`Prepared for ${clientName || "Miss Al Reem Beauty Centre"} — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.`}
+            whatWeFound={scope || "Your current site has no online booking and no way to capture a visitor before they leave. Most inquiries currently come through Instagram DMs, which are easy to miss during busy salon hours."}
+            services={services}
+            totalInvestment={totalInvestment}
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Target Client Bar */}
+          <div className="p-4 rounded-xl bg-[#141417] border border-[#26262e] flex items-center justify-between">
         <div>
           <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Client Prospect</span>
           <div className="text-lg font-bold text-zinc-100">{clientName || "Direct Proposal Draft"}</div>
@@ -627,6 +721,8 @@ function ProposalBuilderContent() {
           />
         </div>
       </div>
+    </div>
+  )}
 
       {/* Action Toolbar & Approval Gates (Gates 2 & 3) */}
       <div className="p-5 rounded-xl bg-[#16161c] border border-[#26262e] flex flex-wrap items-center justify-between gap-3">

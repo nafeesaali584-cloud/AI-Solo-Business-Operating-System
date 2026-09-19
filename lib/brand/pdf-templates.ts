@@ -1,9 +1,10 @@
 ﻿import { jsPDF } from "jspdf";
+import { COLOR_TOKENS } from "./tokens";
 import { BRAND } from "./config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type PdfTemplate = "A" | "B" | "C";
+export type PdfTemplate = "A" | "B" | "C"; // "B" = Dark (Screen), "A" = Light (Print), "C" = Corporate Classic
 
 export interface ProposalData {
   clientName:      string;
@@ -11,11 +12,13 @@ export interface ProposalData {
   status:          string;
   services:        Array<{ name: string; description: string; price: number }>;
   totalInvestment: number;
-  scope:           string;
-  deliverables:    string;
-  timeline:        string;
-  terms:           string;
+  scope?:          string;
+  deliverables?:   string;
+  timeline?:       string;
+  terms?:          string;
   proposalNumber?: string;
+  headline?:       string;
+  currency?:       string;
 }
 
 export interface InvoiceData {
@@ -23,552 +26,513 @@ export interface InvoiceData {
   invoiceNumber:       string;
   date:                string;
   dueDate:             string;
-  lineItems:           Array<{ description: string; quantity: number; unit_price: number; total: number }>;
+  lineItems:           Array<{ description: string; subDescription?: string; quantity: number; unit_price: number; total: number }>;
   totalAmount:         number;
+  subtotal?:           number;
+  depositPaid?:        number;
   paymentInstructions: string;
-  notes:               string;
+  notes?:              string;
+  currency?:           string;
+  clientAddress?:      string;
+  clientPhone?:        string;
+  relatedProposalNumber?: string;
 }
-
-// ─── Color helpers ─────────────────────────────────────────────────────────────
 
 function hexToRgb(hex: string): [number, number, number] {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return [r, g, b];
+  const clean = hex.replace("#", "");
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
 }
 
-// ─── Shared footer ─────────────────────────────────────────────────────────────
+// ─── Shared Footer ────────────────────────────────────────────────────────────
 
-function addFooter(doc: jsPDF, template: PdfTemplate, pageNum: number) {
+function drawFooter(doc: jsPDF, mode: "dark" | "light", pageNum: number) {
+  const t = COLOR_TOKENS[mode];
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
-  const y = pageH - 16;
+  const y = pageH - 12;
 
-  if (template === "B") {
-    doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-    doc.rect(0, pageH - 22, pageW, 22, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "normal");
-    doc.text(BRAND.contact.website, 14, y);
-    doc.text(`LinkedIn: ${BRAND.contact.linkedin}`, 14, y + 5);
-    doc.text(`WhatsApp: ${BRAND.contact.waDisplay}`, pageW / 2, y, { align: "center" });
-    doc.text(`Page ${pageNum}`, pageW - 14, y, { align: "right" });
-  } else {
-    // A & C — light footer line
-    doc.setDrawColor(...hexToRgb(BRAND.colors.lightLine));
-    doc.line(14, y - 4, pageW - 14, y - 4);
-    doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.setFontSize(7.5);
-    doc.text(BRAND.contact.website, 14, y);
-    doc.text(`LinkedIn: ${BRAND.contact.linkedin}`, 14, y + 4.5);
-    doc.text(`WhatsApp: ${BRAND.contact.waDisplay}`, pageW - 14, y, { align: "right" });
-    doc.text(`Page ${pageNum}`, pageW - 14, y + 4.5, { align: "right" });
-  }
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.line(16, y - 5, pageW - 16, y - 5);
+
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text("nafeesaali.com   ·   Connect on LinkedIn", 16, y);
+  doc.text("Nafeesa Ali · AI, Web & Automation", pageW - 16, y, { align: "right" });
 }
 
-// ─── Profile image helper (base64 from fetch — runs client side) ───────────────
-// We embed the profile image as a data URL. The caller passes it in.
+// ─── Proposal PDF Generator (Dark & Light) ────────────────────────────────────
 
-// ─── TEMPLATE A: Minimal Modern ───────────────────────────────────────────────
-// White background, orange left-sidebar accent, Space Grotesk-style bold heading
-
-function buildProposalA(doc: jsPDF, d: ProposalData, profileDataUrl?: string) {
+function buildProposal(doc: jsPDF, d: ProposalData, mode: "dark" | "light", profileDataUrl?: string) {
+  const t = COLOR_TOKENS[mode];
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const currency = d.currency || "AED";
 
-  // Orange left accent bar
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(0, 0, 6, 297, "F");
+  // Document background
+  doc.setFillColor(...hexToRgb(t.bg));
+  doc.rect(0, 0, pageW, pageH, "F");
 
-  // Header area
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg));
-  doc.rect(0, 0, pageW, 52, "F");
+  // Outer border frame
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.4);
+  doc.roundedRect(8, 8, pageW - 16, pageH - 16, 4, 4, "S");
 
-  // Profile image circle (if available)
+  let y = 20;
+
+  // 1. Header Row
   if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 46, 8, 34, 34); } catch (_) {}
+    try {
+      doc.addImage(profileDataUrl, "JPEG", 16, y - 4, 11, 11);
+    } catch (_) {}
   }
 
-  // Heading
+  const nameX = profileDataUrl ? 30 : 16;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("SERVICE PROPOSAL", 14, 22);
+  doc.setFontSize(11);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(BRAND.ownerName, nameX, y + 1);
 
-  doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(`${BRAND.ownerName}  ·  ${BRAND.tagline}`, 14, 30);
-  doc.text(`Prepared for: ${d.clientName}`, 14, 38);
-  doc.text(`Date: ${d.date}   ·   Status: ${d.status}`, 14, 44);
+  doc.setFontSize(6.5);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("AI · WEB · AUTOMATION", nameX, y + 5.5);
 
-  // Accent divider
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(14, 52, 60, 1.2, "F");
+  // Right Header Meta
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text(`Proposal ${d.proposalNumber || "#PRP-0042"}`, pageW - 16, y - 1, { align: "right" });
+  doc.text(d.date || "18 September 2026", pageW - 16, y + 3, { align: "right" });
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.setFontSize(7);
+  doc.text("Valid until 2 October 2026", pageW - 16, y + 7, { align: "right" });
 
-  let y = 62;
+  y += 18;
 
-  // Services table
+  // 2. Large Headline
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Services & Investment", 14, y);
-  y += 8;
+  doc.setFontSize(18);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  const headline = d.headline || "A website that works while you sleep.";
+  const wrappedHeadline = doc.splitTextToSize(headline, pageW - 32);
+  doc.text(wrappedHeadline, 16, y);
+  y += wrappedHeadline.length * 7 + 2;
+
+  // Subtitle
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  const subtitle = `Prepared for ${d.clientName} — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.`;
+  const wrappedSubtitle = doc.splitTextToSize(subtitle, pageW - 32);
+  doc.text(wrappedSubtitle, 16, y);
+  y += wrappedSubtitle.length * 4.2 + 8;
+
+  // 3. Section: What we found
+  doc.setFillColor(...hexToRgb(t.accent));
+  doc.rect(16, y - 3, 1.2, 5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text("What we found", 19.5, y + 1);
+  y += 6;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...hexToRgb(t.textBody));
+  const foundText = d.scope || "Your current site has no online booking and no way to capture a visitor before they leave. Most inquiries currently come through Instagram DMs, which are easy to miss during busy salon hours.";
+  const wrappedFound = doc.splitTextToSize(foundText, pageW - 34);
+  doc.text(wrappedFound, 17, y);
+  y += wrappedFound.length * 3.8 + 4;
+
+  // Finding pill tags
+  const tags = ["No booking system", "Mobile load: 6.2s", "Instagram-only contact"];
+  let tagX = 17;
+  tags.forEach((tag) => {
+    const w = tag.length * 1.8 + 6;
+    doc.setFillColor(...hexToRgb(t.cardBg));
+    doc.setDrawColor(...hexToRgb(t.border));
+    doc.setLineWidth(0.2);
+    doc.roundedRect(tagX, y - 3, w, 5, 1.2, 1.2, "FD");
+    doc.setTextColor(...hexToRgb(t.textMuted));
+    doc.setFontSize(6.5);
+    doc.text(tag, tagX + 3, y + 0.5);
+    tagX += w + 3;
+  });
+  y += 9;
+
+  // 4. Section: Scope of work
+  doc.setFillColor(...hexToRgb(t.accent));
+  doc.rect(16, y - 3, 1.2, 5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text("Scope of work", 19.5, y + 1);
+  y += 6;
 
   d.services.forEach((s) => {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text(`• ${s.name}`, 14, y);
-    doc.text(`$${Number(s.price).toLocaleString()}`, pageW - 14, y, { align: "right" });
-    y += 5.5;
+    doc.setFontSize(9);
+    doc.setTextColor(...hexToRgb(t.textPrimary));
+    doc.text(s.name, 17, y);
+    doc.text(`${currency} ${Number(s.price).toLocaleString()}`, pageW - 17, y, { align: "right" });
+    y += 4;
+
     if (s.description) {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-      const wrapped = doc.splitTextToSize(s.description, pageW - 40);
-      doc.text(wrapped, 18, y);
-      y += wrapped.length * 4.5 + 2;
+      doc.setFontSize(7.5);
+      doc.setTextColor(...hexToRgb(t.textMuted));
+      const wrappedDesc = doc.splitTextToSize(s.description, pageW - 48);
+      doc.text(wrappedDesc, 17, y);
+      y += wrappedDesc.length * 3.5 + 2;
     }
+
+    doc.setDrawColor(...hexToRgb(t.border));
+    doc.setLineWidth(0.2);
+    doc.line(17, y, pageW - 17, y);
+    y += 4;
   });
 
-  // Total
   y += 4;
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg));
-  doc.roundedRect(14, y - 4, pageW - 28, 12, 2, 2, "F");
+
+  // 5. Section: Timeline
+  doc.setFillColor(...hexToRgb(t.accent));
+  doc.rect(16, y - 3, 1.2, 5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text("Timeline", 19.5, y + 1);
+  y += 7;
+
+  const steps = [
+    { num: "1", title: "Discovery", desc: "Days 1–2 — content & brand" },
+    { num: "2", title: "Design", desc: "Days 3–6 — visual direction" },
+    { num: "3", title: "Build", desc: "Days 7–11 — development" },
+    { num: "4", title: "Launch", desc: "Day 12 — go live & handover" },
+  ];
+  const stepColW = (pageW - 34) / 4;
+  steps.forEach((st, idx) => {
+    const sx = 17 + idx * stepColW;
+    doc.setFillColor(...hexToRgb(t.cardBg));
+    doc.setDrawColor(...hexToRgb(t.accent));
+    doc.setLineWidth(0.3);
+    doc.circle(sx + 3, y, 3, "FD");
+    doc.setTextColor(...hexToRgb(t.accent));
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.text(st.num, sx + 2.2, y + 1);
+
+    doc.setFontSize(8);
+    doc.setTextColor(...hexToRgb(t.textPrimary));
+    doc.text(st.title, sx + 8, y + 1);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...hexToRgb(t.textMuted));
+    doc.text(st.desc, sx, y + 6);
+  });
+  y += 14;
+
+  // 6. Section: Investment Box
+  doc.setFillColor(...hexToRgb(t.accent));
+  doc.rect(16, y - 3, 1.2, 5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text("Investment", 19.5, y + 1);
+  y += 6;
+
+  // Investment card box
+  const boxH = d.services.length * 6 + 14;
+  doc.setFillColor(...hexToRgb(t.cardBg));
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.roundedRect(17, y, pageW - 34, boxH, 2, 2, "FD");
+
+  let iy = y + 5;
+  d.services.forEach((s) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...hexToRgb(t.textBody));
+    doc.text(s.name, 21, iy);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...hexToRgb(t.textPrimary));
+    doc.text(`${currency} ${Number(s.price).toLocaleString()}`, pageW - 21, iy, { align: "right" });
+    iy += 6;
+  });
+
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.2);
+  doc.line(21, iy, pageW - 21, iy);
+  iy += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("Total investment", 21, iy);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(`Total Investment: $${d.totalInvestment.toLocaleString()}`, 20, y + 4);
-  y += 16;
+  doc.setTextColor(...hexToRgb(t.accent));
+  doc.text(`${currency} ${d.totalInvestment.toLocaleString()}`, pageW - 21, iy + 0.5, { align: "right" });
 
-  // Scope
-  if (d.scope) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text("Scope of Work", 14, y); y += 6;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const s = doc.splitTextToSize(d.scope, pageW - 28);
-    doc.text(s, 14, y); y += s.length * 5 + 6;
-  }
+  y += boxH + 6;
 
-  // Deliverables
-  if (d.deliverables) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text("Deliverables", 14, y); y += 6;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const dl = doc.splitTextToSize(d.deliverables, pageW - 28);
-    doc.text(dl, 14, y); y += dl.length * 5 + 6;
-  }
+  // 7. Signed By Block
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.line(16, y, pageW - 16, y);
+  y += 6;
 
-  // Timeline & Terms in 2-col
-  const colW = (pageW - 36) / 2;
-  if (d.timeline) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text("Timeline", 14, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const tl = doc.splitTextToSize(d.timeline, colW);
-    doc.text(tl, 14, y + 5);
-  }
-  if (d.terms) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text("Payment Terms", 14 + colW + 8, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const tr = doc.splitTextToSize(d.terms, colW);
-    doc.text(tr, 14 + colW + 8, y + 5);
-  }
-
-  addFooter(doc, "A", 1);
-}
-
-// ─── TEMPLATE B: Bold Creative (matches nafeesaali.com exactly) ───────────────
-// Dark bg, orange accent header, Space Grotesk feel, pill-style service tags
-
-function buildProposalB(doc: jsPDF, d: ProposalData, profileDataUrl?: string) {
-  const pageW = doc.internal.pageSize.getWidth();
-
-  // Full dark background
-  doc.setFillColor(...hexToRgb(BRAND.colors.bg));
-  doc.rect(0, 0, pageW, 297, "F");
-
-  // Full-width orange header band
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(0, 0, pageW, 58, "F");
-
-  // Profile photo in orange header
   if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 50, 5, 40, 46); } catch (_) {}
+    try {
+      doc.addImage(profileDataUrl, "JPEG", 17, y - 2, 10, 10);
+    } catch (_) {}
   }
-
-  // Heading (white on orange)
+  const sigX = profileDataUrl ? 30 : 17;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.setTextColor(255, 255, 255);
-  doc.text("SERVICE PROPOSAL", 14, 22);
-
   doc.setFontSize(9);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(BRAND.ownerName, sigX, y + 2);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(255, 220, 180);
-  doc.text(`${BRAND.ownerName}  ·  ${BRAND.tagline}`, 14, 30);
-  doc.text(`For: ${d.clientName}   ·   ${d.date}   ·   ${d.status}`, 14, 38);
+  doc.setFontSize(7.5);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("Founder — AI, Web & Automation", sigX, y + 6);
 
-  // Service pills
-  let pillX = 14;
-  let pillY = 44;
-  d.services.slice(0, 4).forEach((s) => {
-    const label = s.name.slice(0, 22);
-    const w = label.length * 2.2 + 8;
-    if (pillX + w > pageW - 60) { pillX = 14; pillY += 8; }
-    doc.setFillColor(0, 0, 0);
-    doc.roundedRect(pillX, pillY - 4, w, 6, 1.5, 1.5, "F");
-    doc.setFontSize(7);
-    doc.setTextColor(255, 255, 255);
-    doc.text(label, pillX + 4, pillY);
-    pillX += w + 4;
-  });
-
-  let y = 70;
-
-  // Services list
-  d.services.forEach((s) => {
-    // Service card background
-    doc.setFillColor(25, 25, 30);
-    doc.roundedRect(14, y - 4, pageW - 28, 18, 2, 2, "F");
-    doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-    doc.rect(14, y - 4, 3, 18, "F");
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(...hexToRgb(BRAND.colors.text));
-    doc.text(s.name, 22, y + 2);
-    doc.text(`$${Number(s.price).toLocaleString()}`, pageW - 18, y + 2, { align: "right" });
-
-    if (s.description) {
-      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-      doc.text(s.description.slice(0, 85), 22, y + 8);
-    }
-    y += 24;
-  });
-
-  // Total box — orange highlight
-  y += 2;
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.roundedRect(14, y, pageW - 28, 14, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-  doc.text(`TOTAL INVESTMENT: $${d.totalInvestment.toLocaleString()}`, pageW / 2, y + 9, { align: "center" });
-  y += 20;
-
-  // Scope & Deliverables
-  const sections = [
-    { label: "Scope of Work", body: d.scope },
-    { label: "Deliverables", body: d.deliverables },
-    { label: "Timeline", body: d.timeline },
-    { label: "Payment Terms", body: d.terms },
-  ].filter(s => s.body);
-
-  sections.forEach((sec) => {
-    doc.setFillColor(25, 25, 30);
-    const preview = doc.splitTextToSize(sec.body, pageW - 36);
-    const boxH = preview.length * 5 + 14;
-    doc.roundedRect(14, y, pageW - 28, boxH, 2, 2, "F");
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(sec.label.toUpperCase(), 20, y + 8);
-
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(preview, 20, y + 15);
-    y += boxH + 6;
-  });
-
-  addFooter(doc, "B", 1);
+  drawFooter(doc, mode, 1);
 }
 
-// ─── TEMPLATE C: Corporate Classic ────────────────────────────────────────────
-// Clean white, two-column header, orange rule, tabular layout
+// ─── Invoice PDF Generator (Dark & Light) ─────────────────────────────────────
 
-function buildProposalC(doc: jsPDF, d: ProposalData, profileDataUrl?: string) {
+function buildInvoice(doc: jsPDF, d: InvoiceData, mode: "dark" | "light", profileDataUrl?: string) {
+  const t = COLOR_TOKENS[mode];
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const currency = d.currency || "AED";
 
-  // White bg (default)
-  // Profile photo top-right
+  // Document background
+  doc.setFillColor(...hexToRgb(t.bg));
+  doc.rect(0, 0, pageW, pageH, "F");
+
+  // Outer border frame
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.4);
+  doc.roundedRect(8, 8, pageW - 16, pageH - 16, 4, 4, "S");
+
+  let y = 20;
+
+  // 1. Header Row
   if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 42, 10, 30, 30); } catch (_) {}
+    try {
+      doc.addImage(profileDataUrl, "JPEG", 16, y - 4, 11, 11);
+    } catch (_) {}
   }
+  const nameX = profileDataUrl ? 30 : 16;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(BRAND.ownerName, nameX, y + 1);
 
-  // Company name & meta top-left
-  doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(BRAND.ownerName, 14, 20);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(BRAND.tagline, 14, 27);
-  doc.text(BRAND.contact.website, 14, 33);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("AI · WEB · AUTOMATION", nameX, y + 5.5);
 
-  // Orange horizontal rule
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(14, 40, pageW - 28, 2, "F");
+  // Right Header Meta
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("nafeesaali.com", pageW - 16, y + 1, { align: "right" });
+  doc.setFontSize(7.5);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("Ajman, UAE", pageW - 16, y + 5.5, { align: "right" });
 
-  // Document title
-  doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("SERVICE PROPOSAL", 14, 50);
-
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(`Client: ${d.clientName}`, 14, 57);
-  doc.text(`Date: ${d.date}`, pageW - 14, 50, { align: "right" });
-  doc.text(`Status: ${d.status}`, pageW - 14, 57, { align: "right" });
-
-  let y = 66;
-
-  // Services table header
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg));
-  doc.rect(14, y, pageW - 28, 8, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Service", 18, y + 5.5);
-  doc.text("Description", 80, y + 5.5);
-  doc.text("Price", pageW - 18, y + 5.5, { align: "right" });
-  y += 8;
-
-  doc.setDrawColor(...hexToRgb(BRAND.colors.lightLine));
-  d.services.forEach((s, i) => {
-    if (i % 2 === 1) { doc.setFillColor(249, 250, 251); doc.rect(14, y, pageW - 28, 9, "F"); }
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text(s.name.slice(0, 30), 18, y + 6);
-    doc.setFont("helvetica", "normal"); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(s.description.slice(0, 50), 80, y + 6);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(`$${Number(s.price).toLocaleString()}`, pageW - 18, y + 6, { align: "right" });
-    y += 9;
-  });
-
-  doc.line(14, y, pageW - 14, y);
-  y += 7;
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Total Investment:", 14, y);
-  doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(`$${d.totalInvestment.toLocaleString()}`, pageW - 14, y, { align: "right" });
-  y += 12;
-
-  const bodySections = [
-    { label: "Scope of Work", body: d.scope },
-    { label: "Deliverables",  body: d.deliverables },
-    { label: "Timeline",      body: d.timeline },
-    { label: "Payment Terms", body: d.terms },
-  ].filter(s => s.body);
-
-  bodySections.forEach((sec) => {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(sec.label, 14, y); y += 5;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const lines = doc.splitTextToSize(sec.body, pageW - 28);
-    doc.text(lines, 14, y); y += lines.length * 4.8 + 7;
-  });
-
-  addFooter(doc, "C", 1);
-}
-
-// ─── INVOICE TEMPLATES ─────────────────────────────────────────────────────────
-
-function buildInvoiceA(doc: jsPDF, d: InvoiceData, profileDataUrl?: string) {
-  const pageW = doc.internal.pageSize.getWidth();
-
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(0, 0, 6, 297, "F");
-
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg));
-  doc.rect(0, 0, pageW, 52, "F");
-
-  if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 46, 8, 34, 34); } catch (_) {}
-  }
-
-  doc.setFont("helvetica", "bold"); doc.setFontSize(26); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("INVOICE", 14, 22);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(`${BRAND.ownerName}  ·  ${BRAND.tagline}`, 14, 30);
-  doc.text(`Billed to: ${d.clientName}`, 14, 38);
-
-  doc.setFontSize(9);
-  doc.text(`Invoice #: ${d.invoiceNumber}`, pageW - 80, 20);
-  doc.text(`Date: ${d.date}`, pageW - 80, 26);
-  doc.text(`Due: ${d.dueDate}`, pageW - 80, 32);
-
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent));
-  doc.rect(14, 52, 60, 1.2, "F");
-
-  let y = 62;
-  // Table header
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg)); doc.rect(14, y - 4, pageW - 28, 9, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Description", 18, y + 1); doc.text("Qty", 130, y + 1); doc.text("Unit Price", 148, y + 1); doc.text("Total", pageW - 18, y + 1, { align: "right" });
-  y += 9;
-
-  d.lineItems.forEach((item, i) => {
-    if (i % 2 === 1) { doc.setFillColor(...hexToRgb(BRAND.colors.lightBg)); doc.rect(14, y - 4, pageW - 28, 9, "F"); }
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text(item.description.slice(0, 55), 18, y + 1);
-    doc.text(String(item.quantity), 133, y + 1);
-    doc.text(`$${item.unit_price.toLocaleString()}`, 151, y + 1);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(`$${item.total.toLocaleString()}`, pageW - 18, y + 1, { align: "right" });
-    y += 9;
-  });
-
-  y += 4;
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg)); doc.roundedRect(14, y, pageW - 28, 13, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(`TOTAL AMOUNT DUE: $${d.totalAmount.toLocaleString()}`, pageW / 2, y + 8.5, { align: "center" });
   y += 18;
 
-  if (d.paymentInstructions) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text("Payment Details", 14, y); y += 5;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const pi = doc.splitTextToSize(d.paymentInstructions, pageW - 28);
-    doc.text(pi, 14, y); y += pi.length * 4.8 + 6;
-  }
+  // 2. Title Row + Status Badge
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text("Invoice", 16, y + 2);
 
-  if (d.notes) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(d.notes, 14, y);
-  }
+  // Status badge
+  const badgeText = "Awaiting payment";
+  const bw = badgeText.length * 2.2 + 8;
+  doc.setFillColor(...hexToRgb(t.cardBg));
+  doc.setDrawColor(...hexToRgb(t.accent));
+  doc.setLineWidth(0.3);
+  doc.roundedRect(pageW - 16 - bw, y - 4, bw, 6, 2, 2, "FD");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...hexToRgb(t.accent));
+  doc.text(badgeText, pageW - 16 - bw / 2, y + 0.3, { align: "center" });
 
-  addFooter(doc, "A", 1);
-}
+  y += 14;
 
-function buildInvoiceB(doc: jsPDF, d: InvoiceData, profileDataUrl?: string) {
-  const pageW = doc.internal.pageSize.getWidth();
+  // 3. Two-Column Metadata Row (BILLED TO & INVOICE)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("BILLED TO", 16, y);
+  doc.text("INVOICE", pageW - 16, y, { align: "right" });
 
-  // Dark bg
-  doc.setFillColor(...hexToRgb(BRAND.colors.bg)); doc.rect(0, 0, pageW, 297, "F");
+  y += 5;
+  doc.setFontSize(10);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(d.clientName, 16, y);
+  doc.text(d.invoiceNumber, pageW - 16, y, { align: "right" });
 
-  // Orange header
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent)); doc.rect(0, 0, pageW, 52, "F");
-
-  if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 50, 5, 42, 42); } catch (_) {}
-  }
-
-  doc.setFont("helvetica", "bold"); doc.setFontSize(28); doc.setTextColor(255, 255, 255);
-  doc.text("INVOICE", 14, 22);
-  doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(255, 220, 180);
-  doc.text(`${BRAND.ownerName}  ·  ${BRAND.tagline}`, 14, 30);
-  doc.text(`For: ${d.clientName}   ·   ${d.invoiceNumber}   ·   Due: ${d.dueDate}`, 14, 38);
-
-  let y = 62;
-
-  // Table header — dark card
-  doc.setFillColor(25, 25, 30); doc.rect(14, y - 4, pageW - 28, 9, "F");
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent)); doc.rect(14, y - 4, 3, 9, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text("DESCRIPTION", 22, y + 1); doc.text("QTY", 130, y + 1); doc.text("PRICE", 148, y + 1); doc.text("TOTAL", pageW - 18, y + 1, { align: "right" });
-  y += 10;
-
-  d.lineItems.forEach((item) => {
-    doc.setFillColor(25, 25, 30); doc.roundedRect(14, y - 4, pageW - 28, 9, 1, 1, "F");
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.text));
-    doc.text(item.description.slice(0, 55), 20, y + 1);
-    doc.text(String(item.quantity), 133, y + 1);
-    doc.text(`$${item.unit_price.toLocaleString()}`, 151, y + 1);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(`$${item.total.toLocaleString()}`, pageW - 18, y + 1, { align: "right" });
-    y += 11;
-  });
+  y += 4.5;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text(d.clientAddress || "Ajman, UAE", 16, y);
+  doc.text(`Related to Proposal ${d.relatedProposalNumber || "#PRP-0042"}`, pageW - 16, y, { align: "right" });
 
   y += 4;
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent)); doc.roundedRect(14, y, pageW - 28, 14, 2, 2, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255);
-  doc.text(`TOTAL AMOUNT DUE: $${d.totalAmount.toLocaleString()}`, pageW / 2, y + 9.5, { align: "center" });
-  y += 20;
+  doc.text(d.clientPhone || "+971 50 xxx xxxx", 16, y);
 
-  if (d.paymentInstructions) {
-    doc.setFillColor(25, 25, 30); const piLines = doc.splitTextToSize(d.paymentInstructions, pageW - 36); const boxH = piLines.length * 5 + 14;
-    doc.roundedRect(14, y, pageW - 28, boxH, 2, 2, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text("PAYMENT DETAILS", 20, y + 8);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(piLines, 20, y + 15);
-    y += boxH + 6;
-  }
+  y += 10;
 
-  if (d.notes) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(d.notes, 14, y);
-  }
+  // 4. Dates Row (ISSUED & DUE)
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("ISSUED", 16, y);
+  doc.text("DUE", 55, y);
 
-  addFooter(doc, "B", 1);
-}
+  y += 4.5;
+  doc.setFontSize(9);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(d.date || "18 Sep 2026", 16, y);
+  doc.text(d.dueDate || "25 Sep 2026", 55, y);
 
-function buildInvoiceC(doc: jsPDF, d: InvoiceData, profileDataUrl?: string) {
-  const pageW = doc.internal.pageSize.getWidth();
+  y += 10;
 
-  if (profileDataUrl) {
-    try { doc.addImage(profileDataUrl, "JPEG", pageW - 42, 10, 30, 30); } catch (_) {}
-  }
+  // 5. Line Items Table
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.line(16, y, pageW - 16, y);
+  y += 5;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(BRAND.ownerName, 14, 20);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(BRAND.tagline, 14, 27); doc.text(BRAND.contact.website, 14, 33);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("Item", 16, y);
+  doc.text("Qty", 115, y, { align: "center" });
+  doc.text("Rate", 145, y, { align: "right" });
+  doc.text("Amount", pageW - 16, y, { align: "right" });
 
-  doc.setFillColor(...hexToRgb(BRAND.colors.accent)); doc.rect(14, 40, pageW - 28, 2, "F");
+  y += 3;
+  doc.line(16, y, pageW - 16, y);
+  y += 6;
 
-  doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("INVOICE", 14, 50);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-  doc.text(`Billed to: ${d.clientName}`, 14, 57);
-  doc.text(`${d.invoiceNumber}  ·  Date: ${d.date}  ·  Due: ${d.dueDate}`, pageW - 14, 50, { align: "right" });
+  d.lineItems.forEach((item) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...hexToRgb(t.textPrimary));
+    doc.text(item.description, 16, y);
 
-  let y = 66;
-  doc.setFillColor(...hexToRgb(BRAND.colors.lightBg)); doc.rect(14, y - 4, pageW - 28, 8, "F");
-  doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Description", 18, y + 1); doc.text("Qty", 130, y + 1); doc.text("Unit Price", 148, y + 1); doc.text("Total", pageW - 18, y + 1, { align: "right" });
-  y += 8;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...hexToRgb(t.textSecondaryBody));
+    doc.text(String(item.quantity), 115, y, { align: "center" });
+    doc.text(`${currency} ${Number(item.unit_price).toLocaleString()}`, 145, y, { align: "right" });
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...hexToRgb(t.textPrimary));
+    doc.text(`${currency} ${Number(item.total).toLocaleString()}`, pageW - 16, y, { align: "right" });
 
-  d.lineItems.forEach((item, i) => {
-    if (i % 2 === 1) { doc.setFillColor(...hexToRgb(BRAND.colors.lightBg)); doc.rect(14, y - 4, pageW - 28, 9, "F"); }
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-    doc.text(item.description.slice(0, 55), 18, y + 1);
-    doc.text(String(item.quantity), 133, y + 1);
-    doc.text(`$${item.unit_price.toLocaleString()}`, 151, y + 1);
-    doc.setFont("helvetica", "bold"); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text(`$${item.total.toLocaleString()}`, pageW - 18, y + 1, { align: "right" });
-    y += 9;
+    y += 4;
+    if (item.subDescription) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...hexToRgb(t.textMuted));
+      doc.text(item.subDescription, 16, y);
+      y += 3;
+    }
+
+    doc.setDrawColor(...hexToRgb(t.border));
+    doc.setLineWidth(0.2);
+    doc.line(16, y + 1, pageW - 16, y + 1);
+    y += 6;
   });
 
-  doc.setDrawColor(...hexToRgb(BRAND.colors.lightLine)); doc.line(14, y, pageW - 14, y); y += 7;
-  doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(...hexToRgb(BRAND.colors.bg));
-  doc.text("Total Amount Due:", 14, y);
-  doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-  doc.text(`$${d.totalAmount.toLocaleString()}`, pageW - 14, y, { align: "right" });
-  y += 12;
+  y += 2;
 
-  if (d.paymentInstructions) {
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(...hexToRgb(BRAND.colors.accent));
-    doc.text("Payment Details", 14, y); y += 5;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    const pi = doc.splitTextToSize(d.paymentInstructions, pageW - 28);
-    doc.text(pi, 14, y); y += pi.length * 4.8 + 6;
-  }
+  // 6. Totals Block (Right-Aligned)
+  const subtotal = d.subtotal ?? d.lineItems.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+  const deposit = d.depositPaid ?? 2550;
+  const due = d.totalAmount ?? (subtotal - deposit);
 
-  if (d.notes) {
-    doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(...hexToRgb(BRAND.colors.textDim));
-    doc.text(d.notes, 14, y);
-  }
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("Subtotal", 130, y);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(`${currency} ${subtotal.toLocaleString()}`, pageW - 16, y, { align: "right" });
 
-  addFooter(doc, "C", 1);
+  y += 5.5;
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("Deposit paid", 130, y);
+  doc.setTextColor(...hexToRgb(t.textPrimary));
+  doc.text(`– ${currency} ${deposit.toLocaleString()}`, pageW - 16, y, { align: "right" });
+
+  y += 5;
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.line(130, y, pageW - 16, y);
+
+  y += 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text("Amount due", 130, y);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.setTextColor(...hexToRgb(t.accent));
+  doc.text(`${currency} ${due.toLocaleString()}`, pageW - 16, y + 0.5, { align: "right" });
+
+  y += 14;
+
+  // 7. Payment Details Box
+  doc.setFillColor(...hexToRgb(t.cardBg));
+  doc.setDrawColor(...hexToRgb(t.border));
+  doc.setLineWidth(0.3);
+  doc.roundedRect(16, y, pageW - 32, 18, 2, 2, "FD");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7);
+  doc.setTextColor(...hexToRgb(t.textExtraMuted));
+  doc.text("PAYMENT DETAILS", 20, y + 5);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...hexToRgb(t.textBody));
+  doc.text("Bank transfer — Emirates NBD · IBAN: AE00 0000 0000 0000 0000 000", 20, y + 10);
+  doc.setTextColor(...hexToRgb(t.textMuted));
+  doc.text(`Reference: ${d.invoiceNumber.replace("#", "")}`, 20, y + 14.5);
+
+  drawFooter(doc, mode, 1);
 }
 
-// ─── Public API ────────────────────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export function generateProposalPdf(template: PdfTemplate, data: ProposalData, profileDataUrl?: string): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  if (template === "A") buildProposalA(doc, data, profileDataUrl);
-  else if (template === "B") buildProposalB(doc, data, profileDataUrl);
-  else buildProposalC(doc, data, profileDataUrl);
+  const mode: "dark" | "light" = template === "B" ? "dark" : "light";
+  buildProposal(doc, data, mode, profileDataUrl);
   return doc;
 }
 
 export function generateInvoicePdf(template: PdfTemplate, data: InvoiceData, profileDataUrl?: string): jsPDF {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  if (template === "A") buildInvoiceA(doc, data, profileDataUrl);
-  else if (template === "B") buildInvoiceB(doc, data, profileDataUrl);
-  else buildInvoiceC(doc, data, profileDataUrl);
+  const mode: "dark" | "light" = template === "B" ? "dark" : "light";
+  buildInvoice(doc, data, mode, profileDataUrl);
   return doc;
 }
 
