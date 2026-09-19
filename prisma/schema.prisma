@@ -16,6 +16,10 @@ model Lead {
   email                 String?
   city_country          String?
   niche_industry        String?
+  rating                Float?        // e.g. 4.8 / 5
+  review_count          Int?          // e.g. 83
+  key_services          String?       // comma-separated or text services
+  address               String?       // full street address
   source_csv_row        Json          // Raw imported row, immutable source of truth
   ai_summary            String?       // AI generated, tagged inference
   ai_opportunity        String?       // AI generated, tagged inference

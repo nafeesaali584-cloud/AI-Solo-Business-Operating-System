@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -23,23 +23,31 @@ import { useBusinessBrain } from "@/context/BusinessBrainContext";
 /** The system fields a CSV column can map to */
 type SystemField =
   | "business_name"
-  | "website"
-  | "phone"
-  | "email"
-  | "city"
   | "niche"
+  | "key_services"
+  | "rating"
+  | "review_count"
+  | "city"
+  | "address"
+  | "phone"
+  | "website"
+  | "email"
   | "notes"
   | "ignore";
 
 const SYSTEM_FIELDS: { value: SystemField; label: string }[] = [
   { value: "business_name", label: "Business Name (Required)" },
-  { value: "website", label: "Website / Social" },
-  { value: "phone", label: "Phone / WhatsApp" },
-  { value: "email", label: "Email Address" },
-  { value: "city", label: "City / Location" },
   { value: "niche", label: "Niche / Industry" },
+  { value: "key_services", label: "Key Services / Specialization" },
+  { value: "rating", label: "Rating (e.g. 5.0 / 4.8)" },
+  { value: "review_count", label: "Review Count (e.g. 15, 83)" },
+  { value: "city", label: "City / Location" },
+  { value: "address", label: "Street Address / Full Location" },
+  { value: "phone", label: "Phone / WhatsApp" },
+  { value: "website", label: "Website / Social" },
+  { value: "email", label: "Email Address" },
   { value: "notes", label: "Notes / Context" },
-  { value: "ignore", label: "Don'\''t map — store as extra data only" },
+  { value: "ignore", label: "Don't map — store as extra data only" },
 ];
 
 type Confidence = "high" | "suggestion" | "none";
@@ -61,8 +69,65 @@ function guessSystemField(header: string): { field: SystemField; confidence: Con
     h === "company name" || h === "name" || h === "shop name" ||
     h.includes("shop") || h.includes("business") || h.includes("company")
   ) {
-    const confidence: Confidence = (h === "business_name" || h === "business name" || h === "company name") ? "high" : "suggestion";
+    const confidence: Confidence = (h === "business_name" || h === "business name" || h === "company name" || h === "shop name") ? "high" : "suggestion";
     return { field: "business_name", confidence };
+  }
+
+  // Rating
+  if (
+    h === "rating" || h === "stars" || h === "score" || h === "review rating" ||
+    h.includes("rating") || h.includes("stars")
+  ) {
+    return { field: "rating", confidence: "high" };
+  }
+
+  // Review Count
+  if (
+    h === "review count" || h === "reviews" || h === "review_count" ||
+    h === "total reviews" || h === "number of reviews" || h.includes("review")
+  ) {
+    return { field: "review_count", confidence: "high" };
+  }
+
+  // Key Services / Specialization
+  if (
+    h === "key services" || h === "key_services" || h === "services" ||
+    h === "specialization" || h === "specialisation" || h === "offerings" ||
+    h.includes("key service") || h.includes("special")
+  ) {
+    return { field: "key_services", confidence: "high" };
+  }
+
+  // Street Address
+  if (
+    h === "address" || h === "street" || h === "street address" ||
+    h === "full address" || h.includes("street") || h === "addr"
+  ) {
+    return { field: "address", confidence: "high" };
+  }
+
+  // City / Location
+  if (
+    h === "city" || h === "location" || h === "country" ||
+    h === "service area" || h === "area" || h === "region" ||
+    h.includes("city") || h.includes("location") || h.includes("country") ||
+    h.includes("service area") || h.includes("area")
+  ) {
+    const confidence: Confidence =
+      (h === "city" || h === "location" || h === "service area") ? "high" : "suggestion";
+    return { field: "city", confidence };
+  }
+
+  // Niche / Industry
+  if (
+    h === "niche" || h === "industry" || h === "category" ||
+    h === "sector" || h === "type" || h === "service type" ||
+    h.includes("niche") || h.includes("industry") ||
+    h.includes("category") || h.includes("sector")
+  ) {
+    const confidence: Confidence =
+      (h === "niche" || h === "industry" || h === "category") ? "high" : "suggestion";
+    return { field: "niche", confidence };
   }
 
   // Website
@@ -71,7 +136,7 @@ function guessSystemField(header: string): { field: SystemField; confidence: Con
     h === "social" || h === "social media" || h === "instagram" ||
     h.includes("website") || h.includes("url") || h.includes("social")
   ) {
-    const confidence: Confidence = (h === "website" || h === "url") ? "high" : "suggestion";
+    const confidence: Confidence = (h === "website" || h === "url" || h === "website/social") ? "high" : "suggestion";
     return { field: "website", confidence };
   }
 
@@ -89,32 +154,6 @@ function guessSystemField(header: string): { field: SystemField; confidence: Con
   if (h === "email" || h === "email address" || h.includes("email") || h.includes("mail")) {
     const confidence: Confidence = h === "email" ? "high" : "suggestion";
     return { field: "email", confidence };
-  }
-
-  // City / Location
-  if (
-    h === "city" || h === "location" || h === "country" || h === "address" ||
-    h === "service area" || h === "area" || h === "region" ||
-    h.includes("city") || h.includes("location") || h.includes("country") ||
-    h.includes("service area") || h.includes("area")
-  ) {
-    // "address" is ambiguous — give suggestion only
-    const confidence: Confidence =
-      (h === "city" || h === "location" || h === "country") ? "high" : "suggestion";
-    return { field: "city", confidence };
-  }
-
-  // Niche / Industry
-  if (
-    h === "niche" || h === "industry" || h === "category" ||
-    h === "specialization" || h === "specialisation" || h === "sector" ||
-    h === "type" || h === "service type" ||
-    h.includes("niche") || h.includes("industry") || h.includes("special") ||
-    h.includes("category") || h.includes("sector")
-  ) {
-    const confidence: Confidence =
-      (h === "niche" || h === "industry" || h === "category") ? "high" : "suggestion";
-    return { field: "niche", confidence };
   }
 
   // Notes
@@ -139,7 +178,14 @@ function buildSignature(headers: string[]): string {
 
 // ─── Confidence badge ─────────────────────────────────────────────────────────
 
-function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
+function ConfidenceBadge({ confidence, isIgnore }: { confidence: Confidence; isIgnore?: boolean }) {
+  if (isIgnore) {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+        ⚪ Extra Data (Stored in Raw Data)
+      </span>
+    );
+  }
   if (confidence === "high")
     return (
       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800/60">
@@ -154,7 +200,7 @@ function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
     );
   return (
     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
-      ⚪ Unmapped
+      ⚪ Extra Data (Stored in Raw Data)
     </span>
   );
 }
@@ -311,7 +357,11 @@ export default function CsvImportPage() {
       const phoneHeader = getMappedHeader("phone");
       const emailHeader = getMappedHeader("email");
       const cityHeader = getMappedHeader("city");
+      const addressHeader = getMappedHeader("address");
       const nicheHeader = getMappedHeader("niche");
+      const keyServicesHeader = getMappedHeader("key_services");
+      const ratingHeader = getMappedHeader("rating");
+      const reviewCountHeader = getMappedHeader("review_count");
       const notesHeader = getMappedHeader("notes");
 
       return {
@@ -320,7 +370,15 @@ export default function CsvImportPage() {
         phone: phoneHeader ? row[phoneHeader] || null : null,
         email: emailHeader ? row[emailHeader] || null : null,
         city: cityHeader ? row[cityHeader] || null : null,
-        niche: nicheHeader ? row[nicheHeader] || null : null,
+        address: addressHeader ? row[addressHeader] || null : null,
+        niche: nicheHeader
+          ? row[nicheHeader] || null
+          : keyServicesHeader
+          ? row[keyServicesHeader] || null
+          : null,
+        key_services: keyServicesHeader ? row[keyServicesHeader] || null : null,
+        rating: ratingHeader ? row[ratingHeader] || null : null,
+        review_count: reviewCountHeader ? row[reviewCountHeader] || null : null,
         notes: notesHeader ? row[notesHeader] || null : null,
         source_csv_row: row, // Full raw row — no data lost
       };
@@ -354,7 +412,13 @@ export default function CsvImportPage() {
 
   const previewRows = csvData.slice(0, 10).map((row) => ({
     business_name: getMappedHeader("business_name") ? row[getMappedHeader("business_name")!] : "—",
-    niche: getMappedHeader("niche") ? row[getMappedHeader("niche")!] : "—",
+    niche: getMappedHeader("niche")
+      ? row[getMappedHeader("niche")!]
+      : getMappedHeader("key_services")
+      ? row[getMappedHeader("key_services")!]
+      : "—",
+    rating: getMappedHeader("rating") ? row[getMappedHeader("rating")!] : null,
+    review_count: getMappedHeader("review_count") ? row[getMappedHeader("review_count")!] : null,
     city: getMappedHeader("city") ? row[getMappedHeader("city")!] : "—",
     phone: getMappedHeader("phone") ? row[getMappedHeader("phone")!] : "—",
     website: getMappedHeader("website") ? row[getMappedHeader("website")!] : "—",
@@ -460,7 +524,7 @@ export default function CsvImportPage() {
                       </div>
                     )}
                     <div className="mt-1">
-                      <ConfidenceBadge confidence={guess.confidence} />
+                      <ConfidenceBadge confidence={guess.confidence} isIgnore={guess.systemField === "ignore"} />
                     </div>
                   </div>
 
@@ -544,7 +608,8 @@ export default function CsvImportPage() {
               <thead className="bg-[#1b1b22] text-zinc-400 border-b border-[#26262e]">
                 <tr>
                   <th className="p-2.5">Business Name</th>
-                  <th className="p-2.5">Niche / Industry</th>
+                  <th className="p-2.5">Niche / Services</th>
+                  <th className="p-2.5">Rating</th>
                   <th className="p-2.5">City / Location</th>
                   <th className="p-2.5">Phone</th>
                   <th className="p-2.5">Website / Social</th>
@@ -556,6 +621,13 @@ export default function CsvImportPage() {
                   <tr key={idx} className="hover:bg-zinc-800/30">
                     <td className="p-2.5 font-medium text-zinc-200">{row.business_name || "Untitled"}</td>
                     <td className="p-2.5 text-zinc-400">{row.niche || "—"}</td>
+                    <td className="p-2.5 text-amber-400 font-medium">
+                      {row.rating ? (
+                        <span>⭐ {row.rating} {row.review_count ? `(${row.review_count})` : ""}</span>
+                      ) : (
+                        <span className="text-zinc-600">—</span>
+                      )}
+                    </td>
                     <td className="p-2.5 text-zinc-400">{row.city || "—"}</td>
                     <td className="p-2.5 text-zinc-400">{row.phone || "—"}</td>
                     <td className="p-2.5 text-zinc-400 max-w-[150px] truncate">{row.website || "—"}</td>

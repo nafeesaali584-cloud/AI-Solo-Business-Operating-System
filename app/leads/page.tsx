@@ -26,6 +26,10 @@ interface LeadItem {
   email?: string | null;
   city_country?: string | null;
   niche_industry?: string | null;
+  key_services?: string | null;
+  rating?: number | null;
+  review_count?: number | null;
+  address?: string | null;
   status: string;
   is_today_target: boolean;
   created_at: string;
@@ -272,13 +276,20 @@ export default function LeadListPage() {
                       className="hover:bg-[#1a1a21] cursor-pointer transition group"
                     >
                       <td className="p-3.5 font-medium text-zinc-100 group-hover:text-amber-400 transition">
-                        <div>{lead.business_name}</div>
+                        <div className="flex items-center gap-2">
+                          <span>{lead.business_name}</span>
+                          {lead.rating && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-800/60">
+                              ⭐ {lead.rating} {lead.review_count ? `(${lead.review_count})` : ""}
+                            </span>
+                          )}
+                        </div>
                         {lead.website && (
                           <div className="text-[11px] text-zinc-500">{lead.website}</div>
                         )}
                       </td>
-                      <td className="p-3.5 text-zinc-400">
-                        {lead.niche_industry || <span className="text-zinc-600">—</span>}
+                      <td className="p-3.5 text-zinc-300">
+                        {lead.niche_industry || lead.key_services || <span className="text-zinc-600">—</span>}
                       </td>
                       <td className="p-3.5 text-zinc-400">
                         {lead.city_country || <span className="text-zinc-600">—</span>}

@@ -40,6 +40,10 @@ interface LeadDetailData {
     email?: string | null;
     city_country?: string | null;
     niche_industry?: string | null;
+    key_services?: string | null;
+    rating?: number | null;
+    review_count?: number | null;
+    address?: string | null;
     source_csv_row: any;
     ai_summary?: string | null;
     ai_opportunity?: string | null;
@@ -289,8 +293,28 @@ export default function LeadDetailPage() {
             <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400 pt-1">
               <div className="flex items-center gap-1.5">
                 <FactBadge type="fact" label="Fact" />
-                <span>Industry: {lead.niche_industry || "Not available"}</span>
+                <span>Industry: {lead.niche_industry || lead.key_services || "Not available"}</span>
               </div>
+              {lead.rating && (
+                <div className="flex items-center gap-1 font-semibold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded text-xs">
+                  <span>⭐ {lead.rating}</span>
+                  {lead.review_count && (
+                    <span className="text-[11px] text-amber-400/80 font-normal">({lead.review_count} reviews)</span>
+                  )}
+                </div>
+              )}
+              {lead.key_services && lead.niche_industry && (
+                <div className="flex items-center gap-1 text-zinc-300">
+                  <span className="text-zinc-500 font-medium">Services:</span>
+                  <span className="text-zinc-200">{lead.key_services}</span>
+                </div>
+              )}
+              {lead.address && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>{lead.address}</span>
+                </div>
+              )}
               {lead.website && (
                 <div className="flex items-center gap-1">
                   <Globe className="w-3.5 h-3.5 text-zinc-500" />

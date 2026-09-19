@@ -20,7 +20,23 @@ export async function POST(req: NextRequest) {
       const phone = row.phone || row.Phone || null;
       const email = row.email || row.Email || null;
       const city_country = row.city || row.City || row.location || row.city_country || null;
-      const niche_industry = row.niche || row.industry || row.Niche || row.Industry || null;
+      const niche_industry = row.niche || row.industry || row.Niche || row.Industry || row.key_services || row.specialization || null;
+
+      // Extract rating, review count, key services, address
+      let rating: number | null = null;
+      if (row.rating !== undefined && row.rating !== null && row.rating !== "") {
+        const parsed = parseFloat(String(row.rating).replace(/[^0-9.]/g, ""));
+        if (!isNaN(parsed)) rating = parsed;
+      }
+
+      let review_count: number | null = null;
+      if (row.review_count !== undefined && row.review_count !== null && row.review_count !== "") {
+        const parsed = parseInt(String(row.review_count).replace(/[^0-9]/g, ""), 10);
+        if (!isNaN(parsed)) review_count = parsed;
+      }
+
+      const key_services = row.key_services || row.services || null;
+      const address = row.address || row.Address || row.street || null;
 
       // Duplicate Check: check if lead already exists by website, phone, or email
       let existing = null;
@@ -54,7 +70,11 @@ export async function POST(req: NextRequest) {
           email,
           city_country,
           niche_industry,
-          source_csv_row: row, // Immutable raw data
+          rating,
+          review_count,
+          key_services,
+          address,
+          source_csv_row: row.source_csv_row || row, // Immutable raw data
           status: "Imported",
           is_today_target: false,
         },
