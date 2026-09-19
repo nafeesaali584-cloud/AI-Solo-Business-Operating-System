@@ -293,7 +293,16 @@ export default function LeadDetailPage() {
             <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-400 pt-1">
               <div className="flex items-center gap-1.5">
                 <FactBadge type="fact" label="Fact" />
-                <span>Industry: {lead.niche_industry || lead.key_services || "Not available"}</span>
+                <span>
+                  Industry:{" "}
+                  {lead.niche_industry ||
+                    lead.key_services ||
+                    (lead as any).source_csv_row?.Specialization ||
+                    (lead as any).source_csv_row?.specialization ||
+                    (lead as any).source_csv_row?.Niche ||
+                    (lead as any).source_csv_row?.niche ||
+                    "Not available"}
+                </span>
               </div>
               {lead.rating && (
                 <div className="flex items-center gap-1 font-semibold text-amber-300 bg-amber-950/70 border border-amber-800/60 px-2 py-0.5 rounded text-xs">

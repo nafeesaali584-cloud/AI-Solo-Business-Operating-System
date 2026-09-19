@@ -30,6 +30,7 @@ interface LeadItem {
   rating?: number | null;
   review_count?: number | null;
   address?: string | null;
+  source_csv_row?: any;
   status: string;
   is_today_target: boolean;
   created_at: string;
@@ -289,7 +290,14 @@ export default function LeadListPage() {
                         )}
                       </td>
                       <td className="p-3.5 text-zinc-300">
-                        {lead.niche_industry || lead.key_services || <span className="text-zinc-600">—</span>}
+                        {lead.niche_industry ||
+                          lead.key_services ||
+                          (lead as any).source_csv_row?.Specialization ||
+                          (lead as any).source_csv_row?.specialization ||
+                          (lead as any).source_csv_row?.Niche ||
+                          (lead as any).source_csv_row?.niche || (
+                            <span className="text-zinc-600">—</span>
+                          )}
                       </td>
                       <td className="p-3.5 text-zinc-400">
                         {lead.city_country || <span className="text-zinc-600">—</span>}

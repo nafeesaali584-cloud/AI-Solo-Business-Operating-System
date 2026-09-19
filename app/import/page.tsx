@@ -224,8 +224,8 @@ export default function CsvImportPage() {
   const [savedTemplateDetected, setSavedTemplateDetected] = useState(false);
   const [headerSignature, setHeaderSignature] = useState("");
 
-  // Import settings
-  const [generateAiSnapshots, setGenerateAiSnapshots] = useState(true);
+  // Import settings (default false for fast instant import; can be toggled on)
+  const [generateAiSnapshots, setGenerateAiSnapshots] = useState(false);
   const [importResult, setImportResult] = useState<{
     imported_count: number;
     duplicate_count: number;
@@ -651,7 +651,7 @@ export default function CsvImportPage() {
                   Generate AI Business Snapshot for imported leads
                 </div>
                 <div className="text-[11px] text-zinc-400">
-                  Strictly extracts facts and inferences with zero hallucination.
+                  Extracts facts and strategic angles in the background without slowing down import.
                 </div>
               </div>
             </div>

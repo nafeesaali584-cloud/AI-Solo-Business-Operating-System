@@ -20,7 +20,16 @@ export async function POST(req: NextRequest) {
       const phone = row.phone || row.Phone || null;
       const email = row.email || row.Email || null;
       const city_country = row.city || row.City || row.location || row.city_country || null;
-      const niche_industry = row.niche || row.industry || row.Niche || row.Industry || row.key_services || row.specialization || null;
+      const niche_industry =
+        row.niche ||
+        row.industry ||
+        row.Niche ||
+        row.Industry ||
+        row.specialization ||
+        row.Specialization ||
+        row.key_services ||
+        row.services ||
+        null;
 
       // Extract rating, review count, key services, address
       let rating: number | null = null;
@@ -80,24 +89,28 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Optionally generate AI Snapshot in the background or right away
-      if (generate_ai_snapshots) {
-        try {
-          const snapshot = await generateLeadSnapshot(lead);
-          await db.lead.update({
-            where: { id: lead.id },
-            data: {
-              ai_summary: snapshot.ai_summary,
-              ai_opportunity: snapshot.ai_opportunity,
-              ai_recommended_angle: snapshot.ai_recommended_angle,
-            },
-          });
-        } catch (aiErr) {
-          console.warn(`Snapshot generation skipped for lead ${lead.id}:`, aiErr);
-        }
-      }
-
       createdLeads.push(lead);
+    }
+
+    // Trigger background AI snapshot generation asynchronously (non-blocking for fast import)
+    if (generate_ai_snapshots && createdLeads.length > 0) {
+      (async () => {
+        for (const lead of createdLeads) {
+          try {
+            const snapshot = await generateLeadSnapshot(lead);
+            await db.lead.update({
+              where: { id: lead.id },
+              data: {
+                ai_summary: snapshot.ai_summary,
+                ai_opportunity: snapshot.ai_opportunity,
+                ai_recommended_angle: snapshot.ai_recommended_angle,
+              },
+            });
+          } catch (aiErr) {
+            console.warn(`Background snapshot skipped for lead ${lead.id}:`, aiErr);
+          }
+        }
+      })().catch(() => {});
     }
 
     return NextResponse.json({
