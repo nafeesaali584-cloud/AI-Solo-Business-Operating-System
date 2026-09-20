@@ -13,6 +13,7 @@ import {
   MessageSquare,
   FileText,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
@@ -73,6 +74,48 @@ export default function SettingsPage() {
     }
     loadSettings();
   }, []);
+
+  // Danger Zone States
+  const [resetConfirmation, setResetConfirmation] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetError, setResetError] = useState("");
+
+  const handleExecuteReset = async (mode: "purge_data" | "factory_reset") => {
+    if (resetConfirmation !== "RESET") {
+      setResetError('You must type "RESET" in capital letters to confirm.');
+      return;
+    }
+    setResetLoading(true);
+    setResetError("");
+    setResetMsg("");
+    try {
+      const res = await fetch("/api/settings/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          confirmation: resetConfirmation,
+          mode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.error || "Reset failed.");
+        return;
+      }
+      setResetMsg(data.message);
+      setResetConfirmation("");
+      if (mode === "factory_reset") {
+        setDailyQuota(3);
+        setCadenceDays(4);
+        setTonePreference("Professional, concise, and value-oriented");
+      }
+    } catch (err: any) {
+      setResetError(err.message || "Network error.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +351,96 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* SECTION 3: Danger Zone (Clean Slate / System Reset) */}
+      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--danger-border)] space-y-5">
+        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-[var(--danger)]" />
+            <h2 className="text-sm font-semibold font-heading text-[var(--danger)]">
+              Danger Zone — System Reset &amp; Data Purge
+            </h2>
+          </div>
+          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-border)]">
+            IRREVERSIBLE
+          </span>
+        </div>
+
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          Need to test with fresh data or completely clear the system? You can choose to purge all business data while keeping your customized settings, or perform a full factory reset.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="p-3.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1">
+            <p className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+              <Trash2 className="w-3.5 h-3.5 text-[var(--danger)]" />
+              <span>Purge All Data</span>
+            </p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              Deletes all leads, clients, deals, proposals, invoices, tasks, interactions, onboarding records, and CSV templates. <strong>Keeps your settings &amp; templates intact.</strong>
+            </p>
+          </div>
+          <div className="p-3.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1">
+            <p className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-[var(--danger)]" />
+              <span>Factory Reset</span>
+            </p>
+            <p className="text-[11px] text-[var(--text-muted)]">
+              Purges all data <strong>AND</strong> resets daily quotas, cadence days, outreach templates, and terms back to initial factory defaults.
+            </p>
+          </div>
+        </div>
+
+        {resetMsg && (
+          <div className="p-3 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] text-[var(--success)] text-xs flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>{resetMsg}</span>
+          </div>
+        )}
+
+        {resetError && (
+          <div className="p-3 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-[var(--danger)] text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            <span>{resetError}</span>
+          </div>
+        )}
+
+        <div className="p-4 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] space-y-3">
+          <label className="block text-xs font-semibold text-[var(--text-primary)]">
+            To proceed, type <span className="font-mono text-[var(--danger)] font-bold">RESET</span> in capital letters below:
+          </label>
+          <input
+            type="text"
+            value={resetConfirmation}
+            onChange={(e) => setResetConfirmation(e.target.value)}
+            placeholder="Type RESET to confirm"
+            disabled={resetLoading}
+            className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)] rounded-lg px-3.5 py-2 text-xs font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--danger)]"
+          />
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              type="button"
+              disabled={resetConfirmation !== "RESET" || resetLoading}
+              onClick={() => handleExecuteReset("purge_data")}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-border)] text-xs font-semibold shadow-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              <span>Purge All Data (Clean Slate)</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={resetConfirmation !== "RESET" || resetLoading}
+              onClick={() => handleExecuteReset("factory_reset")}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold shadow-sm transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              <span>Factory Reset (Wipe All + Defaults)</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

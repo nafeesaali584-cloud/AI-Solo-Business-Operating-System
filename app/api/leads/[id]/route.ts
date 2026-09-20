@@ -49,7 +49,21 @@ export async function PATCH(
 ) {
   try {
     const body = await req.json();
-    const { status, is_today_target, notes, convert_to_client } = body;
+    const {
+      status,
+      is_today_target,
+      notes,
+      convert_to_client,
+      business_name,
+      niche_industry,
+      city_country,
+      phone,
+      email,
+      website,
+      rating,
+      review_count,
+      key_services,
+    } = body;
 
     // Check quota if is_today_target is being enabled
     if (is_today_target === true) {
@@ -114,6 +128,15 @@ export async function PATCH(
     const updateData: any = {};
     if (status !== undefined) updateData.status = status;
     if (is_today_target !== undefined) updateData.is_today_target = is_today_target;
+    if (business_name !== undefined) updateData.business_name = business_name;
+    if (niche_industry !== undefined) updateData.niche_industry = niche_industry;
+    if (city_country !== undefined) updateData.city_country = city_country;
+    if (phone !== undefined) updateData.phone = phone;
+    if (email !== undefined) updateData.email = email;
+    if (website !== undefined) updateData.website = website;
+    if (rating !== undefined) updateData.rating = rating;
+    if (review_count !== undefined) updateData.review_count = review_count;
+    if (key_services !== undefined) updateData.key_services = key_services;
 
     const updatedLead = await db.lead.update({
       where: { id: params.id },
@@ -135,6 +158,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Delete associated tasks
+    await db.task.deleteMany({
+      where: { related_id: params.id },
+    });
+
     await db.lead.delete({
       where: { id: params.id },
     });

@@ -15,6 +15,11 @@ import {
   AlertCircle,
   Loader2,
   Check,
+  Plus,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
@@ -55,20 +60,40 @@ export default function LeadListPage() {
   const [quotaCount, setQuotaCount] = useState(0);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  // Modals state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  // Form data for Add / Edit
+  const [formData, setFormData] = useState({
+    business_name: "",
+    niche_industry: "",
+    city_country: "",
+    phone: "",
+    email: "",
+    website: "",
+    status: "Imported",
+  });
+
   const fetchLeads = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== "ALL") params.append("status", statusFilter);
+      if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
       if (targetsOnly) params.append("targets_only", "true");
       if (noReplyFilter) params.append("no_reply_days", noReplyFilter);
 
       const res = await fetch(`/api/leads?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
-        setLeads(json.leads || []);
-        const activeTargets = (json.leads || []).filter((l: LeadItem) => l.is_today_target).length;
-        setQuotaCount(activeTargets);
+        const loadedLeads: LeadItem[] = json.leads || [];
+        setLeads(loadedLeads);
+        const currentTargets = loadedLeads.filter((l) => l.is_today_target).length;
+        setQuotaCount(currentTargets);
       }
     } catch (err) {
       console.error("Failed to fetch leads", err);
@@ -115,6 +140,119 @@ export default function LeadListPage() {
     }
   };
 
+  const handleOpenAdd = () => {
+    setFormData({
+      business_name: "",
+      niche_industry: "",
+      city_country: "",
+      phone: "",
+      email: "",
+      website: "",
+      status: "Imported",
+    });
+    setFormError("");
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEdit = (lead: LeadItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedLead(lead);
+    setFormData({
+      business_name: lead.business_name,
+      niche_industry: lead.niche_industry || "",
+      city_country: lead.city_country || "",
+      phone: lead.phone || "",
+      email: lead.email || "",
+      website: lead.website || "",
+      status: lead.status,
+    });
+    setFormError("");
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDelete = (lead: LeadItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedLead(lead);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.business_name.trim()) {
+      setFormError("Business Name is required.");
+      return;
+    }
+    setActionLoading(true);
+    setFormError("");
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error || "Failed to create lead.");
+        return;
+      }
+      setIsAddModalOpen(false);
+      fetchLeads();
+    } catch (err: any) {
+      setFormError(err.message || "Network error.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    if (!formData.business_name.trim()) {
+      setFormError("Business Name is required.");
+      return;
+    }
+    setActionLoading(true);
+    setFormError("");
+    try {
+      const res = await fetch(`/api/leads/${selectedLead.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error || "Failed to update lead.");
+        return;
+      }
+      setIsEditModalOpen(false);
+      setSelectedLead(null);
+      fetchLeads();
+    } catch (err: any) {
+      setFormError(err.message || "Network error.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteLead = async () => {
+    if (!selectedLead) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/leads/${selectedLead.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setIsDeleteModalOpen(false);
+        setSelectedLead(null);
+        fetchLeads();
+      }
+    } catch (err) {
+      console.error("Failed to delete lead", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredLeads = leads.filter((l) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -151,7 +289,7 @@ export default function LeadListPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Target Quota Meter */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--accent-border)] text-xs">
             <Target className="w-3.5 h-3.5 text-[var(--accent)]" />
@@ -159,9 +297,17 @@ export default function LeadListPage() {
             <span className="font-bold text-[var(--accent)]">{quotaCount} / 3 Active</span>
           </div>
 
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold border border-[var(--border)] transition-colors"
+          >
+            <Plus className="w-4 h-4 text-[var(--accent)]" />
+            <span>Add Single Lead</span>
+          </button>
+
           <Link
             href="/import"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
           >
             <UploadCloud className="w-4 h-4" />
             <span>Import CSV</span>
@@ -184,79 +330,75 @@ export default function LeadListPage() {
             <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-2.5 top-2.5" />
             <input
               type="text"
+              placeholder="Search leads, niche, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search leads..."
-              className="bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent)] w-48 transition-colors"
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)] w-56 transition-colors"
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5 text-[var(--text-muted)] ml-1" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
-            >
-              {statuses.map((s) => (
-                <option key={s} value={s}>
-                  Status: {s}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Status Dropdown */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+          >
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {s === "ALL" ? "All Statuses" : s}
+              </option>
+            ))}
+          </select>
 
-          {/* No Reply in X days Filter */}
+          {/* Follow-up Cadence Filter */}
           <select
             value={noReplyFilter}
             onChange={(e) => setNoReplyFilter(e.target.value)}
-            className="bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-secondary)] outline-none focus:border-[var(--accent)]"
+            className="px-2.5 py-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-secondary)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           >
-            <option value="">All Follow-up Windows</option>
-            <option value="2">No reply in 2+ days</option>
-            <option value="4">No reply in 4+ days (Default Cadence)</option>
-            <option value="7">No reply in 7+ days (Stalled)</option>
+            <option value="">Any Timing</option>
+            <option value="3">No reply in 3+ days</option>
+            <option value="7">No reply in 7+ days</option>
           </select>
+
+          {/* Targets Only Toggle */}
+          <button
+            onClick={() => setTargetsOnly(!targetsOnly)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors flex items-center gap-1.5 ${
+              targetsOnly
+                ? "bg-[var(--accent)] text-white border-[var(--accent-border)] font-semibold"
+                : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
+            }`}
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>Today&apos;s Targets only</span>
+          </button>
         </div>
 
-        {/* Targets Only Toggle */}
-        <button
-          onClick={() => setTargetsOnly(!targetsOnly)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-            targetsOnly
-              ? "bg-[var(--accent)] text-white border-[var(--accent-border)]"
-              : "bg-[var(--surface-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border-[var(--border)]"
-          }`}
-        >
-          <Target className="w-3.5 h-3.5" />
-          <span>Today&apos;s Targets Only</span>
-        </button>
+        <div className="text-xs text-[var(--text-muted)]">
+          Showing <span className="font-semibold text-[var(--text-primary)]">{filteredLeads.length}</span> leads
+        </div>
       </div>
 
-      {/* Leads Table */}
+      {/* Leads Table Card */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-[var(--text-muted)] space-y-2">
-            <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin mx-auto" />
-            <p className="text-xs">Loading leads...</p>
+          <div className="p-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 text-[var(--accent)] animate-spin" />
+            <span className="text-xs text-[var(--text-muted)]">Loading leads directory...</span>
           </div>
         ) : filteredLeads.length === 0 ? (
-          <div className="p-12 text-center text-[var(--text-dim)] space-y-3">
-            <Users className="w-10 h-10 mx-auto text-[var(--text-dim)]" />
-            <p className="text-sm">No leads match your current search and filters.</p>
-            <Link
-              href="/import"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors"
-            >
-              <UploadCloud className="w-3.5 h-3.5" />
-              <span>Import leads from CSV</span>
-            </Link>
+          <div className="p-12 text-center space-y-2">
+            <Users className="w-8 h-8 text-[var(--text-dim)] mx-auto opacity-60" />
+            <p className="text-sm font-medium text-[var(--text-primary)]">No leads found</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Try adjusting your filters or click &quot;Add Single Lead&quot; above to create one.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)]">
+              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)] uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="p-3.5">Business Name</th>
                   <th className="p-3.5">Niche / Industry</th>
@@ -342,13 +484,29 @@ export default function LeadListPage() {
                         </button>
                       </td>
                       <td className="p-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          href={`/leads/${lead.id}`}
-                          className="px-2.5 py-1 rounded bg-[var(--surface-hover)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] transition-colors inline-flex items-center gap-1"
-                        >
-                          <span>Lead Card</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </Link>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={(e) => handleOpenEdit(lead, e)}
+                            title="Edit Lead"
+                            className="p-1.5 rounded bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] transition-colors"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleOpenDelete(lead, e)}
+                            title="Delete Lead"
+                            className="p-1.5 rounded bg-[var(--surface-hover)] hover:bg-[var(--danger-soft)] text-[var(--text-muted)] hover:text-[var(--danger)] border border-[var(--border)] hover:border-[var(--danger-border)] transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <Link
+                            href={`/leads/${lead.id}`}
+                            className="px-2 py-1 rounded bg-[var(--surface-hover)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] transition-colors inline-flex items-center gap-1"
+                          >
+                            <span>Card</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -358,6 +516,289 @@ export default function LeadListPage() {
           </div>
         )}
       </div>
+
+      {/* ─── ADD LEAD MODAL ─── */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Add Single Lead</h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)]">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateLead} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Business Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Elegance Salon & Spa"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Niche / Industry</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Hair Salon"
+                    value={formData.niche_industry}
+                    onChange={(e) => setFormData({ ...formData, niche_industry: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">City / Country</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dubai, UAE"
+                    value={formData.city_country}
+                    onChange={(e) => setFormData({ ...formData, city_country: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    placeholder="+971 50 123 4567"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Email</label>
+                  <input
+                    type="email"
+                    placeholder="info@elegance.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Website</label>
+                <input
+                  type="text"
+                  placeholder="https://elegance.com"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Lead</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT LEAD MODAL ─── */}
+      {isEditModalOpen && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Edit Lead</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedLead(null);
+                }}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)]">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateLead} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Business Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Niche / Industry</label>
+                  <input
+                    type="text"
+                    value={formData.niche_industry}
+                    onChange={(e) => setFormData({ ...formData, niche_industry: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">City / Location</label>
+                  <input
+                    type="text"
+                    value={formData.city_country}
+                    onChange={(e) => setFormData({ ...formData, city_country: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Website</label>
+                <input
+                  type="text"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-2.5 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                >
+                  {statuses.filter((s) => s !== "ALL").map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedLead(null);
+                  }}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DELETE LEAD MODAL ─── */}
+      {isDeleteModalOpen && selectedLead && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--danger-border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-[var(--danger-soft)] text-[var(--danger)]">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Delete Lead?</h2>
+                <p className="text-xs text-[var(--text-dim)]">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Are you sure you want to delete <strong className="text-[var(--text-primary)]">{selectedLead.business_name}</strong>?
+              This will permanently remove the lead and all associated contacts, deals, tasks, and interaction records.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedLead(null);
+                }}
+                className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteLead}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Delete Lead</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -26,6 +26,8 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import { FactBadge } from "@/components/ui/FactBadge";
 import { GateBadge } from "@/components/ui/GateBadge";
@@ -114,6 +116,21 @@ export default function LeadDetailPage() {
   const [isLostModalOpen, setIsLostModalOpen] = useState(false);
   const [lostReason, setLostReason] = useState("");
 
+  // Edit / Delete Lead Modal States
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editActionLoading, setEditActionLoading] = useState(false);
+  const [editFormError, setEditFormError] = useState("");
+  const [editFormData, setEditFormData] = useState({
+    business_name: "",
+    niche_industry: "",
+    city_country: "",
+    phone: "",
+    email: "",
+    website: "",
+    key_services: "",
+  });
+
   // AI inline suggestion
   const [aiSuggestion, setAiSuggestion] = useState<{
     suggested_tactic: string;
@@ -130,6 +147,15 @@ export default function LeadDetailPage() {
       if (res.ok) {
         const json = await res.json();
         setData(json);
+        setEditFormData({
+          business_name: json.lead.business_name || "",
+          niche_industry: json.lead.niche_industry || "",
+          city_country: json.lead.city_country || "",
+          phone: json.lead.phone || "",
+          email: json.lead.email || "",
+          website: json.lead.website || "",
+          key_services: json.lead.key_services || "",
+        });
         setActiveEntity({
           type: "lead",
           id: json.lead.id,
@@ -141,6 +167,49 @@ export default function LeadDetailPage() {
       console.error("Failed to load lead details", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData.business_name.trim()) {
+      setEditFormError("Business Name is required.");
+      return;
+    }
+    setEditActionLoading(true);
+    setEditFormError("");
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editFormData),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setEditFormError(json.error || "Failed to update lead.");
+        return;
+      }
+      setIsEditModalOpen(false);
+      fetchLead();
+    } catch (err: any) {
+      setEditFormError(err.message || "Network error.");
+    } finally {
+      setEditActionLoading(false);
+    }
+  };
+
+  const handleDeleteLead = async () => {
+    setEditActionLoading(true);
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        router.push("/leads");
+      }
+    } catch (err) {
+      console.error("Failed to delete lead", err);
+      setEditActionLoading(false);
     }
   };
 
@@ -385,6 +454,20 @@ export default function LeadDetailPage() {
               className="px-2.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] text-xs font-medium border border-[var(--border)] transition-colors"
             >
               Mark Lost
+            </button>
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>Edit</span>
+            </button>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] text-xs font-medium border border-[var(--border)] hover:border-[var(--danger-border)] transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete</span>
             </button>
           </div>
         </div>
@@ -747,6 +830,164 @@ export default function LeadDetailPage() {
                 className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
               >
                 Confirm Lost
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT LEAD MODAL ─── */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Edit Lead</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {editFormError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)]">
+                {editFormError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateLead} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Business Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.business_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, business_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Niche / Industry</label>
+                  <input
+                    type="text"
+                    value={editFormData.niche_industry}
+                    onChange={(e) => setEditFormData({ ...editFormData, niche_industry: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">City / Location</label>
+                  <input
+                    type="text"
+                    value={editFormData.city_country}
+                    onChange={(e) => setEditFormData({ ...editFormData, city_country: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Email</label>
+                  <input
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Website</label>
+                <input
+                  type="text"
+                  value={editFormData.website}
+                  onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Key Services</label>
+                <input
+                  type="text"
+                  value={editFormData.key_services}
+                  onChange={(e) => setEditFormData({ ...editFormData, key_services: e.target.value })}
+                  placeholder="e.g. Haircuts, Beard Trim, Facial"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editActionLoading}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {editActionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DELETE LEAD MODAL ─── */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--danger-border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-[var(--danger-soft)] text-[var(--danger)]">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Delete Lead?</h2>
+                <p className="text-xs text-[var(--text-dim)]">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Are you sure you want to delete <strong className="text-[var(--text-primary)]">{lead.business_name}</strong>?
+              This will permanently remove the lead and all associated contacts, deals, tasks, and interaction records.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteLead}
+                disabled={editActionLoading}
+                className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {editActionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Delete Lead</span>
               </button>
             </div>
           </div>

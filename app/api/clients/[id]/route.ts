@@ -152,3 +152,74 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await req.json();
+    const { business_name, primary_contact, email, phone, stage, payment_status } = body;
+
+    const updateData: any = {};
+    if (business_name !== undefined) updateData.business_name = business_name;
+    if (primary_contact !== undefined) updateData.primary_contact = primary_contact;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone;
+    if (stage !== undefined) updateData.stage = stage;
+    if (payment_status !== undefined) updateData.payment_status = payment_status;
+    updateData.last_activity = new Date();
+
+    const client = await db.client.update({
+      where: { id: params.id },
+      data: updateData,
+    });
+
+    return NextResponse.json({ success: true, client });
+  } catch (error: any) {
+    console.error("Client update error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to update client" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const client = await db.client.findUnique({
+      where: { id: params.id },
+      include: { onboarding: true },
+    });
+
+    if (!client) {
+      return NextResponse.json({ error: "Client not found" }, { status: 404 });
+    }
+
+    // Clean up associated tasks
+    await db.task.deleteMany({
+      where: {
+        OR: [
+          { related_id: client.id },
+          ...(client.onboarding ? [{ related_id: client.onboarding.id }] : []),
+        ],
+      },
+    });
+
+    // Delete client (Prisma cascades to proposals, invoices, onboarding, contacts, interactions)
+    await db.client.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ success: true, message: "Client and associated records deleted." });
+  } catch (error: any) {
+    console.error("Client delete error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to delete client" },
+      { status: 500 }
+    );
+  }
+}

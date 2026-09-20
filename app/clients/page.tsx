@@ -9,9 +9,12 @@ import {
   Loader2,
   Receipt,
   FileText,
-  CheckCircle2,
-  Clock,
+  Plus,
+  Edit2,
+  Trash2,
   Search,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
@@ -37,6 +40,24 @@ export default function ClientListPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Modals state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClientItem | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  // Form states
+  const [formData, setFormData] = useState({
+    business_name: "",
+    primary_contact: "",
+    email: "",
+    phone: "",
+    stage: "Proposal",
+    payment_status: "Pending",
+  });
+
   const fetchClients = async () => {
     setLoading(true);
     try {
@@ -61,6 +82,117 @@ export default function ClientListPage() {
     });
   }, []);
 
+  const handleOpenAdd = () => {
+    setFormData({
+      business_name: "",
+      primary_contact: "",
+      email: "",
+      phone: "",
+      stage: "Proposal",
+      payment_status: "Pending",
+    });
+    setFormError("");
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEdit = (client: ClientItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedClient(client);
+    setFormData({
+      business_name: client.business_name,
+      primary_contact: client.primary_contact || "",
+      email: client.email || "",
+      phone: client.phone || "",
+      stage: client.stage,
+      payment_status: client.payment_status,
+    });
+    setFormError("");
+    setIsEditModalOpen(true);
+  };
+
+  const handleOpenDelete = (client: ClientItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedClient(client);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.business_name.trim()) {
+      setFormError("Business Name is required.");
+      return;
+    }
+    setActionLoading(true);
+    setFormError("");
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error || "Failed to create client.");
+        return;
+      }
+      setIsAddModalOpen(false);
+      fetchClients();
+    } catch (err: any) {
+      setFormError(err.message || "Network error.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClient) return;
+    if (!formData.business_name.trim()) {
+      setFormError("Business Name is required.");
+      return;
+    }
+    setActionLoading(true);
+    setFormError("");
+    try {
+      const res = await fetch(`/api/clients/${selectedClient.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFormError(data.error || "Failed to update client.");
+        return;
+      }
+      setIsEditModalOpen(false);
+      setSelectedClient(null);
+      fetchClients();
+    } catch (err: any) {
+      setFormError(err.message || "Network error.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteClient = async () => {
+    if (!selectedClient) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/clients/${selectedClient.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setIsDeleteModalOpen(false);
+        setSelectedClient(null);
+        fetchClients();
+      }
+    } catch (err) {
+      console.error("Failed to delete client", err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filtered = clients.filter((c) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -84,62 +216,71 @@ export default function ClientListPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Client</span>
+          </button>
           <Link
             href="/proposals/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>New Proposal</span>
           </Link>
           <Link
             href="/invoices/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
           >
-            <Receipt className="w-3.5 h-3.5" />
+            <Receipt className="w-3.5 h-3.5 text-[var(--accent)]" />
             <span>New Invoice</span>
           </Link>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
-        <div className="relative w-full max-w-sm">
+      <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2.5" />
           <input
             type="text"
+            placeholder="Search clients by name, contact, or stage..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter clients by name, contact, stage..."
-            className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg pl-9 pr-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent)] transition-colors"
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] placeholder:text-[var(--text-dim)] outline-none focus:border-[var(--accent)] transition-colors"
           />
         </div>
-        <span className="text-xs text-[var(--text-muted)]">{filtered.length} total client(s)</span>
+        <div className="text-xs text-[var(--text-muted)]">
+          Total: <strong className="text-[var(--text-primary)]">{filtered.length}</strong> clients
+        </div>
       </div>
 
-      {/* Table */}
+      {/* Client Table Card */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-[var(--text-muted)] space-y-2">
-            <Loader2 className="w-8 h-8 text-[var(--accent)] animate-spin mx-auto" />
-            <p className="text-xs">Loading client portfolio...</p>
+          <div className="p-12 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 text-[var(--accent)] animate-spin" />
+            <span className="text-xs text-[var(--text-muted)]">Loading client directory...</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-[var(--text-dim)] space-y-3">
-            <Briefcase className="w-10 h-10 mx-auto text-[var(--text-dim)]" />
-            <p className="text-sm">No clients in conversion pipeline yet.</p>
-            <p className="text-xs text-[var(--text-dim)]">
-              When a lead in Workspace A reaches agreement, click &quot;Move to Proposal&quot; on their Lead Card.
+          <div className="p-12 text-center space-y-2">
+            <Briefcase className="w-8 h-8 text-[var(--text-dim)] mx-auto opacity-60" />
+            <p className="text-sm font-medium text-[var(--text-primary)]">No clients found</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Convert a lead from Workspace A or click &quot;Add Client&quot; above to create one manually.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)]">
+              <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)] uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
                   <th className="p-3.5">Business Name</th>
-                  <th className="p-3.5">Primary Contact</th>
-                  <th className="p-3.5">Conversion Stage</th>
+                  <th className="p-3.5">Contact Person</th>
+                  <th className="p-3.5">Stage</th>
                   <th className="p-3.5">Payment Status</th>
                   <th className="p-3.5">Last Activity</th>
                   <th className="p-3.5 text-right">Actions</th>
@@ -193,13 +334,29 @@ export default function ClientListPage() {
                       {new Date(client.last_activity).toLocaleDateString()}
                     </td>
                     <td className="p-3.5 text-right" onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/clients/${client.id}`}
-                        className="px-2.5 py-1 rounded bg-[var(--surface-raised)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] hover:border-[var(--accent-border)] transition-colors inline-flex items-center gap-1"
-                      >
-                        <span>Timeline</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={(e) => handleOpenEdit(client, e)}
+                          title="Edit Client"
+                          className="p-1.5 rounded bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border)] transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => handleOpenDelete(client, e)}
+                          title="Delete Client"
+                          className="p-1.5 rounded bg-[var(--surface-hover)] hover:bg-[var(--danger-soft)] text-[var(--text-muted)] hover:text-[var(--danger)] border border-[var(--border)] hover:border-[var(--danger-border)] transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <Link
+                          href={`/clients/${client.id}`}
+                          className="px-2 py-1 rounded bg-[var(--surface-raised)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border)] hover:border-[var(--accent-border)] transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>Timeline</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -208,6 +365,288 @@ export default function ClientListPage() {
           </div>
         )}
       </div>
+
+      {/* ─── ADD CLIENT MODAL ─── */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Add New Client</h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)]">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateClient} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Business Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Apex Health Clinic"
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Primary Contact Person</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Dr. Sarah Jenkins"
+                  value={formData.primary_contact}
+                  onChange={(e) => setFormData({ ...formData, primary_contact: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Email</label>
+                  <input
+                    type="email"
+                    placeholder="contact@apex.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    placeholder="+971 50 123 4567"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Pipeline Stage</label>
+                  <select
+                    value={formData.stage}
+                    onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                    className="w-full px-2.5 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="Proposal">Proposal</option>
+                    <option value="Invoice">Invoice</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Onboarding">Onboarding</option>
+                    <option value="Active">Active</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Payment Status</label>
+                  <select
+                    value={formData.payment_status}
+                    onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
+                    className="w-full px-2.5 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Overdue">Overdue</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Client</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── EDIT CLIENT MODAL ─── */}
+      {isEditModalOpen && selectedClient && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <h2 className="font-heading text-lg font-bold text-[var(--text-primary)]">Edit Client</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedClient(null);
+                }}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {formError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)]">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateClient} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Business Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.business_name}
+                  onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium text-[var(--text-secondary)]">Primary Contact Person</label>
+                <input
+                  type="text"
+                  value={formData.primary_contact}
+                  onChange={(e) => setFormData({ ...formData, primary_contact: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Phone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Pipeline Stage</label>
+                  <select
+                    value={formData.stage}
+                    onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                    className="w-full px-2.5 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="Proposal">Proposal</option>
+                    <option value="Invoice">Invoice</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Onboarding">Onboarding</option>
+                    <option value="Active">Active</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium text-[var(--text-secondary)]">Payment Status</label>
+                  <select
+                    value={formData.payment_status}
+                    onChange={(e) => setFormData({ ...formData, payment_status: e.target.value })}
+                    className="w-full px-2.5 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Overdue">Overdue</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedClient(null);
+                  }}
+                  className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Update Client</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DELETE CLIENT CONFIRMATION MODAL ─── */}
+      {isDeleteModalOpen && selectedClient && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--danger-border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-[var(--danger-soft)] text-[var(--danger)]">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">Delete Client?</h2>
+                <p className="text-xs text-[var(--text-dim)]">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Are you sure you want to delete <strong className="text-[var(--text-primary)]">{selectedClient.business_name}</strong>?
+              This will permanently remove the client and all associated proposals, invoices, and onboarding data.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedClient(null);
+                }}
+                className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteClient}
+                disabled={actionLoading}
+                className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Delete Client</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
