@@ -21,7 +21,7 @@ export const DEFAULT_ONBOARDING_CHECKLIST = [
  * GATE 1: Interaction manual confirmation
  * Ensures outbound message cannot be marked 'sent' by AI or automated background jobs.
  */
-export async function executeGate1ConfirmSent(interactionId: string) {
+export async function executeGate1ConfirmSent(interactionId: string, updatedContent?: string) {
   const interaction = await db.interaction.findUnique({
     where: { id: interactionId },
   });
@@ -30,9 +30,14 @@ export async function executeGate1ConfirmSent(interactionId: string) {
     throw new Error("Interaction not found.");
   }
 
+  const updateData: any = { confirmed_sent: true };
+  if (updatedContent && updatedContent.trim()) {
+    updateData.content = updatedContent.trim();
+  }
+
   const updated = await db.interaction.update({
     where: { id: interactionId },
-    data: { confirmed_sent: true },
+    data: updateData,
   });
 
   // If tied to a lead, update status from Target Today or Qualified to Contacted if needed

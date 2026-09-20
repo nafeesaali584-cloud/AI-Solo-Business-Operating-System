@@ -28,6 +28,7 @@ import {
   Database,
   Edit2,
   Trash2,
+  ExternalLink,
 } from "lucide-react";
 import { FactBadge } from "@/components/ui/FactBadge";
 import { GateBadge } from "@/components/ui/GateBadge";
@@ -103,6 +104,14 @@ export default function LeadDetailPage() {
   const [drafting, setDrafting] = useState(false);
   const [createdInteractionId, setCreatedInteractionId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Direct WhatsApp & Email Push States
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [draftSubject, setDraftSubject] = useState("");
+  const [draftBody, setDraftBody] = useState("");
+  const [pushStatusMessage, setPushStatusMessage] = useState("");
+  const [pushErrorMessage, setPushErrorMessage] = useState("");
 
   // Note Modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -218,22 +227,45 @@ export default function LeadDetailPage() {
   }, [leadId]);
 
   // Generate AI Outreach Draft (GATE 1 Prep)
-  const handleOpenContactModal = async () => {
+  const handleOpenContactModal = async (channelOverride?: "WhatsApp" | "Email" | unknown) => {
+    const channel: "WhatsApp" | "Email" =
+      channelOverride === "WhatsApp" || channelOverride === "Email"
+        ? channelOverride
+        : contactChannel;
     setIsContactModalOpen(true);
     setDraftResult(null);
+    setDraftSubject("");
+    setDraftBody("");
+    setPushStatusMessage("");
+    setPushErrorMessage("");
     setDrafting(true);
+
+    const initialPhone =
+      data?.lead.phone ||
+      data?.lead.contacts?.[0]?.phone ||
+      data?.lead.contacts?.[0]?.whatsapp ||
+      "";
+    const initialEmail =
+      data?.lead.email ||
+      data?.lead.contacts?.[0]?.email ||
+      "";
+    setRecipientPhone(initialPhone);
+    setRecipientEmail(initialEmail);
+
     try {
       const res = await fetch("/api/ai/draft-message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           lead_id: leadId,
-          channel: contactChannel,
+          channel: channel,
         }),
       });
       if (res.ok) {
         const json = await res.json();
         setDraftResult(json.draft);
+        setDraftSubject(json.draft?.subject || "");
+        setDraftBody(json.draft?.body || "");
         setCreatedInteractionId(json.interaction_id);
       }
     } catch (err) {
@@ -243,6 +275,109 @@ export default function LeadDetailPage() {
     }
   };
 
+  const handleSwitchChannel = async (newChannel: "WhatsApp" | "Email") => {
+    if (newChannel === contactChannel && draftResult) return;
+    setContactChannel(newChannel);
+    setPushStatusMessage("");
+    setPushErrorMessage("");
+    setDrafting(true);
+    try {
+      const res = await fetch("/api/ai/draft-message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_id: leadId,
+          channel: newChannel,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setDraftResult(json.draft);
+        setDraftSubject(json.draft?.subject || "");
+        setDraftBody(json.draft?.body || "");
+        setCreatedInteractionId(json.interaction_id);
+      }
+    } catch (err) {
+      console.error("Draft regeneration failed", err);
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  const handlePushToWhatsApp = async () => {
+    setPushStatusMessage("");
+    setPushErrorMessage("");
+
+    const phoneTrimmed = recipientPhone.trim();
+    if (!phoneTrimmed) {
+      setPushErrorMessage("Please provide a valid WhatsApp phone number with country code above.");
+      return;
+    }
+
+    const cleanDigits = phoneTrimmed.replace(/[^0-9]/g, "");
+    if (cleanDigits.length < 7) {
+      setPushErrorMessage("Invalid phone number. Please include your country code (e.g. +971 50 123 4567 or +92 318 427 4017).");
+      return;
+    }
+
+    if (!draftBody.trim()) {
+      setPushErrorMessage("Message body cannot be empty.");
+      return;
+    }
+
+    // Sync edited phone back to lead record if it was newly provided or changed
+    if (phoneTrimmed !== (data?.lead.phone || "")) {
+      try {
+        await fetch(`/api/leads/${leadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: phoneTrimmed }),
+        });
+      } catch (e) {
+        // non-blocking
+      }
+    }
+
+    const waUrl = `https://wa.me/${cleanDigits}?text=${encodeURIComponent(draftBody)}`;
+    window.open(waUrl, "_blank");
+
+    setPushStatusMessage("WhatsApp chat opened with your draft pre-filled! Review and update in WhatsApp, send it on your behalf, then click 'Mark as Sent' to unlock Gate 1.");
+  };
+
+  const handlePushToEmail = async () => {
+    setPushStatusMessage("");
+    setPushErrorMessage("");
+
+    const emailTrimmed = recipientEmail.trim();
+    if (!emailTrimmed) {
+      setPushErrorMessage("Please provide a recipient email address above.");
+      return;
+    }
+
+    if (!draftBody.trim()) {
+      setPushErrorMessage("Message body cannot be empty.");
+      return;
+    }
+
+    // Sync edited email back to lead record if changed
+    if (emailTrimmed !== (data?.lead.email || "")) {
+      try {
+        await fetch(`/api/leads/${leadId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailTrimmed }),
+        });
+      } catch (e) {
+        // non-blocking
+      }
+    }
+
+    const mailtoUrl = `mailto:${encodeURIComponent(emailTrimmed)}?subject=${encodeURIComponent(draftSubject)}&body=${encodeURIComponent(draftBody)}`;
+    window.open(mailtoUrl, "_blank");
+
+    setPushStatusMessage("Email client launched with draft pre-filled! Review and send in your email client, then click 'Mark as Sent' to unlock Gate 1.");
+  };
+
   // GATE 1: Manual Confirm Sent
   const handleConfirmSentGate1 = async () => {
     if (!createdInteractionId) return;
@@ -250,7 +385,10 @@ export default function LeadDetailPage() {
       const res = await fetch("/api/gates/gate1", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interaction_id: createdInteractionId }),
+        body: JSON.stringify({
+          interaction_id: createdInteractionId,
+          updated_content: draftBody,
+        }),
       });
       if (res.ok) {
         setIsContactModalOpen(false);
@@ -413,15 +551,31 @@ export default function LeadDetailPage() {
                 </div>
               )}
               {lead.phone && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-[var(--text-dim)]" />
-                  <span>{lead.phone}</span>
+                  <a
+                    href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-emerald-500 hover:underline flex items-center gap-1 transition-colors"
+                    title="Direct WhatsApp Chat"
+                  >
+                    <span>{lead.phone}</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-[var(--text-dim)]" />
+                  </a>
                 </div>
               )}
               {lead.email && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-[var(--text-dim)]" />
-                  <span>{lead.email}</span>
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="hover:text-[var(--accent)] hover:underline flex items-center gap-1 transition-colors"
+                    title="Send direct email"
+                  >
+                    <span>{lead.email}</span>
+                    <ExternalLink className="w-2.5 h-2.5 text-[var(--text-dim)]" />
+                  </a>
                 </div>
               )}
             </div>
@@ -430,7 +584,7 @@ export default function LeadDetailPage() {
           {/* Core Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={handleOpenContactModal}
+              onClick={() => handleOpenContactModal()}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -672,12 +826,12 @@ export default function LeadDetailPage() {
 
       {/* MODAL: Gate 1 Contact Outreach Drafter */}
       {isContactModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="w-full max-w-xl bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-xl bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4 my-8">
             <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
               <div className="flex items-center gap-2">
                 <GateBadge gateNumber={1} isUnlocked={false} label="HARD APPROVAL GATE 1" />
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">Outreach Message Review</h3>
+                <h3 className="text-sm font-bold text-[var(--text-primary)] font-heading">Outreach Message Review</h3>
               </div>
               <button
                 onClick={() => setIsContactModalOpen(false)}
@@ -687,37 +841,107 @@ export default function LeadDetailPage() {
               </button>
             </div>
 
-            <div className="text-xs text-[var(--text-muted)]">
+            <div className="text-xs text-[var(--text-muted)] leading-relaxed">
               <p>
                 <strong>Rule:</strong> AI drafts the text, but will <strong>NEVER</strong> send it automatically.
-                Copy the text below, send it via your WhatsApp or Email client, and then click <strong>&quot;Mark as Sent&quot;</strong> to clear Gate 1.
+                Click <strong>Push to WhatsApp</strong> or <strong>Email</strong> to open as an unsent draft in your client, review or update the text, send it on your own behalf, and then click <strong>&quot;Mark as Sent&quot;</strong> to clear Gate 1.
               </p>
             </div>
 
             {/* Channel Selector */}
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-[var(--text-muted)]">Channel:</span>
-              <button
-                onClick={() => setContactChannel("WhatsApp")}
-                className={`px-3 py-1 rounded-lg border transition-colors ${
-                  contactChannel === "WhatsApp"
-                    ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-border)] font-semibold"
-                    : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)]"
-                }`}
-              >
-                WhatsApp
-              </button>
-              <button
-                onClick={() => setContactChannel("Email")}
-                className={`px-3 py-1 rounded-lg border transition-colors ${
-                  contactChannel === "Email"
-                    ? "bg-[var(--info-soft)] text-[var(--info)] border-[var(--info-border)] font-semibold"
-                    : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)]"
-                }`}
-              >
-                Email
-              </button>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center gap-2.5">
+                <span className="text-[var(--text-muted)] font-medium">Channel:</span>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchChannel("WhatsApp")}
+                  className={`px-3 py-1 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                    contactChannel === "WhatsApp"
+                      ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-border)] font-semibold"
+                      : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSwitchChannel("Email")}
+                  className={`px-3 py-1 rounded-lg border transition-colors flex items-center gap-1.5 ${
+                    contactChannel === "Email"
+                      ? "bg-[var(--info-soft)] text-[var(--info)] border-[var(--info-border)] font-semibold"
+                      : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Email</span>
+                </button>
+              </div>
+
+              {draftResult && (
+                <button
+                  type="button"
+                  onClick={() => handleSwitchChannel(contactChannel)}
+                  disabled={drafting}
+                  className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 disabled:opacity-50"
+                  title="Regenerate draft with Gemini"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Regenerate</span>
+                </button>
+              )}
             </div>
+
+            {/* Recipient Input (Phone / Email) */}
+            <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1.5">
+              {contactChannel === "WhatsApp" ? (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Recipient WhatsApp / Phone Number:</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={recipientPhone}
+                    onChange={(e) => setRecipientPhone(e.target.value)}
+                    placeholder="e.g. +971 50 123 4567 or +92 318 427 4017"
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent)]"
+                  />
+                  <p className="text-[10px] text-[var(--text-dim)]">
+                    Must include country code. Clicking &quot;Push to WhatsApp&quot; opens your chat with this number and pre-loads your message draft.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Recipient Email Address:</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="e.g. contact@business.com"
+                    className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Status Banners */}
+            {pushStatusMessage && (
+              <div className="p-3 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] text-[var(--success)] text-xs flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="leading-snug">{pushStatusMessage}</span>
+              </div>
+            )}
+
+            {pushErrorMessage && (
+              <div className="p-3 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-[var(--danger)] text-xs flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="leading-snug">{pushErrorMessage}</span>
+              </div>
+            )}
 
             {/* Draft Area */}
             {drafting ? (
@@ -727,43 +951,88 @@ export default function LeadDetailPage() {
               </div>
             ) : draftResult ? (
               <div className="space-y-3">
-                {draftResult.subject && (
-                  <div className="text-xs text-[var(--text-secondary)] font-medium">
-                    <span className="text-[var(--text-dim)]">Subject: </span>
-                    {draftResult.subject}
+                {contactChannel === "Email" && (
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-[var(--text-muted)]">Subject Line:</label>
+                    <input
+                      type="text"
+                      value={draftSubject}
+                      onChange={(e) => setDraftSubject(e.target.value)}
+                      placeholder="Email subject line..."
+                      className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] font-medium outline-none focus:border-[var(--accent)]"
+                    />
                   </div>
                 )}
-                <div className="p-3.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-primary)] whitespace-pre-wrap max-h-52 overflow-y-auto leading-relaxed">
-                  {draftResult.body}
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                    <span className="font-medium">Message Body (Editable Draft):</span>
+                    <span>{draftBody.length} characters</span>
+                  </div>
+                  <textarea
+                    rows={6}
+                    value={draftBody}
+                    onChange={(e) => setDraftBody(e.target.value)}
+                    placeholder="Outreach message body..."
+                    className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg p-3 text-xs text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed outline-none focus:border-[var(--accent)] resize-y font-sans"
+                  />
                 </div>
               </div>
             ) : null}
 
-            {/* Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-[var(--border)]">
+            {/* Actions Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-3 border-t border-[var(--border)]">
               <button
+                type="button"
                 onClick={() => {
-                  if (draftResult?.body) {
-                    navigator.clipboard.writeText(draftResult.body);
+                  if (draftBody) {
+                    navigator.clipboard.writeText(draftBody);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }
                 }}
-                disabled={!draftResult}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium disabled:opacity-50 transition-colors"
+                disabled={!draftBody}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] border border-[var(--border)] text-xs font-medium disabled:opacity-50 transition-colors"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-[var(--success)]" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copied ? "Copied to Clipboard!" : "Copy Text"}</span>
               </button>
 
-              <button
-                onClick={handleConfirmSentGate1}
-                disabled={!createdInteractionId}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow disabled:opacity-50 transition-colors"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Mark as Sent (Unlock Gate 1)</span>
-              </button>
+              <div className="flex items-center justify-end gap-2">
+                {contactChannel === "WhatsApp" ? (
+                  <button
+                    type="button"
+                    onClick={handlePushToWhatsApp}
+                    disabled={!draftBody || drafting}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold shadow transition-colors disabled:opacity-50"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Push to WhatsApp</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5 opacity-90" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePushToEmail}
+                    disabled={!draftBody || drafting}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition-colors disabled:opacity-50"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Open in Email Client</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5 opacity-90" />
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleConfirmSentGate1}
+                  disabled={!createdInteractionId}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow disabled:opacity-50 transition-colors"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Mark as Sent (Unlock Gate 1)</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

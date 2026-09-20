@@ -3,12 +3,12 @@ import { executeGate1ConfirmSent } from "@/lib/gates";
 
 export async function POST(req: NextRequest) {
   try {
-    const { interaction_id } = await req.json();
+    const { interaction_id, updated_content } = await req.json();
     if (!interaction_id) {
       return NextResponse.json({ error: "interaction_id is required" }, { status: 400 });
     }
 
-    const updated = await executeGate1ConfirmSent(interaction_id);
+    const updated = await executeGate1ConfirmSent(interaction_id, updated_content);
 
     return NextResponse.json({
       success: true,
