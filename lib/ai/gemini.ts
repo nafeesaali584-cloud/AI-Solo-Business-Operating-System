@@ -146,3 +146,79 @@ export async function generateCopilotWithSearch(
     sources: [],
   };
 }
+
+export interface GroundedSearchResult {
+  text: string;
+  isWebSearch: boolean;
+  sources: Array<{ title: string; url: string }>;
+  searchQueries: string[];
+}
+
+/**
+ * Execute a prompt with Google Search grounding tool and retrieve structured
+ * citations, search queries, and parsed content.
+ */
+export async function generateWithSearchGrounding(
+  prompt: string,
+  systemInstruction: string
+): Promise<GroundedSearchResult> {
+  const apiKey = getApiKey();
+  const modelsToTry = [PRIMARY_MODEL, ...FALLBACK_MODELS];
+
+  for (const m of modelsToTry) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            tools: [{ googleSearch: {} }],
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (data.candidates && data.candidates[0]) {
+        const candidate = data.candidates[0];
+        const text = candidate.content?.parts?.[0]?.text || "";
+
+        const sources: Array<{ title: string; url: string }> = [];
+        const chunks = candidate.groundingMetadata?.groundingChunks;
+        if (Array.isArray(chunks)) {
+          chunks.forEach((c: any) => {
+            if (c.web?.uri) {
+              sources.push({
+                title: c.web.title || new URL(c.web.uri).hostname,
+                url: c.web.uri,
+              });
+            }
+          });
+        }
+
+        const searchQueries: string[] = candidate.groundingMetadata?.webSearchQueries || [];
+        const hasWebGrounding = sources.length > 0 || searchQueries.length > 0;
+
+        return {
+          text,
+          isWebSearch: hasWebGrounding,
+          sources,
+          searchQueries,
+        };
+      }
+    } catch (err) {
+      // Fall through to next model
+    }
+  }
+
+  // Fallback to standard generation if search grounding fails
+  const text = await generateGeminiContent(prompt, systemInstruction);
+  return {
+    text,
+    isWebSearch: false,
+    sources: [],
+    searchQueries: [],
+  };
+}

@@ -11,6 +11,10 @@ export async function POST(req: NextRequest) {
     let niche_industry = null;
     let contact_name = null;
 
+    let primary_observation: string | null = null;
+    let primary_offer: string | null = null;
+    let competitor_pricing_context: string | null = null;
+
     if (lead_id) {
       const lead = await db.lead.findUnique({
         where: { id: lead_id },
@@ -21,6 +25,15 @@ export async function POST(req: NextRequest) {
         niche_industry = lead.niche_industry;
         if (lead.contacts && lead.contacts.length > 0) {
           contact_name = lead.contacts[0].name;
+        }
+        primary_observation = lead.primary_observation || null;
+        primary_offer = lead.primary_offer || null;
+
+        // If competitor pricing is stored on lead
+        if (Array.isArray(lead.competitor_pricing) && lead.competitor_pricing.length > 0) {
+          competitor_pricing_context = lead.competitor_pricing
+            .map((p: any) => `${p.competitor_name}: ${p.price_range}`)
+            .join("; ");
         }
       }
     } else if (client_id) {
@@ -41,6 +54,9 @@ export async function POST(req: NextRequest) {
       channel: channel || "WhatsApp",
       tone,
       custom_instruction,
+      primary_observation,
+      primary_offer,
+      competitor_pricing_context,
     });
 
     // We record the interaction with confirmed_sent = false (GATE 1)

@@ -29,6 +29,13 @@ import {
   Edit2,
   Trash2,
   ExternalLink,
+  Search,
+  TrendingUp,
+  Flame,
+  RefreshCw,
+  Target,
+  DollarSign,
+  Layers,
 } from "lucide-react";
 import { FactBadge } from "@/components/ui/FactBadge";
 import { GateBadge } from "@/components/ui/GateBadge";
@@ -51,6 +58,14 @@ interface LeadDetailData {
     ai_summary?: string | null;
     ai_opportunity?: string | null;
     ai_recommended_angle?: string | null;
+    research_data?: any | null;
+    competitor_pricing?: any | null;
+    qualification_tier?: "Hot" | "Warm" | "Cold" | string | null;
+    qualification_signals?: any | null;
+    primary_observation?: string | null;
+    primary_offer?: string | null;
+    follow_up_count?: number;
+    customer_behavior?: string | null;
     status: string;
     is_today_target: boolean;
     converted_client_id?: string | null;
@@ -112,6 +127,18 @@ export default function LeadDetailPage() {
   const [draftBody, setDraftBody] = useState("");
   const [pushStatusMessage, setPushStatusMessage] = useState("");
   const [pushErrorMessage, setPushErrorMessage] = useState("");
+
+  // Deep Research States
+  const [researching, setResearching] = useState(false);
+  const [researchNotice, setResearchNotice] = useState<string | null>(null);
+
+  // Four-Stage Follow-Up States
+  const [followUpBehavior, setFollowUpBehavior] = useState<
+    "no_reply_not_seen" | "seen_no_reply" | "replied_hesitant" | "final_follow_up" | "warm_interested"
+  >("no_reply_not_seen");
+  const [customHesitation, setCustomHesitation] = useState("");
+  const [generatingFollowUp, setGeneratingFollowUp] = useState(false);
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
 
   // Note Modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -225,6 +252,71 @@ export default function LeadDetailPage() {
   useEffect(() => {
     if (leadId) fetchLead();
   }, [leadId]);
+
+  // Trigger Deep Research (Uses 2-pass Google Search Grounding with database caching)
+  const handleTriggerDeepResearch = async (forceRefresh = false) => {
+    setResearching(true);
+    setResearchNotice(null);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/deep-research`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force_refresh: forceRefresh }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setResearchNotice(`⚠️ ${json.error || "Failed to execute Deep Research."}`);
+        return;
+      }
+      setResearchNotice(
+        json.cached
+          ? "Loaded existing grounded research from cache (0 new search queries used)."
+          : "Completed Deep Research & Competitor Pricing via Google Search Grounding!"
+      );
+      setTimeout(() => setResearchNotice(null), 5000);
+      await fetchLead();
+    } catch (err: any) {
+      setResearchNotice(`⚠️ ${err.message || "Network error while researching."}`);
+    } finally {
+      setResearching(false);
+    }
+  };
+
+  // Generate 4-Stage Behavior Follow-up (Loads into Gate 1 modal)
+  const handleGenerateBehaviorFollowUp = async (overrideBehavior?: any) => {
+    const activeBehavior = overrideBehavior || followUpBehavior;
+    setGeneratingFollowUp(true);
+    setFollowUpError(null);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/follow-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          behavior: activeBehavior,
+          channel: contactChannel,
+          custom_hesitation_notes: activeBehavior === "replied_hesitant" ? customHesitation : undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setFollowUpError(json.error || "Failed to generate follow-up draft.");
+        return;
+      }
+      const followUp = json.follow_up;
+      if (followUp?.draft) {
+        setDraftResult(followUp.draft);
+        setDraftSubject(followUp.draft.subject || "");
+        setDraftBody(followUp.draft.body || "");
+        setCreatedInteractionId(json.interaction_id);
+        setIsContactModalOpen(true);
+      }
+      await fetchLead();
+    } catch (err: any) {
+      setFollowUpError(err.message || "Failed to generate follow-up draft.");
+    } finally {
+      setGeneratingFollowUp(false);
+    }
+  };
 
   // Generate AI Outreach Draft (GATE 1 Prep)
   const handleOpenContactModal = async (channelOverride?: "WhatsApp" | "Email" | unknown) => {
@@ -484,7 +576,7 @@ export default function LeadDetailPage() {
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-2xl font-bold font-heading text-[var(--text-primary)]">{lead.business_name}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
                 {lead.status}
@@ -492,6 +584,27 @@ export default function LeadDetailPage() {
               {lead.is_today_target && (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
                   Target Today (1/3)
+                </span>
+              )}
+              {lead.qualification_tier && (
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold border flex items-center gap-1 ${
+                    lead.qualification_tier === "Hot"
+                      ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                      : lead.qualification_tier === "Warm"
+                      ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                      : "bg-slate-500/15 text-slate-400 border-slate-500/30"
+                  }`}
+                >
+                  {lead.qualification_tier === "Hot" && <Flame className="w-3 h-3 text-rose-400" />}
+                  {lead.qualification_tier === "Warm" && <TrendingUp className="w-3 h-3 text-amber-400" />}
+                  <span>{lead.qualification_tier} Tier</span>
+                </span>
+              )}
+              {lead.primary_offer && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] flex items-center gap-1">
+                  <Target className="w-3 h-3" />
+                  <span>Offer: {lead.primary_offer}</span>
                 </span>
               )}
             </div>
@@ -583,6 +696,39 @@ export default function LeadDetailPage() {
 
           {/* Core Action Buttons */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Deep Research Grounding Button */}
+            {lead.research_data ? (
+              <button
+                type="button"
+                onClick={() => handleTriggerDeepResearch(true)}
+                disabled={researching}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--accent)] text-xs font-semibold border border-[var(--accent-border)] transition-colors disabled:opacity-50"
+                title="Re-run Google Search Grounding to update fresh web data (billable query)"
+              >
+                {researching ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent)]" />
+                ) : (
+                  <RefreshCw className="w-3.5 h-3.5 text-[var(--accent)]" />
+                )}
+                <span>{researching ? "Researching..." : "Re-run Deep Research"}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleTriggerDeepResearch(false)}
+                disabled={researching}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-hover)] text-[var(--accent)] hover:text-white text-xs font-bold border border-[var(--accent-border)] shadow-sm transition-colors disabled:opacity-50"
+                title="Run multi-query search pass via Gemini Google Search Grounding"
+              >
+                {researching ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                <span>{researching ? "Researching Web..." : "Search this business online"}</span>
+              </button>
+            )}
+
             <button
               onClick={() => handleOpenContactModal()}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
@@ -626,6 +772,168 @@ export default function LeadDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Research Notice Banner */}
+      {researchNotice && (
+        <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--accent-border)] text-xs text-[var(--text-primary)] flex items-center justify-between gap-2 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-[var(--accent)] shrink-0" />
+            <span>{researchNotice}</span>
+          </div>
+          <button
+            onClick={() => setResearchNotice(null)}
+            className="text-[var(--text-dim)] hover:text-[var(--text-primary)] text-xs"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ─── DYNAMIC SINGLE-OFFER BANNER ─── */}
+      {lead.primary_offer && (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--accent-border)] p-5 space-y-3 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Target className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold font-heading text-[var(--text-primary)]">
+                  Dynamic Single-Offer Strategy
+                </h3>
+                <p className="text-[11px] text-[var(--text-dim)]">
+                  Strict Single-Offer Rule: Exactly 1 primary observation and 1 focused offer pitched.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--accent)] text-white shadow-sm">
+                Pitch: {lead.primary_offer}
+              </span>
+              {lead.qualification_tier && (
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
+                    lead.qualification_tier === "Hot"
+                      ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                      : lead.qualification_tier === "Warm"
+                      ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                      : "bg-slate-500/15 text-slate-400 border-slate-500/30"
+                  }`}
+                >
+                  {lead.qualification_tier} Tier
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs pt-1">
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                Primary Observation:
+              </span>
+              <p className="text-[var(--text-secondary)] leading-relaxed bg-[var(--surface-hover)] p-3 rounded-lg border border-[var(--border)]">
+                {lead.primary_observation || "Business analyzed for optimal service alignment."}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                Qualification Signals:
+              </span>
+              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] min-h-[58px] flex flex-wrap items-center gap-2">
+                {lead.qualification_signals && Object.keys(lead.qualification_signals).length > 0 ? (
+                  Object.entries(lead.qualification_signals).map(([key, val]) =>
+                    val ? (
+                      <span
+                        key={key}
+                        className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)] flex items-center gap-1"
+                      >
+                        <Check className="w-3 h-3 text-[var(--accent)]" />
+                        <span className="capitalize">{key.replace(/_/g, " ")}</span>
+                      </span>
+                    ) : null
+                  )
+                ) : (
+                  <span className="text-[11px] text-[var(--text-dim)]">No qualification signals recorded.</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── COMPETITOR PRICING SNAPSHOT (LIVE WEB DATA) ─── */}
+      {lead.competitor_pricing && (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold font-heading text-[var(--text-primary)]">
+                Competitor Pricing Snapshot
+              </h3>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Web Data
+              </span>
+            </div>
+            {lead.competitor_pricing.typical_price_range && (
+              <div className="text-xs text-[var(--text-muted)]">
+                Typical Range: <strong className="text-[var(--text-primary)]">{lead.competitor_pricing.typical_price_range}</strong>
+              </div>
+            )}
+          </div>
+
+          {lead.competitor_pricing.pricing_summary && (
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-[var(--surface-hover)] p-3 rounded-lg border border-[var(--border)]">
+              {lead.competitor_pricing.pricing_summary}
+            </p>
+          )}
+
+          {/* Competitor Table */}
+          {Array.isArray(lead.competitor_pricing.competitors) && lead.competitor_pricing.competitors.length > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] uppercase tracking-wider font-semibold text-[10px]">
+                  <tr>
+                    <th className="p-3">Competitor Business</th>
+                    <th className="p-3">Price Range / Typical Package</th>
+                    <th className="p-3 text-right">Live Source Link</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {lead.competitor_pricing.competitors.map((comp: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-[var(--surface-hover)] transition-colors">
+                      <td className="p-3 font-semibold text-[var(--text-primary)]">
+                        {comp.competitor_name || "Competitor"}
+                      </td>
+                      <td className="p-3 text-[var(--text-secondary)]">
+                        {comp.price_range || "Quote upon request"}
+                      </td>
+                      <td className="p-3 text-right">
+                        {comp.source_url ? (
+                          <a
+                            href={comp.source_url.startsWith("http") ? comp.source_url : `https://${comp.source_url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline text-[11px]"
+                          >
+                            <span>Visit Pricing Page</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        ) : (
+                          <span className="text-[var(--text-dim)] text-[11px]">Indexed via web</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-xs text-[var(--text-dim)] italic">No explicit competitor pricing rows detected.</p>
+          )}
+        </div>
+      )}
 
       {/* Grid: AI Business Snapshot + What to do next */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -728,6 +1036,164 @@ export default function LeadDetailPage() {
           <div className="pt-3 border-t border-[var(--border)] text-[11px] text-[var(--text-dim)]">
             Advisory layer only — you click the buttons to commit actions.
           </div>
+        </div>
+      </div>
+
+      {/* ─── FOUR-STAGE FOLLOW-UP ENGINE ─── */}
+      <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-[var(--accent)]" />
+              <h3 className="text-sm font-bold font-heading text-[var(--text-primary)]">
+                Behavior-Based Follow-Up Engine
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
+                Stage {lead.follow_up_count || 0} / 4
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)]">
+              Tailored outreach based on customer interaction behavior. Follows strict sales psychology principles with a 4-touchpoint cap.
+            </p>
+          </div>
+
+          {/* Warm Lead Fast-Path Trigger */}
+          <button
+            type="button"
+            onClick={() => handleGenerateBehaviorFollowUp("warm_interested")}
+            disabled={generatingFollowUp}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-colors shrink-0"
+            title="Lead replied with interest: Prompt immediately to book a call on WhatsApp"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Customer Interested? Book Call</span>
+          </button>
+        </div>
+
+        {followUpError && (
+          <div className="p-3 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)] flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{followUpError}</span>
+          </div>
+        )}
+
+        {/* Behavior Selector Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          {/* Behavior 1 */}
+          <button
+            type="button"
+            onClick={() => setFollowUpBehavior("no_reply_not_seen")}
+            className={`p-3 rounded-lg text-left border transition-all ${
+              followUpBehavior === "no_reply_not_seen"
+                ? "bg-[var(--accent-soft)] border-[var(--accent-border)] ring-1 ring-[var(--accent)]"
+                : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
+            }`}
+          >
+            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
+              Stage 1: Value-Add Nudge
+            </div>
+            <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              No reply &amp; haven&apos;t opened. Offers quick insight/audit with zero pressure.
+            </div>
+          </button>
+
+          {/* Behavior 2 */}
+          <button
+            type="button"
+            onClick={() => setFollowUpBehavior("seen_no_reply")}
+            className={`p-3 rounded-lg text-left border transition-all ${
+              followUpBehavior === "seen_no_reply"
+                ? "bg-[var(--accent-soft)] border-[var(--accent-border)] ring-1 ring-[var(--accent)]"
+                : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
+            }`}
+          >
+            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
+              Stage 2: Social Proof
+            </div>
+            <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              Opened/seen, but ghosted. Shares peer benchmark, competitor data, or case story.
+            </div>
+          </button>
+
+          {/* Behavior 3 */}
+          <button
+            type="button"
+            onClick={() => setFollowUpBehavior("replied_hesitant")}
+            className={`p-3 rounded-lg text-left border transition-all ${
+              followUpBehavior === "replied_hesitant"
+                ? "bg-[var(--accent-soft)] border-[var(--accent-border)] ring-1 ring-[var(--accent)]"
+                : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
+            }`}
+          >
+            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
+              Stage 3: Objection Handle
+            </div>
+            <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              Replied hesitant (&quot;busy&quot;, &quot;price&quot;). Validates &amp; lowers commitment.
+            </div>
+          </button>
+
+          {/* Behavior 4 */}
+          <button
+            type="button"
+            onClick={() => setFollowUpBehavior("final_follow_up")}
+            className={`p-3 rounded-lg text-left border transition-all ${
+              followUpBehavior === "final_follow_up"
+                ? "bg-[var(--accent-soft)] border-[var(--accent-border)] ring-1 ring-[var(--accent)]"
+                : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
+            }`}
+          >
+            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
+              Stage 4: Graceful Exit
+            </div>
+            <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+              Final touchpoint. Closes the loop cleanly, preserves brand equity, leaves door open.
+            </div>
+          </button>
+        </div>
+
+        {/* Custom Objection Input if Stage 3 */}
+        {followUpBehavior === "replied_hesitant" && (
+          <div className="space-y-1.5 pt-1">
+            <label className="text-xs font-semibold text-[var(--text-secondary)]">
+              Specific Customer Hesitation / Objection:
+            </label>
+            <input
+              type="text"
+              value={customHesitation}
+              onChange={(e) => setCustomHesitation(e.target.value)}
+              placeholder="e.g. 'We are swamped right now' or 'Sounds expensive' or 'Already have an agency'"
+              className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+            />
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          <div className="text-[11px] text-[var(--text-dim)]">
+            {(lead.follow_up_count || 0) >= 4 ? (
+              <span className="text-amber-400 font-medium">
+                ⚠️ Maximum 4 follow-ups reached for this lead. Respect client boundaries.
+              </span>
+            ) : (
+              <span>
+                Gate 1 applies: Generated draft opens in review modal before being sent.
+              </span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleGenerateBehaviorFollowUp()}
+            disabled={generatingFollowUp || (lead.follow_up_count || 0) >= 4}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
+          >
+            {generatingFollowUp ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            <span>Generate Stage Follow-up (Gate 1)</span>
+          </button>
         </div>
       </div>
 

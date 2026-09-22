@@ -24,6 +24,14 @@ model Lead {
   ai_summary            String?       // AI generated, tagged inference
   ai_opportunity        String?       // AI generated, tagged inference
   ai_recommended_angle  String?       // AI generated outreach angle
+  research_data         Json?         // Structured deep research findings, citations, and cached web data
+  competitor_pricing    Json?         // Competitor pricing snapshot: [{ competitor_name, price_range, source_url, notes }]
+  qualification_tier    String?       // Hot, Warm, Cold
+  qualification_signals Json?         // [{ type, signal, source, confidence }]
+  primary_observation   String?       // The single primary observation trigger
+  primary_offer         String?       // The single matching service offer
+  follow_up_count       Int           @default(0) // Number of follow-ups executed (max 4)
+  customer_behavior     String?       // no_reply_not_seen, seen_no_reply, replied_hesitant, final_follow_up, warm_interested
   status                String        @default("Imported") // Imported, Qualified, Target Today, Contacted, Replied, Booking, Proposal, Won, Lost
   is_today_target       Boolean       @default(false)
   converted_client_id   String?
@@ -168,6 +176,8 @@ model Invoice {
   amount                Decimal   @default(0)
   due_date              DateTime
   payment_instructions  String?
+  payment_method        String?   @default("sadapay") // sadapay, bank_transfer, payoneer
+  payment_method_note   String?
   notes                 String?
   status                String    @default("Draft") // Draft, Sent, Paid, Pending, Overdue
   sent_confirmed_at     DateTime? // GATE 4

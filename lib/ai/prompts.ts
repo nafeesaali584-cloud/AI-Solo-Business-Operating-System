@@ -72,33 +72,56 @@ export async function draftOutreachMessage(params: {
   channel: "WhatsApp" | "Email";
   tone?: string;
   custom_instruction?: string;
-}): Promise<{ subject: string; body: string }> {
+  primary_observation?: string | null;
+  primary_offer?: "Website Build" | "Website Redesign" | "SEO" | "WhatsApp Automation" | string | null;
+  competitor_pricing_context?: string | null;
+}): Promise<{ subject: string; body: string; primary_offer: string }> {
+  const offer = params.primary_offer || "Website Redesign";
+  const observation = params.primary_observation || "Modernizing your online customer conversion flow";
+
   const prompt = `
-Draft an outreach message for a solo service provider contacting this prospect.
-- Target Business: ${params.business_name}
-- Industry: ${params.niche_industry || "Not available"}
+Draft a high-converting initial outreach message for a solo service professional contacting this prospective business.
+
+TARGET CONTEXT:
+- Business Name: ${params.business_name}
+- Industry: ${params.niche_industry || "Service Business"}
 - Contact Person: ${params.contact_name || "Business Owner"}
-- Channel: ${params.channel} (If WhatsApp: concise, conversational, no subject line needed. If Email: clear, compelling subject line and crisp body)
+- Channel: ${params.channel}
 - Tone: ${params.tone || "Professional, concise, and value-oriented"}
-- Custom Guidance: ${params.custom_instruction || "Focus on solving operational or growth challenges."}
+- Primary Observation Identified: "${observation}"
+- SINGLE ASSIGNED OFFER: "${offer}"
+${params.competitor_pricing_context ? `- Regional Competitor Pricing Benchmark: ${params.competitor_pricing_context}` : ""}
+${params.custom_instruction ? `- Additional Guidance: ${params.custom_instruction}` : ""}
 
-Remember: Never invent fake prior relationships or fabricate client statistics. If something is unknown, keep it general to their stated domain.
+CRITICAL NON-NEGOTIABLE CONSTRAINTS:
+1. DYNAMIC SINGLE-OFFER RULE: You MUST focus 100% of this outreach on exactly ONE service offer: "${offer}". Do NOT mention, list, or cross-pitch any other services (e.g. do not bundle SEO or marketing if offering Website Redesign).
+2. HOMEPAGE CONCEPT HOOK: If the offer is "Website Build" or "Website Redesign", reference a simple homepage visual concept or layout mockup idea inline (e.g. "I put together a quick idea for what your homepage could look like — happy to show you").
+3. NO FABRICATIONS: Never invent prior relationships or make up fake client numbers.
+4. CHANNEL FORMAT:
+   - If WhatsApp: Conversational, personal, 3-5 sentences maximum. No email subject line. End with a low-friction question (e.g., "Would you be open to a quick 3-minute look?").
+   - If Email: Compelling, curiosity-inducing subject line (no spammy hype). Body with 2 short paragraphs max.
 
-Return ONLY a JSON object:
+Return ONLY a valid JSON object:
 {
   "subject": "Email subject or WhatsApp topic",
-  "body": "The drafted message content"
+  "body": "The exact drafted message text"
 }
 `;
 
   const raw = await generateGeminiContent(prompt, CORE_SYSTEM_INSTRUCTION);
   try {
     const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    return {
+      subject: parsed.subject || `Quick question regarding ${params.business_name}`,
+      body: parsed.body || raw.trim(),
+      primary_offer: offer,
+    };
   } catch (err) {
     return {
       subject: `Collaboration inquiry for ${params.business_name}`,
       body: raw.trim(),
+      primary_offer: offer,
     };
   }
 }

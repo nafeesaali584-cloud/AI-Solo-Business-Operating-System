@@ -20,6 +20,9 @@ import {
   Trash2,
   AlertTriangle,
   X,
+  Sparkles,
+  Flame,
+  TrendingUp,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
@@ -38,6 +41,11 @@ interface LeadItem {
   source_csv_row?: any;
   status: string;
   is_today_target: boolean;
+  qualification_tier?: string | null;
+  primary_offer?: string | null;
+  primary_observation?: string | null;
+  research_data?: any | null;
+  competitor_pricing?: any | null;
   created_at: string;
   updated_at: string;
   interactions?: Array<{
@@ -67,6 +75,22 @@ export default function LeadListPage() {
   const [selectedLead, setSelectedLead] = useState<LeadItem | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // Multi-selection state
+  const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+
+  // Bulk Research Safeguard Modal State
+  const [isBulkResearchModalOpen, setIsBulkResearchModalOpen] = useState(false);
+  const [bulkEstimateLoading, setBulkEstimateLoading] = useState(false);
+  const [bulkEstimate, setBulkEstimate] = useState<{
+    total_leads: number;
+    cached_leads: number;
+    uncached_leads: number;
+    estimated_search_queries: number;
+    estimated_time_seconds: number;
+  } | null>(null);
+  const [bulkExecuting, setBulkExecuting] = useState(false);
+  const [bulkResultNotice, setBulkResultNotice] = useState<string | null>(null);
 
   // Form data for Add / Edit
   const [formData, setFormData] = useState({
@@ -263,6 +287,77 @@ export default function LeadListPage() {
     );
   });
 
+  const handleToggleSelectAll = () => {
+    if (selectedLeadIds.length === filteredLeads.length) {
+      setSelectedLeadIds([]);
+    } else {
+      setSelectedLeadIds(filteredLeads.map((l) => l.id));
+    }
+  };
+
+  const handleToggleSelectLead = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedLeadIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleOpenBulkResearchEstimate = async () => {
+    if (selectedLeadIds.length === 0) return;
+    setIsBulkResearchModalOpen(true);
+    setBulkEstimateLoading(true);
+    setBulkEstimate(null);
+    try {
+      const res = await fetch("/api/leads/bulk-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_ids: selectedLeadIds,
+          estimate_only: true,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setBulkEstimate(json);
+      }
+    } catch (err) {
+      console.error("Failed to load bulk research estimate", err);
+    } finally {
+      setBulkEstimateLoading(false);
+    }
+  };
+
+  const handleExecuteBulkResearch = async (forceRefresh = false) => {
+    setBulkExecuting(true);
+    try {
+      const res = await fetch("/api/leads/bulk-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lead_ids: selectedLeadIds,
+          force_refresh: forceRefresh,
+          estimate_only: false,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setBulkResultNotice(
+          `✅ Researched ${json.processed} leads (${json.fresh_researched} fresh grounded searches, ${json.cached_skipped} cached).`
+        );
+        setTimeout(() => setBulkResultNotice(null), 6000);
+        setIsBulkResearchModalOpen(false);
+        setSelectedLeadIds([]);
+        fetchLeads();
+      } else {
+        alert(json.error || "Bulk research failed");
+      }
+    } catch (err: any) {
+      alert(err.message || "Bulk research error");
+    } finally {
+      setBulkExecuting(false);
+    }
+  };
+
   const statuses = [
     "ALL",
     "Imported",
@@ -380,6 +475,52 @@ export default function LeadListPage() {
         </div>
       </div>
 
+      {/* Bulk Result Notice */}
+      {bulkResultNotice && (
+        <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--accent-border)] text-xs text-[var(--text-primary)] flex items-center justify-between gap-2 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[var(--accent)] shrink-0" />
+            <span>{bulkResultNotice}</span>
+          </div>
+          <button
+            onClick={() => setBulkResultNotice(null)}
+            className="text-[var(--text-dim)] hover:text-[var(--text-primary)] text-xs"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Bulk Action Bar */}
+      {selectedLeadIds.length > 0 && (
+        <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--accent-border)] flex flex-wrap items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2.5 text-xs">
+            <span className="px-2.5 py-1 rounded-full font-bold bg-[var(--accent)] text-white shadow-sm">
+              {selectedLeadIds.length} Selected
+            </span>
+            <span className="text-[var(--text-secondary)]">
+              of {filteredLeads.length} leads in current view
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedLeadIds([])}
+              className="px-3 py-1.5 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
+            >
+              Clear Selection
+            </button>
+            <button
+              onClick={handleOpenBulkResearchEstimate}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Deep Research ({selectedLeadIds.length} Selected)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Leads Table Card */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
         {loading ? (
@@ -400,6 +541,18 @@ export default function LeadListPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] border-b border-[var(--border)] uppercase tracking-wider font-semibold text-[10px]">
                 <tr>
+                  <th className="p-3.5 w-10 text-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        filteredLeads.length > 0 &&
+                        selectedLeadIds.length === filteredLeads.length
+                      }
+                      onChange={handleToggleSelectAll}
+                      className="rounded accent-[var(--accent)] cursor-pointer w-3.5 h-3.5"
+                      title="Select all filtered leads"
+                    />
+                  </th>
                   <th className="p-3.5">Business Name</th>
                   <th className="p-3.5">Niche / Industry</th>
                   <th className="p-3.5">City / Location</th>
@@ -412,15 +565,46 @@ export default function LeadListPage() {
               <tbody className="divide-y divide-[var(--border)]">
                 {filteredLeads.map((lead) => {
                   const lastInteraction = lead.interactions?.[0];
+                  const isSelected = selectedLeadIds.includes(lead.id);
                   return (
                     <tr
                       key={lead.id}
                       onClick={() => router.push(`/leads/${lead.id}`)}
-                      className="hover:bg-[var(--surface-hover)] cursor-pointer transition-colors group"
+                      className={`hover:bg-[var(--surface-hover)] cursor-pointer transition-colors group ${
+                        isSelected ? "bg-[var(--accent-soft)]/20" : ""
+                      }`}
                     >
+                      <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => handleToggleSelectLead(lead.id, e as any)}
+                          className="rounded accent-[var(--accent)] cursor-pointer w-3.5 h-3.5"
+                        />
+                      </td>
                       <td className="p-3.5 font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <span>{lead.business_name}</span>
+                          {lead.qualification_tier && (
+                            <span
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border ${
+                                lead.qualification_tier === "Hot"
+                                  ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                                  : lead.qualification_tier === "Warm"
+                                  ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                                  : "bg-slate-500/15 text-slate-400 border-slate-500/30"
+                              }`}
+                            >
+                              {lead.qualification_tier === "Hot" && <Flame className="w-2.5 h-2.5" />}
+                              {lead.qualification_tier === "Warm" && <TrendingUp className="w-2.5 h-2.5" />}
+                              <span>{lead.qualification_tier}</span>
+                            </span>
+                          )}
+                          {lead.primary_offer && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[10px] font-medium bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
+                              🎯 {lead.primary_offer}
+                            </span>
+                          )}
                           {lead.rating && (
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
                               ⭐ {lead.rating} {lead.review_count ? `(${lead.review_count})` : ""}
@@ -796,6 +980,85 @@ export default function LeadListPage() {
                 <span>Delete Lead</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── BULK RESEARCH SAFEGUARD CONFIRMATION MODAL ─── */}
+      {isBulkResearchModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--accent-border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[var(--accent)]" />
+                <h2 className="font-heading text-base font-bold text-[var(--text-primary)]">
+                  Confirm Bulk Deep Research
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsBulkResearchModalOpen(false)}
+                disabled={bulkExecuting}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {bulkEstimateLoading ? (
+              <div className="py-8 flex flex-col items-center justify-center gap-2 text-xs text-[var(--text-muted)]">
+                <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+                <span>Checking cached research records...</span>
+              </div>
+            ) : bulkEstimate ? (
+              <div className="space-y-4 text-xs">
+                <div className="p-3.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-muted)]">Total Leads Selected:</span>
+                    <strong className="text-[var(--text-primary)]">{bulkEstimate.total_leads}</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-muted)]">Already Cached (0 New Queries):</span>
+                    <span className="font-semibold text-emerald-400">{bulkEstimate.cached_leads} lead(s)</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[var(--text-muted)]">Uncached (Fresh Grounded Research):</span>
+                    <span className="font-semibold text-[var(--accent)]">{bulkEstimate.uncached_leads} lead(s)</span>
+                  </div>
+                  <div className="pt-2 border-t border-[var(--border)] flex items-center justify-between">
+                    <span className="font-semibold text-[var(--text-primary)]">Est. Google Search Queries:</span>
+                    <strong className="text-amber-400 font-mono text-sm">~{bulkEstimate.estimated_search_queries} queries</strong>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-dim)]">
+                    <span>Est. Processing Time:</span>
+                    <span>~{bulkEstimate.estimated_time_seconds} seconds</span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[11px] text-[var(--text-dim)] leading-relaxed">
+                  🛡️ <strong>Safeguard active:</strong> Google Search Grounding is billed per query executed. Leads that already have cached research data will NOT be re-searched, keeping your API quota protected.
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsBulkResearchModalOpen(false)}
+                    disabled={bulkExecuting}
+                    className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteBulkResearch(false)}
+                    disabled={bulkExecuting || bulkEstimate.total_leads === 0}
+                    className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {bulkExecuting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>{bulkExecuting ? "Executing Research..." : `Proceed (${bulkEstimate.uncached_leads} Fresh Searches)`}</span>
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

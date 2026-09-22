@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
       amount,
       due_date,
       payment_instructions,
+      payment_method,
+      payment_method_note,
       notes,
     } = body;
 
@@ -69,6 +71,8 @@ export async function POST(req: NextRequest) {
         payment_instructions:
           payment_instructions ||
           "Bank Transfer / Wire or Online Payment. Payment due within specified due date.",
+        payment_method: payment_method || "sadapay",
+        payment_method_note: payment_method_note || null,
         notes: notes || null,
         status: "Draft",
       },
@@ -88,7 +92,17 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, status, line_items, amount, due_date, payment_instructions, notes } = body;
+    const {
+      id,
+      status,
+      line_items,
+      amount,
+      due_date,
+      payment_instructions,
+      payment_method,
+      payment_method_note,
+      notes,
+    } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Invoice id is required" }, { status: 400 });
@@ -116,6 +130,8 @@ export async function PATCH(req: NextRequest) {
     if (amount !== undefined) updateData.amount = amount;
     if (due_date !== undefined) updateData.due_date = new Date(due_date);
     if (payment_instructions !== undefined) updateData.payment_instructions = payment_instructions;
+    if (payment_method !== undefined) updateData.payment_method = payment_method;
+    if (payment_method_note !== undefined) updateData.payment_method_note = payment_method_note;
     if (notes !== undefined) updateData.notes = notes;
 
     const updated = await db.invoice.update({

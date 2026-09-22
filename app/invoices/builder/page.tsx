@@ -15,6 +15,8 @@ import {
   Palette,
   ExternalLink,
   AlertCircle,
+  CreditCard,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
 import { GateBadge } from "@/components/ui/GateBadge";
@@ -34,6 +36,36 @@ interface LineItem {
   unit_price: number;
   total: number;
 }
+
+const PAYMENT_METHODS = [
+  {
+    id: "sadapay",
+    title: "SadaPay (SadaBiz) Payment Link",
+    badge: "Primary Recommended (0% Fee)",
+    isDefault: true,
+    note: "0% receiving fee, works well for international card payments from UAE/GCC clients.",
+    instructions:
+      "SadaPay (SadaBiz) International Card Link:\nPayment Link: https://sadabiz.me/pay/nafeesaali\nSupports international Visa/Mastercard from UAE, GCC, and worldwide with 0% extra receiving fee.",
+  },
+  {
+    id: "bank_transfer",
+    title: "Direct Bank Transfer (UBL / Meezan)",
+    badge: "Secondary Wire Option",
+    isDefault: false,
+    note: "Alternative for clients who prefer wire transfer, note it may involve additional bank forex margin/fees.",
+    instructions:
+      "Direct Bank Wire Transfer:\nBank: Meezan Bank / United Bank Limited (UBL)\nAccount Title: Nafeesa Ali\nIBAN: PK64MEZN0001020304050607\nNote: Bank wire transfers may incur standard intermediary routing and forex fees.",
+  },
+  {
+    id: "payoneer",
+    title: "Payoneer Direct Payment",
+    badge: "Marketplace Sourced Only",
+    isDefault: false,
+    note: "Higher fee structure for direct clients (recommended primarily for Upwork/Fiverr marketplace-sourced clients).",
+    instructions:
+      "Payoneer Billing Request:\nPayoneer Account Email: payments@nafeesaali.com\nPay via credit card or local bank receiving account.",
+  },
+];
 
 function InvoiceBuilderContent() {
   const router = useRouter();
@@ -60,8 +92,9 @@ function InvoiceBuilderContent() {
     new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "Direct Bank Wire / ACH Transfer:\nBank: Solopreneur Business Bank\nIBAN / Account: US89 3704 0044 0532 0130 00\nSWIFT: BIZUS33\nReference: Please include Invoice Number in transfer memo."
+    PAYMENT_METHODS[0].instructions
   );
+  const [paymentMethod, setPaymentMethod] = useState<string>("sadapay");
   const [notes, setNotes] = useState("Thank you for partnering with us. We look forward to executing this milestone.");
   const [status, setStatus] = useState<"Draft" | "Sent" | "Paid" | "Pending" | "Overdue">("Draft");
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
@@ -88,6 +121,7 @@ function InvoiceBuilderContent() {
             if (inv.line_items) setLineItems(inv.line_items);
             if (inv.due_date) setDueDate(new Date(inv.due_date).toISOString().split("T")[0]);
             setPaymentInstructions(inv.payment_instructions || "");
+            if (inv.payment_method) setPaymentMethod(inv.payment_method);
             setNotes(inv.notes || "");
             setStatus(inv.status);
             setSentConfirmedAt(inv.sent_confirmed_at);
@@ -163,6 +197,7 @@ function InvoiceBuilderContent() {
     setActionMessage(null);
     try {
       if (id) {
+        const selectedMethodConfig = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
         const res = await fetch("/api/invoices", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -172,6 +207,8 @@ function InvoiceBuilderContent() {
             amount: totalAmount,
             due_date: dueDate,
             payment_instructions: paymentInstructions,
+            payment_method: paymentMethod,
+            payment_method_note: selectedMethodConfig?.note || null,
             notes,
           }),
         });
@@ -179,6 +216,7 @@ function InvoiceBuilderContent() {
           setActionMessage({ text: "Invoice draft saved successfully.", type: "success" });
         }
       } else {
+        const selectedMethodConfig = PAYMENT_METHODS.find((m) => m.id === paymentMethod);
         const res = await fetch("/api/invoices", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,6 +227,8 @@ function InvoiceBuilderContent() {
             amount: totalAmount,
             due_date: dueDate,
             payment_instructions: paymentInstructions,
+            payment_method: paymentMethod,
+            payment_method_note: selectedMethodConfig?.note || null,
             notes,
           }),
         });
@@ -668,6 +708,60 @@ function InvoiceBuilderContent() {
         <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm font-semibold">
           <span className="text-[var(--text-muted)]">Total Amount Due:</span>
           <span className="text-xl text-[var(--accent)] font-bold">${totalAmount.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* Payment Method Module */}
+      <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="font-heading text-sm font-semibold text-[var(--text-primary)]">
+              Payment Method &amp; Settlement Route
+            </h2>
+          </div>
+          <span className="text-[11px] text-[var(--text-dim)]">
+            Smart defaults based on transaction fees &amp; geography
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {PAYMENT_METHODS.map((method) => {
+            const isSelected = paymentMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                type="button"
+                onClick={() => {
+                  setPaymentMethod(method.id);
+                  setPaymentInstructions(method.instructions);
+                }}
+                className={`p-3.5 rounded-lg border text-left transition-all relative ${
+                  isSelected
+                    ? "bg-[var(--surface-hover)] border-[var(--accent)] shadow-md shadow-[var(--accent)]/10"
+                    : "bg-[var(--surface)] border-[var(--border)] hover:border-[var(--border-hover)]"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-[var(--text-primary)] font-heading">
+                    {method.title}
+                  </span>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                      method.isDefault
+                        ? "bg-[var(--accent)] text-white"
+                        : "bg-[var(--surface-raised)] text-[var(--text-dim)] border border-[var(--border)]"
+                    }`}
+                  >
+                    {method.badge}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                  {method.note}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
