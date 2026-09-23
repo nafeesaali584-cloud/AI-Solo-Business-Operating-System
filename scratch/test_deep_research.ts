@@ -92,7 +92,7 @@ async function runTests() {
     current_follow_up_count: 0,
     primary_offer: "WhatsApp Automation",
   });
-  console.log("Stage 1 Output:", stage1.strategy_name);
+  console.log("Stage 1 Output:", stage1.tactic_name);
   console.log("Stage 1 Draft:", stage1.draft.body.slice(0, 110) + "...\n");
 
   // Stage 2: Social Proof
@@ -104,7 +104,7 @@ async function runTests() {
     current_follow_up_count: 1,
     primary_offer: "WhatsApp Automation",
   });
-  console.log("Stage 2 Output:", stage2.strategy_name);
+  console.log("Stage 2 Output:", stage2.tactic_name);
   console.log("Stage 2 Draft:", stage2.draft.body.slice(0, 110) + "...\n");
 
   // Stage 3: Objection Handle
@@ -117,7 +117,7 @@ async function runTests() {
     primary_offer: "WhatsApp Automation",
     custom_hesitation_notes: "We are swamped with patients right now",
   });
-  console.log("Stage 3 Output:", stage3.strategy_name);
+  console.log("Stage 3 Output:", stage3.tactic_name);
   console.log("Stage 3 Draft:", stage3.draft.body.slice(0, 110) + "...\n");
 
   // Stage 4: Graceful Exit
@@ -129,7 +129,7 @@ async function runTests() {
     current_follow_up_count: 3,
     primary_offer: "WhatsApp Automation",
   });
-  console.log("Stage 4 Output:", stage4.strategy_name);
+  console.log("Stage 4 Output:", stage4.tactic_name);
   console.log("Stage 4 Draft:", stage4.draft.body.slice(0, 110) + "...\n");
 
   // Warm Fast-Path: Call booking prompt
@@ -141,7 +141,7 @@ async function runTests() {
     current_follow_up_count: 2,
     primary_offer: "WhatsApp Automation",
   });
-  console.log("Warm Fast-Path Output:", warm.strategy_name);
+  console.log("Warm Fast-Path Output:", warm.tactic_name);
   console.log("Warm Draft:", warm.draft.body.slice(0, 110) + "...\n");
 
   console.log("=========================================");
