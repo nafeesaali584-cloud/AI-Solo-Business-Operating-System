@@ -18,6 +18,15 @@ const PROTECTED_PREFIXES = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. Canonical domain check: redirect www to apex domain directly (301)
+  const host = request.headers.get("host") || "";
+  if (host.startsWith("www.solodeskos.com")) {
+    const canonicalUrl = new URL(request.url);
+    canonicalUrl.host = "solodeskos.com";
+    canonicalUrl.protocol = "https:";
+    return NextResponse.redirect(canonicalUrl, 301);
+  }
+
   // 1. Allow public static assets and files
   if (
     pathname.startsWith("/_next") ||
@@ -50,7 +59,8 @@ export async function middleware(request: NextRequest) {
     if (session) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Seamless internal rewrite to /login: Returns HTTP 200 OK directly with ZERO redirect delay!
+    return NextResponse.rewrite(new URL("/login", request.url));
   }
 
   // 5. Protected API routes check

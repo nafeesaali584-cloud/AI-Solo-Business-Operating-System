@@ -16,15 +16,15 @@
   --surface-raised: #1e1e1e;
   --border: #2a2a2a;
   --border-hover: #3a3a3a;
-  --accent: #da4d01;
-  --accent-soft: rgba(218, 77, 1, 0.14);
-  --accent-border: rgba(218, 77, 1, 0.35);
-  --accent-hover: #e85a10;
+  --accent: #f97316;
+  --accent-soft: rgba(249, 115, 22, 0.14);
+  --accent-border: rgba(249, 115, 22, 0.35);
+  --accent-hover: #ea580c;
   --text-primary: #fafafa;
-  --text-secondary: #c9c9c9;
+  --text-secondary: #d4d4d4;
   --text-muted: #a3a3a3;
-  --text-dim: #909090;
-  --text-body: #c9c9c9;
+  --text-dim: #9ca3af;
+  --text-body: #d4d4d4;
 
   /* Semantic status colors */
   --success: #22c55e;
@@ -55,15 +55,15 @@
   --surface-raised: #e8e5d9;
   --border: #e3ded2;
   --border-hover: #d4cfc3;
-  --accent: #da4d01;
-  --accent-soft: rgba(218, 77, 1, 0.10);
-  --accent-border: rgba(218, 77, 1, 0.40);
-  --accent-hover: #c44400;
+  --accent: #c2410c;
+  --accent-soft: rgba(194, 65, 12, 0.10);
+  --accent-border: rgba(194, 65, 12, 0.35);
+  --accent-hover: #9a3412;
   --text-primary: #161513;
-  --text-secondary: #3a362f;
-  --text-muted: #575247;
-  --text-dim: #5c574c;
-  --text-body: #3a362f;
+  --text-secondary: #292524;
+  --text-muted: #44403c;
+  --text-dim: #57534e;
+  --text-body: #292524;
 
   /* Semantic status colors — light mode */
   --success: #16a34a;
