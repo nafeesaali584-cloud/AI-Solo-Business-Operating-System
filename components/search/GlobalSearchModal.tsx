@@ -97,6 +97,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
           {loading && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin mr-2" />}
           <button
             onClick={onClose}
+            aria-label="Close search modal"
             className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--surface-hover)] transition-colors"
           >
             <X className="w-5 h-5" />

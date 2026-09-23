@@ -154,6 +154,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {/* Global Search */}
           <button
             onClick={() => setIsSearchOpen(true)}
+            aria-label="Quick search (Ctrl+K)"
             className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <Search className="w-3.5 h-3.5" />
@@ -166,6 +167,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {/* Theme Toggle */}
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
             className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
           >
@@ -179,6 +181,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {/* AI Copilot Toggle */}
           <button
             onClick={toggleCopilot}
+            aria-label="Toggle AI Copilot drawer"
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors shadow-sm ${
               isCopilotOpen
                 ? "bg-[var(--accent)] text-white border-[var(--accent)]"

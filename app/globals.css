@@ -22,8 +22,8 @@
   --accent-hover: #e85a10;
   --text-primary: #fafafa;
   --text-secondary: #c9c9c9;
-  --text-muted: #9c9c9c;
-  --text-dim: #6e6e6e;
+  --text-muted: #a3a3a3;
+  --text-dim: #909090;
   --text-body: #c9c9c9;
 
   /* Semantic status colors */
@@ -61,8 +61,8 @@
   --accent-hover: #c44400;
   --text-primary: #161513;
   --text-secondary: #3a362f;
-  --text-muted: #6b665c;
-  --text-dim: #8c8779;
+  --text-muted: #575247;
+  --text-dim: #5c574c;
   --text-body: #3a362f;
 
   /* Semantic status colors — light mode */

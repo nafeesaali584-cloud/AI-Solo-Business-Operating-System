@@ -199,6 +199,7 @@ export const CopilotDrawer: React.FC = () => {
         </div>
         <button
           onClick={() => setIsCopilotOpen(false)}
+          aria-label="Close AI Copilot drawer"
           className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded hover:bg-[var(--surface-hover)] transition-colors"
         >
           <X className="w-5 h-5" />
@@ -362,6 +363,7 @@ export const CopilotDrawer: React.FC = () => {
         <button
           type="submit"
           disabled={loading || !input.trim()}
+          aria-label="Send prompt to Copilot"
           className="p-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />

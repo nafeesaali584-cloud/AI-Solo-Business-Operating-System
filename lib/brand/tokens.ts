@@ -1,4 +1,4 @@
-﻿/** Exact Color Tokens from user specification */
+/** Exact Color Tokens from user specification */
 export const COLOR_TOKENS = {
   dark: {
     bg: "#0a0a0a",
@@ -8,8 +8,8 @@ export const COLOR_TOKENS = {
     accentSoftBg: "rgba(218, 77, 1, 0.14)",
     accentBorder: "rgba(218, 77, 1, 0.35)",
     textPrimary: "#fafafa",
-    textMuted: "#9c9c9c",
-    textExtraMuted: "#6e6e6e",
+    textMuted: "#a3a3a3",
+    textExtraMuted: "#909090",
     textBody: "#c9c9c9",
     textSecondaryBody: "#d0d0d0",
   },
@@ -21,8 +21,8 @@ export const COLOR_TOKENS = {
     accentSoftBg: "rgba(218, 77, 1, 0.10)",
     accentBorder: "rgba(218, 77, 1, 0.40)",
     textPrimary: "#161513",
-    textMuted: "#6b665c",
-    textExtraMuted: "#8c8779",
+    textMuted: "#575247",
+    textExtraMuted: "#5c574c",
     textBody: "#3a362f",
     textSecondaryBody: "#433f37",
   },

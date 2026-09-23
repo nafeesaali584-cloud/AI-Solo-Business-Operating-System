@@ -71,7 +71,10 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col justify-between bg-[var(--bg)] text-[var(--text-primary)] px-4 py-8 relative transition-colors duration-200">
+    <main
+      role="main"
+      className="min-h-screen w-full flex flex-col justify-between bg-[var(--bg)] text-[var(--text-primary)] px-4 py-8 relative transition-colors duration-200"
+    >
       {/* Background ambient glow */}
       <div
         className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-[140px] opacity-25"
@@ -100,6 +103,7 @@ function LoginForm() {
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+          aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
         >
           {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
@@ -173,6 +177,7 @@ function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -225,7 +230,7 @@ function LoginForm() {
       <div className="w-full max-w-5xl mx-auto text-center z-10 text-[11px] text-[var(--text-dim)]">
         SoloDeskOS — AI Solo-Business Operating System • Protected Solo-Admin Portal
       </div>
-    </div>
+    </main>
   );
 }
 

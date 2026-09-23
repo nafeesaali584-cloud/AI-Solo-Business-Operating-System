@@ -269,6 +269,7 @@ export default function DashboardPage() {
           <button
             onClick={fetchDashboard}
             title="Refresh dashboard data"
+            aria-label="Refresh dashboard data"
             className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <RefreshCw className="w-4 h-4" />

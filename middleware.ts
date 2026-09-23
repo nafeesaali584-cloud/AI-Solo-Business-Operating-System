@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "./lib/auth";
 
+// Known protected application route prefixes
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/leads",
+  "/clients",
+  "/import",
+  "/proposals",
+  "/invoices",
+  "/settings",
+  "/onboarding",
+  "/documents",
+];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -11,7 +24,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/brand") ||
     pathname === "/favicon.ico" ||
     pathname === "/icon.svg" ||
-    pathname.startsWith("/api/auth") // Allow auth endpoints (login, logout, session check)
+    pathname === "/favicon.jpg" ||
+    pathname.startsWith("/api/auth") || // Auth endpoints (login, logout, session check)
+    pathname === "/api/health"          // Uptime monitoring health check
   ) {
     return NextResponse.next();
   }
@@ -30,25 +45,41 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 4. If unauthenticated user tries to access protected resources:
-  if (!session) {
-    // For protected API endpoints, return 401 JSON
-    if (pathname.startsWith("/api/")) {
+  // 4. Handle root path "/"
+  if (pathname === "/") {
+    if (session) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  // 5. Protected API routes check
+  if (pathname.startsWith("/api/")) {
+    if (!session) {
       return NextResponse.json(
-        { error: "Unauthorized. Please log in to ClientPulse." },
+        { error: "Unauthorized. Please log in to SoloDeskOS." },
         { status: 401 }
       );
     }
-
-    // For protected web pages, redirect to /login
-    const loginUrl = new URL("/login", request.url);
-    if (pathname !== "/" && pathname !== "/dashboard") {
-      loginUrl.searchParams.set("next", pathname);
-    }
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.next();
   }
 
-  // 5. User is authenticated, allow request to proceed
+  // 6. Protected app page routes check
+  const isProtectedRoute = PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+
+  if (isProtectedRoute) {
+    if (!session) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
+  }
+
+  // 7. All other routes (e.g. /cart, /admin, /blog, /contact, /order, /pricing):
+  // Let Next.js handle them to return a genuine HTTP 404 status code via app/not-found.tsx
   return NextResponse.next();
 }
 
