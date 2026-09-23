@@ -21,10 +21,8 @@ export async function middleware(request: NextRequest) {
   // 0. Canonical domain check: redirect www to apex domain directly (301)
   const host = request.headers.get("host") || "";
   if (host.startsWith("www.solodeskos.com")) {
-    const canonicalUrl = new URL(request.url);
-    canonicalUrl.host = "solodeskos.com";
-    canonicalUrl.protocol = "https:";
-    return NextResponse.redirect(canonicalUrl, 301);
+    const target = `https://solodeskos.com${pathname}${request.nextUrl.search}`;
+    return NextResponse.redirect(new URL(target), 301);
   }
 
   // 1. Allow public static assets and files
