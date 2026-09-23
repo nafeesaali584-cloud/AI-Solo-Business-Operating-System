@@ -20,9 +20,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ClientPulse — AI Solo-Business Operating System",
+  title: "SoloDeskOS — AI Solo-Business Operating System",
   description:
-    "An AI-assisted operating system for solo service businesses with strict approval gates, grounded data intelligence, and workflow-first execution.",
+    "SoloDeskOS is an AI-powered operating system for solo service businesses. Manage leads, clients, proposals, invoices and deep research intelligence — all in one place.",
 };
 
 export default function RootLayout({

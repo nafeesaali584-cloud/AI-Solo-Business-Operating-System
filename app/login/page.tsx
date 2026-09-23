@@ -84,7 +84,7 @@ function LoginForm() {
           <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--bg)] flex-shrink-0">
             <Image
               src="/brand/profile.jpg"
-              alt="ClientPulse"
+              alt="SoloDeskOS"
               width={32}
               height={32}
               className="w-full h-full object-cover"
@@ -92,7 +92,7 @@ function LoginForm() {
             />
           </div>
           <span className="font-heading text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-            ClientPulse
+            SoloDeskOS
           </span>
         </div>
 
@@ -223,7 +223,7 @@ function LoginForm() {
 
       {/* Bottom Footer */}
       <div className="w-full max-w-5xl mx-auto text-center z-10 text-[11px] text-[var(--text-dim)]">
-        ClientPulse AI Solo-Business Operating System • Protected Solo-Admin Portal
+        SoloDeskOS — AI Solo-Business Operating System • Protected Solo-Admin Portal
       </div>
     </div>
   );

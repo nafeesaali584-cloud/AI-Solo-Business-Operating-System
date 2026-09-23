@@ -123,7 +123,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             </div>
             <div>
               <span className="font-heading text-base tracking-tight text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                ClientPulse
+                SoloDeskOS
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] text-[var(--text-dim)] font-medium tracking-wide uppercase">
                 Solo-Business OS

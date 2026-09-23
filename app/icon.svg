@@ -1,4 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#da4d01"/>
-  <text x="16" y="22.5" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="20" fill="#fafafa">N</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Dark background with rounded corners -->
+  <rect width="512" height="512" rx="90" fill="#0F0F12"/>
+
+  <!-- Amber outer glow layer -->
+  <rect x="96" y="96" width="320" height="320" rx="64" fill="#B45309" opacity="0.35"/>
+
+  <!-- Amber middle layer -->
+  <rect x="108" y="108" width="296" height="296" rx="56" fill="#D97706" opacity="0.6"/>
+
+  <!-- Main amber square -->
+  <rect x="118" y="118" width="276" height="276" rx="48" fill="#F59E0B"/>
+
+  <!-- Bold "S" lettermark -->
+  <text
+    x="256"
+    y="322"
+    text-anchor="middle"
+    font-family="'DM Sans', 'Space Grotesk', 'Inter', sans-serif"
+    font-weight="800"
+    font-size="210"
+    letter-spacing="-8"
+    fill="#FFFBEB"
+  >S</text>
+
+  <!-- "OS" badge bottom-right -->
+  <text
+    x="422"
+    y="468"
+    text-anchor="middle"
+    font-family="'DM Sans', 'Space Grotesk', 'Inter', sans-serif"
+    font-weight="700"
+    font-size="58"
+    letter-spacing="2"
+    fill="#F59E0B"
+  >OS</text>
 </svg>
