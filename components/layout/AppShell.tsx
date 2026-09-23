@@ -17,6 +17,7 @@ import {
   Shield,
   Sun,
   Moon,
+  LogOut,
 } from "lucide-react";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { CopilotDrawer } from "@/components/copilot/CopilotDrawer";
@@ -81,6 +82,20 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { toggleCopilot, isCopilotOpen } = useBusinessBrain();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const isLoginPage = pathname === "/login";
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/login";
+    }
+  };
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   const isWorkspaceB =
     pathname.startsWith("/clients") ||
@@ -248,6 +263,15 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               label="Settings & Gates"
               active={pathname === "/settings"}
             />
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] transition-colors text-left"
+              title="Sign out of ClientPulse"
+            >
+              <LogOut className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--danger)]" />
+              <span>Sign Out</span>
+            </button>
 
             <div className="p-2.5 rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[11px] text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5 font-semibold text-[var(--text-secondary)] mb-0.5">
