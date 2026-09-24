@@ -1,0 +1,1012 @@
+[
+  {
+    "id": "TC001",
+    "title": "Mark an invoice as sent and confirm payment",
+    "description": "Verifies that a user can send an invoice, confirm payment, and unlock onboarding from the client workspace.",
+    "category": "Client Workspace and Document Flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the client directory"
+      },
+      {
+        "type": "action",
+        "description": "Mark the invoice as sent"
+      },
+      {
+        "type": "action",
+        "description": "Confirm payment received"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify onboarding is unlocked for the client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the onboarding workspace is accessible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Find and open a record from global search",
+    "description": "Verifies that a user can search across core records from the dashboard and open a matching result.",
+    "category": "Global Quick Search",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open the global search"
+      },
+      {
+        "type": "action",
+        "description": "Type a client name, proposal identifier, proposal title, or invoice number into the search field"
+      },
+      {
+        "type": "action",
+        "description": "Open a matching result"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the matching record page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Confirm invoice payment and open onboarding",
+    "description": "Verifies that a user can confirm payment on an invoice, see the paid status, and open the new onboarding record.",
+    "category": "Invoice Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /invoices/builder"
+      },
+      {
+        "type": "action",
+        "description": "Review the invoice details"
+      },
+      {
+        "type": "action",
+        "description": "Confirm payment received"
+      },
+      {
+        "type": "action",
+        "description": "Open the newly created onboarding record"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice status changes to paid"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the onboarding workspace is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Create a proposal from a client workspace",
+    "description": "Verifies that a user can create a proposal from a client workspace and continue into the proposal builder.",
+    "category": "Client Workspace and Document Flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the client directory"
+      },
+      {
+        "type": "action",
+        "description": "Create a proposal from the client workspace"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal builder is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal is associated with the selected client"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Create an invoice from a client workspace",
+    "description": "Verifies that a user can create an invoice from a client workspace and continue into the invoice builder.",
+    "category": "Client Workspace and Document Flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the client directory"
+      },
+      {
+        "type": "action",
+        "description": "Create an invoice from the client workspace"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice builder is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice is associated with the selected client"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Run deep research on a lead and review findings",
+    "description": "Verifies that a user can run deep research on a lead and see the resulting research findings.",
+    "category": "Lead Management and Deep Research",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Open a lead record from the lead engine"
+      },
+      {
+        "type": "action",
+        "description": "Run deep research on the lead"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify lead research findings are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify site health and competitor pricing findings are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Start from the dashboard and open a record from global search",
+    "description": "Verifies that a logged-in user can reach the dashboard, use global search, and open the correct record from categorized results.",
+    "category": "Dashboard Navigation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Use global search to look up a record"
+      },
+      {
+        "type": "action",
+        "description": "Open the matching record from the categorized results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the matching record page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Use keyboard navigation to open a search result",
+    "description": "Verifies that a user can move through global search results with the keyboard and open the intended record.",
+    "category": "Global Quick Search",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open the global search"
+      },
+      {
+        "type": "action",
+        "description": "Type a query into the search field"
+      },
+      {
+        "type": "action",
+        "description": "Press Arrow Down"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected matching record page is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Mark an invoice as sent",
+    "description": "Verifies that a user can mark an invoice as sent and see the invoice status change accordingly.",
+    "category": "Invoice Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /invoices/builder"
+      },
+      {
+        "type": "action",
+        "description": "Customize the invoice details"
+      },
+      {
+        "type": "action",
+        "description": "Mark the invoice as sent"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice status changes to sent"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Open onboarding from a paid client workspace",
+    "description": "Verifies that a user can open the onboarding record after payment has been confirmed.",
+    "category": "Client Workspace and Document Flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the client directory"
+      },
+      {
+        "type": "action",
+        "description": "Confirm payment received"
+      },
+      {
+        "type": "action",
+        "description": "Open the onboarding workspace for the client"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the onboarding record is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the onboarding checklist is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Open a lead from the lead engine and review its details",
+    "description": "Verifies that a user can open a lead from the lead table and view the lead detail workspace.",
+    "category": "Lead Management and Deep Research",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Open a lead record from the lead engine"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead detail page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead information and qualification tier are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Open a client workspace from the client directory",
+    "description": "Verifies that a user can open a client record from the client directory and reach the client workspace.",
+    "category": "Client Workspace and Document Flow",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the client directory"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client workspace is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify client relationship details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Load the sample CSV and import leads",
+    "description": "Verifies that a user can load the sample CSV, confirm the mapped fields, and import leads into the lead engine.",
+    "category": "CSV Lead Import",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /import"
+      },
+      {
+        "type": "action",
+        "description": "Load the sample leads CSV"
+      },
+      {
+        "type": "action",
+        "description": "Review the mapped fields"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads are available in the lead engine"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful import confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Advance a lead through its stage flow",
+    "description": "Verifies that a user can move a lead forward through qualification stages and see the updated stage.",
+    "category": "Lead Management and Deep Research",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Open a lead record from the lead engine"
+      },
+      {
+        "type": "action",
+        "description": "Advance the lead stage"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead stage is updated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the next qualification stage is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Customize an invoice and export it",
+    "description": "Verifies that a user can update invoice details and export the invoice as a PDF.",
+    "category": "Invoice Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /invoices/builder"
+      },
+      {
+        "type": "action",
+        "description": "Customize the invoice line items, payment method, and notes"
+      },
+      {
+        "type": "action",
+        "description": "Export the invoice as a PDF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customized invoice details are available"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a PDF export confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Import leads from CSV and confirm the mapped columns",
+    "description": "Verifies that a user can load sample lead data, review auto-mapped columns, and confirm the import.",
+    "category": "CSV Lead Import",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /import"
+      },
+      {
+        "type": "action",
+        "description": "Load the sample CSV fixture"
+      },
+      {
+        "type": "action",
+        "description": "Review the auto-mapped columns"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the import completion summary is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads are reflected in the system"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Edit and export a proposal",
+    "description": "Verifies that a user can update proposal content and export the finished proposal as a PDF.",
+    "category": "Proposal Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /proposals/builder"
+      },
+      {
+        "type": "action",
+        "description": "Edit the proposal scope"
+      },
+      {
+        "type": "action",
+        "description": "Review the proposal content"
+      },
+      {
+        "type": "action",
+        "description": "Export the proposal as a PDF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal content is available for export"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a PDF export confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "See categorized results for a search query",
+    "description": "Verifies that global search groups results by record type so the user can distinguish leads, clients, proposals, and invoices.",
+    "category": "Global Quick Search",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Open the global search"
+      },
+      {
+        "type": "action",
+        "description": "Type a query that matches multiple record types into the search field"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify categorized search results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify multiple record types are shown in the results"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Approve a proposal and export it",
+    "description": "Verifies that a user can approve a proposal, see the status update, and export the approved proposal as a PDF.",
+    "category": "Proposal Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /proposals/builder"
+      },
+      {
+        "type": "action",
+        "description": "Edit the proposal scope"
+      },
+      {
+        "type": "action",
+        "description": "Approve the proposal through the approval gate"
+      },
+      {
+        "type": "action",
+        "description": "Export the proposal as a PDF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal status is updated to approved"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a PDF export confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "See imported leads in the lead engine for follow-up",
+    "description": "Verifies that leads imported from CSV appear in the lead engine and are available for follow-up work.",
+    "category": "CSV Lead Import",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /import"
+      },
+      {
+        "type": "action",
+        "description": "Load the sample CSV fixture"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads appear in the lead engine"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads are available for follow-up"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Upload a CSV and verify automatic column mapping",
+    "description": "Verifies that a user can upload a CSV file, see the detected mappings, and proceed to import leads.",
+    "category": "CSV Lead Import",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /import"
+      },
+      {
+        "type": "action",
+        "description": "Choose a CSV file to upload"
+      },
+      {
+        "type": "action",
+        "description": "Verify the detected column mappings"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads are available in the lead engine"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Use the quota-limited research fallback profile",
+    "description": "Verifies that when deep research is quota-limited, the lead still shows a usable pre-built research profile.",
+    "category": "Lead Management and Deep Research",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Open a lead record from the lead engine"
+      },
+      {
+        "type": "action",
+        "description": "Run deep research on the lead"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a pre-built research profile is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead remains usable for further work"
+      }
+    ],
+    "priority": "Low"
+  }
+]

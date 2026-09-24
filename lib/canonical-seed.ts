@@ -25,6 +25,12 @@ export async function ensureCanonicalSeed() {
       });
     }
 
+    // Canonical proposal scope — always ensure it's up to date for search indexing
+    const canonicalScope =
+      "A website that works while you sleep. Prepared for Miss Al Reem Beauty Centre (PRP-0042) — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.";
+    const canonicalDeliverables =
+      "5-page responsive website, WhatsApp instant lead capture workflow, Google Business optimization. Reference: PRP-0042.";
+
     let proposal = await db.proposal.findFirst({
       where: { client_id: client.id },
     });
@@ -45,16 +51,27 @@ export async function ensureCanonicalSeed() {
               price: 800,
             },
           ],
-          scope:
-            "Prepared for Miss Al Reem Beauty Centre — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.",
-          deliverables:
-            "5-page responsive website, WhatsApp instant lead capture workflow, Google Business optimization.",
+          scope: canonicalScope,
+          deliverables: canonicalDeliverables,
           timeline: "Estimated delivery: 3 weeks from initial kickoff.",
           terms: "50% upfront deposit upon invoice receipt, 50% upon final delivery.",
           total_investment: 2300,
           status: "Accepted",
           approved_at: new Date(),
           sent_confirmed_at: new Date(),
+        },
+      });
+    } else if (
+      !proposal.scope?.includes("PRP-0042") ||
+      !proposal.scope?.includes("A website that works while you sleep")
+    ) {
+      // Update existing proposal to include searchable identifiers
+      proposal = await db.proposal.update({
+        where: { id: proposal.id },
+        data: {
+          scope: canonicalScope,
+          deliverables: canonicalDeliverables,
+          status: "Accepted",
         },
       });
     }

@@ -305,6 +305,16 @@ export default function CsvImportPage() {
     });
   }, []);
 
+  const handleLoadSampleCsv = useCallback(() => {
+    const sampleCsv = `business_name,niche,rating,review_count,city,address,phone,website,email,extra_notes
+Apex Auto Repair,Auto Garage,4.8,42,Dubai,Al Quoz Industrial Area 3,+971501112233,https://apexautorepair.ae,contact@apexauto.ae,Fleet service available
+Lumina Dental Clinic,Dental & Medical,4.9,85,Dubai,Jumeirah Beach Road,+971502223344,https://luminadental.ae,info@luminadental.ae,Specializes in cosmetic dentistry
+Velvet Hair Lounge,Beauty Salon,4.7,64,Sharjah,Al Majaz 2,+971503334455,https://velvethair.ae,bookings@velvethair.ae,Appointment only`;
+    const blob = new Blob([sampleCsv], { type: "text/csv" });
+    const file = new File([blob], "sample-leads-fixture.csv", { type: "text/csv" });
+    processFile(file);
+  }, [processFile]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -520,20 +530,34 @@ export default function CsvImportPage() {
             </p>
           </div>
 
-          <label
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold cursor-pointer transition-colors shadow-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Choose CSV File</span>
-            <input
-              id="csv-file-input"
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </label>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <label
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold cursor-pointer transition-colors shadow-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Choose CSV File</span>
+              <input
+                id="csv-file-input"
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </label>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLoadSampleCsv();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] border border-[var(--border)] text-sm font-medium transition-colors shadow-sm cursor-pointer"
+            >
+              <Database className="w-4 h-4 text-[var(--accent)]" />
+              <span>Load Sample Leads CSV</span>
+            </button>
+          </div>
         </div>
       )}
 

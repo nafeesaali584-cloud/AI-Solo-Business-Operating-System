@@ -892,7 +892,7 @@ function InvoiceBuilderContent() {
           {/* Gate 4: Mark Invoice as Sent */}
           <button
             onClick={handleMarkSentGate4}
-            disabled={status === "Sent" || status === "Paid"}
+            disabled={status === "Paid"}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />

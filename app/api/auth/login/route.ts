@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const durationSeconds = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
     const token = await createSessionToken(admin.email, durationSeconds);
 
-    const isProduction = process.env.NODE_ENV === "production";
+    const isSecure = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
 
     const response = NextResponse.json({
       success: true,
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       name: SESSION_COOKIE_NAME,
       value: token,
       httpOnly: true,
-      secure: isProduction,
+      secure: isSecure,
       sameSite: "lax",
       path: "/",
       maxAge: durationSeconds,

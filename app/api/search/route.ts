@@ -25,14 +25,20 @@ export async function GET(req: NextRequest) {
 
     const uuidQ = q.replace(/^(prop|prp|inv)[-_#]?/i, "").trim();
 
-    // 1. Leads
+    // 1. Leads — exclude converted leads (they surface as Clients instead)
     const leads = await db.lead.findMany({
       where: {
-        OR: [
-          { business_name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { niche_industry: { contains: q, mode: "insensitive" } },
-          { city_country: { contains: q, mode: "insensitive" } },
+        AND: [
+          {
+            OR: [
+              { business_name: { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+              { niche_industry: { contains: q, mode: "insensitive" } },
+              { city_country: { contains: q, mode: "insensitive" } },
+            ],
+          },
+          // Only show leads that haven't been converted to a client record
+          { converted_client_id: null },
         ],
       },
       take: 6,

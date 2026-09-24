@@ -188,7 +188,11 @@ export default function ClientDetailPage() {
 
   // Gate readiness checks for progressive buttons
   const latestProposal = client.proposals[0];
-  const isProposalAccepted = client.proposals.some((p) => p.status === "Accepted");
+  // Proposal accepted check: also consider stages that are only reachable post-acceptance
+  const advancedStages = ["Invoice", "Paid", "Onboarding", "Completed"];
+  const isProposalAccepted =
+    client.proposals.some((p) => p.status === "Accepted") ||
+    advancedStages.includes(client.stage);
   const isInvoicePaid = client.payment_status === "Paid" || client.invoices.some((i) => i.status === "Paid");
 
   return (

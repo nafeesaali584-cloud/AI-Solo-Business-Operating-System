@@ -38,3 +38,5 @@ Thumbs.db
 
 # Scratch and temporary scripts
 scratch/
+testsprite_tests/tmp/
+testsprite_tests/tmp/config.json
