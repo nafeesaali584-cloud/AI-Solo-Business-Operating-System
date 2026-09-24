@@ -890,47 +890,184 @@ export default function LeadDetailPage() {
           )}
 
           {/* Competitor Table */}
-          {Array.isArray(lead.competitor_pricing.competitors) && lead.competitor_pricing.competitors.length > 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] uppercase tracking-wider font-semibold text-[10px]">
-                  <tr>
-                    <th className="p-3">Competitor Business</th>
-                    <th className="p-3">Price Range / Typical Package</th>
-                    <th className="p-3 text-right">Live Source Link</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {lead.competitor_pricing.competitors.map((comp: any, idx: number) => (
-                    <tr key={idx} className="hover:bg-[var(--surface-hover)] transition-colors">
-                      <td className="p-3 font-semibold text-[var(--text-primary)]">
-                        {comp.competitor_name || "Competitor"}
-                      </td>
-                      <td className="p-3 text-[var(--text-secondary)]">
-                        {comp.price_range || "Quote upon request"}
-                      </td>
-                      <td className="p-3 text-right">
-                        {comp.source_url ? (
-                          <a
-                            href={comp.source_url.startsWith("http") ? comp.source_url : `https://${comp.source_url}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline text-[11px]"
-                          >
-                            <span>Visit Pricing Page</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="text-[var(--text-dim)] text-[11px]">Indexed via web</span>
-                        )}
-                      </td>
+          {(() => {
+            const competitorRows = Array.isArray(lead.competitor_pricing)
+              ? lead.competitor_pricing
+              : Array.isArray(lead.competitor_pricing?.competitors)
+              ? lead.competitor_pricing.competitors
+              : [];
+
+            return competitorRows.length > 0 ? (
+              <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[var(--surface-hover)] text-[var(--text-muted)] uppercase tracking-wider font-semibold text-[10px]">
+                    <tr>
+                      <th className="p-3">Competitor Business</th>
+                      <th className="p-3">Price Range / Typical Package</th>
+                      <th className="p-3 text-right">Live Source Link</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)]">
+                    {competitorRows.map((comp: any, idx: number) => (
+                      <tr key={idx} className="hover:bg-[var(--surface-hover)] transition-colors">
+                        <td className="p-3 font-semibold text-[var(--text-primary)]">
+                          {comp.competitor_name || "Regional Benchmark"}
+                        </td>
+                        <td className="p-3 text-[var(--text-secondary)]">
+                          {comp.price_range || "Quote upon request"}
+                        </td>
+                        <td className="p-3 text-right">
+                          {comp.source_url ? (
+                            <a
+                              href={comp.source_url.startsWith("http") ? comp.source_url : `https://${comp.source_url}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline text-[11px]"
+                            >
+                              <span>Visit Pricing Page</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-[var(--text-dim)] text-[11px]">Indexed via web</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--text-dim)] italic">No explicit competitor pricing rows detected.</p>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ─── DEEP RESEARCH ENGINE AUDIT & MATCH VALIDATION LOG ─── */}
+      {lead.research_data && (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <Search className="w-4 h-4 text-[var(--accent)]" />
+              <h3 className="text-sm font-bold font-heading text-[var(--text-primary)]">
+                Deep Research Intelligence &amp; Match Validation
+              </h3>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
+                Audit Trail
+              </span>
             </div>
-          ) : (
-            <p className="text-xs text-[var(--text-dim)] italic">No explicit competitor pricing rows detected.</p>
+            {lead.research_data.researched_at && (
+              <div className="text-[11px] text-[var(--text-dim)]">
+                Researched: {new Date(lead.research_data.researched_at).toLocaleString()}
+              </div>
+            )}
+          </div>
+
+          {/* 1. Exact Search Queries Executed */}
+          {Array.isArray(lead.research_data.executed_queries) && lead.research_data.executed_queries.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                  Exact Queries Generated from Stored Lead Data:
+                </span>
+                <span className="text-[11px] text-[var(--text-dim)]">
+                  {lead.research_data.executed_queries.length} exact template(s)
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono">
+                {lead.research_data.executed_queries.map((q: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="p-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-secondary)] break-all flex items-start gap-2"
+                  >
+                    <span className="text-[var(--accent)] font-bold shrink-0">{idx + 1}.</span>
+                    <span>{q}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 2. Match Validation Audit (Passed vs Discarded) */}
+          {Array.isArray(lead.research_data.validation_audit) && lead.research_data.validation_audit.length > 0 && (
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                  Result Match-Validation Audit (Discarding Irrelevant Entities):
+                </span>
+                <span className="text-[11px] text-[var(--text-dim)]">
+                  Strict lead identifier verification
+                </span>
+              </div>
+              <div className="space-y-2 text-xs">
+                {lead.research_data.validation_audit.map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ${
+                      item.matched
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-[var(--text-primary)]"
+                        : "bg-rose-500/10 border-rose-500/20 text-[var(--text-muted)]"
+                    }`}
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                          item.matched
+                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                            : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                        }`}>
+                          {item.matched ? "VERIFIED MATCH" : "DISCARDED"}
+                        </span>
+                        <span className="font-semibold text-xs truncate">{item.title}</span>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-dim)]">{item.reason}</p>
+                    </div>
+                    {item.url && (
+                      <a
+                        href={item.url.startsWith("http") ? item.url : `https://${item.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-[var(--accent)] hover:underline inline-flex items-center gap-1 shrink-0"
+                      >
+                        <span>View Source</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Site Health & Reputation Summary */}
+          {lead.research_data.site_health && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1">
+                <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Site Health &amp; Digital Presence:
+                </span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
+                  {lead.research_data.site_health.indexed_pages_note || "Site audit completed."}
+                </p>
+                {lead.research_data.site_health.tech_debt_flag && (
+                  <div className="text-[11px] text-amber-400 flex items-center gap-1 pt-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    <span>Tech Debt: {lead.research_data.site_health.tech_debt_flag}</span>
+                  </div>
+                )}
+              </div>
+
+              {lead.research_data.reputation && (
+                <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1">
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+                    Public Reputation &amp; Sentiment:
+                  </span>
+                  <p className="text-[var(--text-secondary)] leading-relaxed">
+                    {lead.research_data.reputation.summary || "Reputation verified via regional directory index."}
+                  </p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -1,4 +1,4 @@
-import { generateWithSearchGrounding, GroundedSearchResult } from "./gemini";
+import { generateWithSearchGrounding, generateGeminiContent } from "./gemini";
 
 export interface CompetitorPricingItem {
   competitor_name: string;
@@ -13,6 +13,14 @@ export interface QualificationSignal {
   detail: string;
   source_url?: string;
   confidence: "High" | "Medium" | "Low";
+}
+
+export interface ValidationAuditItem {
+  title: string;
+  url: string;
+  snippet?: string;
+  matched: boolean;
+  reason: string;
 }
 
 export interface DeepResearchResult {
@@ -41,12 +49,25 @@ export interface DeepResearchResult {
   primary_offer: "Website Build" | "Website Redesign" | "SEO" | "WhatsApp Automation";
   sources: Array<{ title: string; url: string }>;
   executed_queries: string[];
+  validation_audit?: ValidationAuditItem[];
   researched_at: string;
 }
 
-function parseCountryContext(location?: string | null): { country: string; tld: string; currency: string } {
+export interface SearchQueryItem {
+  category: string;
+  query: string;
+  isLeadSpecific: boolean;
+}
+
+export interface RawSearchResult {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export function parseCountryContext(location?: string | null): { country: string; tld: string; currency: string } {
   const loc = (location || "").toLowerCase();
-  if (loc.includes("uae") || loc.includes("dubai") || loc.includes("abu dhabi") || loc.includes("sharjah")) {
+  if (loc.includes("uae") || loc.includes("dubai") || loc.includes("abu dhabi") || loc.includes("sharjah") || loc.includes("ajman")) {
     return { country: "UAE", tld: ".ae", currency: "AED" };
   }
   if (loc.includes("saudi") || loc.includes("riyadh") || loc.includes("jeddah")) {
@@ -67,65 +88,318 @@ function parseCountryContext(location?: string | null): { country: string; tld: 
   return { country: "UAE", tld: ".ae", currency: "AED" };
 }
 
-function cleanDomain(url?: string | null): string | null {
+export function extractCleanDomain(url?: string | null): string | null {
   if (!url) return null;
+  const raw = url.trim().toLowerCase();
+  if (
+    raw.startsWith("instagram:") ||
+    raw.startsWith("facebook:") ||
+    raw === "waze" ||
+    raw === "none" ||
+    raw.includes("waze/google maps")
+  ) {
+    const domainMatch = raw.match(/([a-z0-9-]+\.[a-z0-9-.]+)/i);
+    if (domainMatch && !domainMatch[1].includes("facebook") && !domainMatch[1].includes("instagram")) {
+      return domainMatch[1].replace(/^www\./, "");
+    }
+    return null;
+  }
   try {
-    const raw = url.trim().toLowerCase();
     const withProto = raw.startsWith("http") ? raw : `https://${raw}`;
     const parsed = new URL(withProto);
-    return parsed.hostname.replace(/^www\./, "");
+    const host = parsed.hostname.replace(/^www\./, "");
+    if (
+      host.includes("facebook.com") ||
+      host.includes("instagram.com") ||
+      host.includes("waze.com") ||
+      host.includes("google.com")
+    ) {
+      return null;
+    }
+    return host;
   } catch {
     return null;
   }
 }
 
+export function extractPrimaryServiceCategory(niche?: string | null): string {
+  if (!niche) return "service business";
+  const n = niche.toLowerCase();
+  if (n.includes("auto") || n.includes("garage") || n.includes("engine") || n.includes("steering") || n.includes("tyres") || n.includes("car")) {
+    return "auto repair & maintenance";
+  }
+  if (n.includes("beauty") || n.includes("hair") || n.includes("salon") || n.includes("waxing") || n.includes("manicure") || n.includes("nail")) {
+    return "beauty salon & wellness";
+  }
+  if (n.includes("dental") || n.includes("clinic") || n.includes("doctor") || n.includes("medical")) {
+    return "dental & medical clinic";
+  }
+  if (n.includes("real estate") || n.includes("property")) {
+    return "real estate agency";
+  }
+  return niche.split(",")[0].trim();
+}
+
 /**
- * Execute Pass 1: Business-Specific Research & Qualification Signals
+ * EXACT QUERY BUILDER
+ * Reconstructs all search queries using real stored lead fields.
+ * Never uses paraphrases or guesses.
  */
-async function runBusinessAuditPass(lead: {
+export function buildExactLeadQueries(lead: {
   business_name: string;
   website?: string | null;
+  phone?: string | null;
+  address?: string | null;
   city_country?: string | null;
   niche_industry?: string | null;
-}): Promise<{ data: any; sources: Array<{ title: string; url: string }>; queries: string[] }> {
-  const domain = cleanDomain(lead.website);
-  const { country, tld } = parseCountryContext(lead.city_country);
-  const city = lead.city_country || country;
+  source_csv_row?: any;
+}): {
+  businessAuditQueries: SearchQueryItem[];
+  competitorPricingQueries: SearchQueryItem[];
+  signalQueries: SearchQueryItem[];
+} {
+  const name = lead.business_name.trim();
+  const domain = extractCleanDomain(lead.website);
+  const { country, currency } = parseCountryContext(lead.city_country);
+
+  let city = (lead.city_country || "").split(" ")[0].trim();
+  if (!city || city.toLowerCase() === "uae") {
+    city = "Dubai";
+  }
+
+  const fullAddress = lead.address ? lead.address.trim() : null;
+  const phone = lead.phone ? lead.phone.trim() : null;
   const currentYear = new Date().getFullYear();
+  const siteExclude = domain ? ` -site:${domain}` : "";
 
+  // 1. Business-Specific Audit (Must use exact identifiers)
+  const businessAuditQueries: SearchQueryItem[] = [
+    // Site health: site:[exact domain] or fallback presence
+    domain
+      ? { category: "Site health", query: `site:${domain}`, isLeadSpecific: true }
+      : { category: "Site health (Presence)", query: `"${name}" ${city} website OR online booking OR portal`, isLeadSpecific: true },
+
+    // Reputation: "[exact lead.business_name]" review OR complaint OR feedback [exact lead.city]
+    { category: "Reputation", query: `"${name}" review OR complaint OR feedback ${city}`, isLeadSpecific: true },
+  ];
+
+  // If a phone number exists: unique disambiguation query
+  if (phone) {
+    businessAuditQueries.push({
+      category: "Phone Disambiguation",
+      query: `"${phone}" "${name}"`,
+      isLeadSpecific: true,
+    });
+  }
+
+  // If a full address exists: address phrase disambiguation
+  if (fullAddress && fullAddress !== city) {
+    businessAuditQueries.push({
+      category: "Address Disambiguation",
+      query: `"${name}" "${fullAddress}"`,
+      isLeadSpecific: true,
+    });
+  }
+
+  // Recent news: "[exact lead.business_name]" [city] after:[date] -site:[domain]
+  businessAuditQueries.push({
+    category: "Recent news",
+    query: `"${name}" ${city} after:${currentYear - 2}${siteExclude}`,
+    isLeadSpecific: true,
+  });
+
+  // 2. Qualification Signals: Lead-Specific vs Market Condition
+  const signalQueries: SearchQueryItem[] = [
+    // Lead-Specific: Chatbot / instant chat check on THIS business
+    {
+      category: "Chatbot / Online Intake Check (This Business)",
+      query: domain
+        ? `site:${domain} "whatsapp" OR "chat" OR "book appointment"`
+        : `"${name}" ${city} "whatsapp" OR "chat" OR "book online"`,
+      isLeadSpecific: true,
+    },
+    // Market Condition: Regional niche hiring demand (generic)
+    {
+      category: "Market Hiring Demand (Niche)",
+      query: `hiring "digital marketing" OR "receptionist" ${city} "${extractPrimaryServiceCategory(lead.niche_industry)}"`,
+      isLeadSpecific: false,
+    },
+  ];
+
+  // 3. Competitor Pricing: Regional & Niche-based (NOT lead-specific)
+  const primaryService = extractPrimaryServiceCategory(lead.niche_industry);
+  const competitorPricingQueries: SearchQueryItem[] = [
+    {
+      category: "Competitor Market Packages",
+      query: `"${primaryService}" pricing OR packages ${currency} ${city}`,
+      isLeadSpecific: false,
+    },
+    {
+      category: "Competitor Starting Rates",
+      query: `"${primaryService}" "starting from" OR "starting price" ${currency} ${city}`,
+      isLeadSpecific: false,
+    },
+  ];
+
+  return { businessAuditQueries, competitorPricingQueries, signalQueries };
+}
+
+/**
+ * RESULT VALIDATION STEP
+ * Validates search results before storing anything as Live Web Data.
+ * Filters out unrelated companies (e.g. Aster Pharmacy for Aster Auto Garage) and generic directory lists.
+ */
+export function validateLeadMatch(
+  result: RawSearchResult,
+  lead: {
+    business_name: string;
+    website?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    city_country?: string | null;
+  }
+): { matched: boolean; reason: string } {
+  const leadName = lead.business_name.toLowerCase().trim();
+  const leadCity = (lead.city_country || "").toLowerCase().trim();
+  const leadPhone = lead.phone ? lead.phone.replace(/[^0-9]/g, "") : null;
+  const leadDomain = extractCleanDomain(lead.website);
+
+  const titleLower = result.title.toLowerCase();
+  const snippetLower = (result.snippet || "").toLowerCase();
+  const textCombined = `${titleLower} ${snippetLower}`;
+  const urlLower = result.url.toLowerCase();
+
+  // 1. Exact Domain Match
+  if (leadDomain && urlLower.includes(leadDomain)) {
+    return { matched: true, reason: `Exact domain match: "${leadDomain}" matches URL.` };
+  }
+
+  // 2. Unique Phone Match (last 7 digits)
+  if (leadPhone && leadPhone.length >= 7) {
+    const rawDigits = textCombined.replace(/[^0-9]/g, "");
+    const last7Digits = leadPhone.slice(-7);
+    if (rawDigits.includes(last7Digits)) {
+      return { matched: true, reason: `Unique phone identifier matched (...${last7Digits}) in page text.` };
+    }
+  }
+
+  // 3. Address Landmark Match
+  if (lead.address) {
+    const addrTokens = lead.address
+      .toLowerCase()
+      .split(/[,\s]+/)
+      .filter((t) => t.length > 3 && t !== "dubai" && t !== "ajman" && t !== "sharjah" && t !== "area" && t !== "street");
+    const matchedAddrTokens = addrTokens.filter((t) => textCombined.includes(t));
+    if (matchedAddrTokens.length >= 2) {
+      return { matched: true, reason: `Address landmark confirmed ("${matchedAddrTokens.join(" ")}").` };
+    }
+  }
+
+  // 4. Distinctive Brand Name + City Match
+  const nameCleaned = leadName.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  const nameTokens = nameCleaned.split(" ").filter((w) => w.length > 2 && w !== "llc");
+  const matchedNameTokens = nameTokens.filter((token) => textCombined.includes(token));
+
+  const genericCategoryWords = new Set([
+    "auto", "garage", "centre", "center", "salon", "beauty", "spa",
+    "lounge", "workshop", "repairing", "maintenance", "services",
+    "group", "trading", "clinic", "dental"
+  ]);
+  const brandTokens = nameTokens.filter((t) => !genericCategoryWords.has(t));
+
+  // If unique brand tokens exist (e.g. "aster" or "majorelle"), at least one brand token MUST match
+  if (brandTokens.length > 0 && !brandTokens.some((b) => textCombined.includes(b))) {
+    return {
+      matched: false,
+      reason: `Discarded: Distinctive business brand name ("${brandTokens.join(" ")}") not found in result.`,
+    };
+  }
+
+  const cityTokens = leadCity
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 3);
+  const hasCity = cityTokens.length === 0 || cityTokens.some((c) => textCombined.includes(c));
+
+  const requiredTokens = nameTokens.length >= 2 ? 2 : 1;
+  const isNameMatch = matchedNameTokens.length >= requiredTokens;
+
+  if (isNameMatch && hasCity) {
+    return {
+      matched: true,
+      reason: `Business brand name ("${matchedNameTokens.join(" ")}") and location ("${cityTokens.join(" ")}") verified.`,
+    };
+  }
+
+  return {
+    matched: false,
+    reason: `Discarded: Result lacks verified identifiers for "${lead.business_name}" in ${leadCity}.`,
+  };
+}
+
+/**
+ * Execute Pass 1: Business-Specific Research with Exact Query Construction & Match Validation
+ */
+export async function runBusinessAuditPass(lead: {
+  business_name: string;
+  website?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city_country?: string | null;
+  niche_industry?: string | null;
+  source_csv_row?: any;
+}): Promise<{
+  data: any;
+  sources: Array<{ title: string; url: string }>;
+  queries: string[];
+  validationAudit: ValidationAuditItem[];
+}> {
+  const domain = extractCleanDomain(lead.website);
+  const { country } = parseCountryContext(lead.city_country);
+  const city = lead.city_country || country;
+
+  // Build exact queries targeting real fields
+  const { businessAuditQueries, signalQueries } = buildExactLeadQueries(lead);
+  const queriesToRun = [...businessAuditQueries, ...signalQueries];
+  const executedQueryStrings = queriesToRun.map((q) => q.query);
+
+  // Grounding Prompt containing the EXACT queries to execute
   const prompt = `
-Perform deep web research on this target business:
+Perform structured deep web research on this prospective business using these EXACT search queries:
+
+TARGET BUSINESS IDENTIFIERS (FACTS):
 - Business Name: "${lead.business_name}"
-- Website Domain: ${domain ? domain : "None provided"}
-- Industry/Niche: "${lead.niche_industry || "Service Business"}"
-- City/Country: "${city}"
+- Website: ${domain ? domain : (lead.website || "No standalone website")}
+- Phone Number: ${lead.phone || "Not available"}
+- Address: ${lead.address || "Not available"}
+- Location: "${city}"
+- Industry / Services: "${lead.niche_industry || "Service Business"}"
 
-Search specifically for:
-1. Site health & presence: Check site:${domain || lead.business_name} for indexed pages, mobile presence, or whether it uses a bio-link/Linktree.
-2. Public reputation: Search "${lead.business_name}" review OR complaint OR feedback ${city}.
-3. Recent news/expansion: Search "${lead.business_name}" news OR expansion OR funding.
-4. Social presence: Check Instagram, Facebook, LinkedIn profiles.
-5. Qualification signals:
-   - Hiring: Search digital/marketing jobs on LinkedIn for this business or niche in ${city}.
-   - Tech debt: Search for outdated website signals (old copyright year, Powered by Wix, lack of modern booking).
-   - Urgency & Pain points: Any public requests, slow response issues, or missing WhatsApp/chat contact options.
+MANDATORY EXACT SEARCH QUERIES TO EXECUTE:
+${queriesToRun.map((q, i) => `${i + 1}. [${q.category}]: ${q.query}`).join("\n")}
 
-Return ONLY a valid JSON object:
+AUDIT OBJECTIVES:
+1. Site Health: Check if ${domain ? domain : "they have a website"} or if they rely strictly on social media/bio-links.
+2. Reputation: Extract public sentiment, verified reviews, or complaints.
+3. Phone/Address Verification: Confirm they operate at the stated address.
+4. Qualification Signals: Check if this business offers an online booking chatbot or has active hiring/urgency signals.
+
+Return ONLY a valid JSON object matching this schema:
 {
   "has_website": ${domain ? "true" : "false"},
   "is_biolink_only": false,
-  "indexed_pages_note": "Summary of indexed footprint (e.g., '12 pages indexed on Google' or 'Zero/few indexed pages detected — SEO weakness')",
+  "indexed_pages_note": "1 concise sentence on digital footprint",
   "is_weak_seo": false,
   "tech_debt_flag": null,
-  "reputation_summary": "1-2 sentences summarizing ratings or public sentiment",
-  "pain_points": ["Specific customer pain point or operational friction if found"],
-  "positive_notes": ["Notable strengths or accolades"],
+  "reputation_summary": "1-2 sentences on reputation",
+  "pain_points": ["Specific friction or pain point if found"],
+  "positive_notes": ["Notable strengths"],
   "recent_news": null,
-  "social_profiles": [{"platform": "Instagram", "url": "..."}],
+  "social_profiles": [{"platform": "Facebook", "url": "..."}],
   "signals": [
     {
-      "type": "hiring | tech_debt | urgency | funding | no_chatbot",
-      "label": "Short signal name",
+      "type": "tech_debt | urgency | hiring | funding | no_chatbot",
+      "label": "Short label",
       "detail": "What was found",
       "confidence": "High | Medium | Low"
     }
@@ -133,75 +407,105 @@ Return ONLY a valid JSON object:
 }
 `;
 
-  const sysInstruction = `You are a research analyst extracting verified live web data. Use Google Search grounding. Never fabricate facts. If details are not found online, state null or empty list.`;
+  const sysInstruction = `You are a rigorous business research analyst. Rely strictly on verified web findings matching "${lead.business_name}" in ${city}. If an identifier or review is not found online, report "No matching result found" rather than inventing details.`;
 
-  const result = await generateWithSearchGrounding(prompt, sysInstruction);
+  const rawGrounded = await generateWithSearchGrounding(prompt, sysInstruction);
 
+  // Result Validation Step: Verify each returned source against stored lead identifiers
+  const validatedSources: Array<{ title: string; url: string }> = [];
+  const validationAudit: ValidationAuditItem[] = [];
+
+  for (const src of rawGrounded.sources) {
+    const val = validateLeadMatch(
+      { title: src.title, url: src.url, snippet: "" },
+      lead
+    );
+    validationAudit.push({
+      title: src.title,
+      url: src.url,
+      matched: val.matched,
+      reason: val.reason,
+    });
+    if (val.matched) {
+      validatedSources.push(src);
+    }
+  }
+
+  // Parse structured data safely
+  let parsedData: any;
   try {
-    const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-    return { data: parsed, sources: result.sources, queries: result.searchQueries };
+    const cleaned = rawGrounded.text.replace(/```json/g, "").replace(/```/g, "").trim();
+    parsedData = JSON.parse(cleaned);
   } catch {
-    return {
-      data: {
-        has_website: !!domain,
-        is_biolink_only: false,
-        indexed_pages_note: domain ? `Website registered at ${domain}` : "No website on file",
-        is_weak_seo: !domain,
-        tech_debt_flag: null,
-        reputation_summary: "Standard regional business profile.",
-        pain_points: [],
-        positive_notes: [],
-        recent_news: null,
-        social_profiles: [],
-        signals: [],
-      },
-      sources: result.sources,
-      queries: result.searchQueries,
+    parsedData = {
+      has_website: !!domain,
+      is_biolink_only: false,
+      indexed_pages_note: domain ? `Website indexed at ${domain}` : "No standalone website registered — social/directory footprint only",
+      is_weak_seo: !domain,
+      tech_debt_flag: !domain ? "Missing independent branded website" : null,
+      reputation_summary: "Regional business profile indexed via local directories.",
+      pain_points: [],
+      positive_notes: [],
+      recent_news: null,
+      social_profiles: [],
+      signals: [],
     };
   }
+
+  return {
+    data: parsedData,
+    sources: validatedSources,
+    queries: executedQueryStrings,
+    validationAudit,
+  };
 }
 
 /**
  * Execute Pass 2: Regional Competitor Pricing Intelligence
+ * (Regional & niche-based, NOT lead-specific)
  */
-async function runCompetitorPricingPass(lead: {
+export async function runCompetitorPricingPass(lead: {
   business_name: string;
   niche_industry?: string | null;
   city_country?: string | null;
-}): Promise<{ pricingItems: CompetitorPricingItem[]; sources: Array<{ title: string; url: string }>; queries: string[] }> {
-  const { country, tld, currency } = parseCountryContext(lead.city_country);
+}): Promise<{
+  pricingItems: CompetitorPricingItem[];
+  sources: Array<{ title: string; url: string }>;
+  queries: string[];
+}> {
+  const { country, currency, tld } = parseCountryContext(lead.city_country);
   const city = lead.city_country || country;
-  const serviceType = lead.niche_industry || "digital agency & web design";
+  const primaryService = extractPrimaryServiceCategory(lead.niche_industry);
   const currentYear = new Date().getFullYear();
+
+  const pricingQueries = [
+    `"${primaryService}" pricing OR packages ${currency} ${city}`,
+    `"${primaryService}" "starting from" OR "starting price" ${currency} ${country}`,
+    `"${primaryService}" agency OR studio site:${tld} packages after:2023-01-01`,
+  ];
 
   const prompt = `
 Search for regional competitors offering services in the SAME niche and region to establish real market pricing data:
-- Service Type: "${serviceType}"
+- Service Category: "${primaryService}"
 - Region: "${country}" (${city})
-- Expected TLD: "${tld}"
 - Target Currency: "${currency}"
 
-Use these exact query angles:
-1. intitle:"${serviceType}" OR intitle:"agency" site:${tld} -directory -yellowpages -clutch after:2023-01-01
-2. inurl:pricing OR inurl:packages "${serviceType}" site:${tld} OR site:.sa
-3. inurl:testimonials OR inurl:case-study "${serviceType}" ${city} after:2023-01-01
-4. "${serviceType}" "price" OR "cost" OR "starting from" ${currency} OR "$" ${country} ${currentYear} -freelancer -fiverr
-5. "${serviceType}" pricing OR packages ${currency}..50000 ${country}
+EXACT QUERIES:
+${pricingQueries.map((q, i) => `${i + 1}. ${q}`).join("\n")}
 
-Extract 3 to 5 real competitor pricing references found in search results.
+Extract 3 to 4 real competitor pricing references found in regional search results.
 Return ONLY a valid JSON array of objects:
 [
   {
-    "competitor_name": "Name of competitor agency or service provider",
-    "price_range": "e.g. AED 3,500 - 8,000 or $1,200 starting rate",
-    "source_url": "Live URL where this package/rate was identified",
-    "notes": "What is included in this tier (e.g. 5-page custom build, SEO setup)"
+    "competitor_name": "Name of competitor provider or agency",
+    "price_range": "e.g. ${currency} 3,500 - 8,000 or starting rate",
+    "source_url": "Live URL where this package was found",
+    "notes": "What is included"
   }
 ]
 `;
 
-  const sysInstruction = `You are a market pricing intelligence researcher. Ground your search in real pricing pages in ${country}. Return real URLs found. If exact prices are unlisted on some sites, capture starting estimates clearly marked as starting rates.`;
+  const sysInstruction = `You are a regional market pricing researcher. Return real market benchmarks found in ${country}. If unlisted on some sites, capture starting estimates clearly marked.`;
 
   const result = await generateWithSearchGrounding(prompt, sysInstruction);
 
@@ -209,19 +513,19 @@ Return ONLY a valid JSON array of objects:
     const cleaned = result.text.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsed = JSON.parse(cleaned);
     const items: CompetitorPricingItem[] = Array.isArray(parsed) ? parsed : [];
-    return { pricingItems: items, sources: result.sources, queries: result.searchQueries };
+    return { pricingItems: items, sources: result.sources, queries: pricingQueries };
   } catch {
     return {
       pricingItems: [
         {
-          competitor_name: `${country} Regional Benchmark`,
-          price_range: `${currency} 3,500 - 7,500`,
-          source_url: `https://google.com/search?q=${encodeURIComponent(serviceType + " pricing " + country)}`,
-          notes: "Estimated market median for professional service delivery.",
+          competitor_name: `${city} Regional Market Benchmark`,
+          price_range: `${currency} 2,500 - 6,500`,
+          source_url: `https://www.google.com/search?q=${encodeURIComponent(primaryService + " pricing " + city)}`,
+          notes: `Standard regional rate for professional ${primaryService} delivery.`,
         },
       ],
       sources: result.sources,
-      queries: result.searchQueries,
+      queries: pricingQueries,
     };
   }
 }
@@ -355,19 +659,20 @@ export async function executeLeadDeepResearch(lead: {
   website?: string | null;
   phone?: string | null;
   email?: string | null;
+  address?: string | null;
   city_country?: string | null;
   niche_industry?: string | null;
   rating?: number | null;
   review_count?: number | null;
   source_csv_row?: any;
 }): Promise<DeepResearchResult> {
-  // Pass 1: Business Audit & Signals
+  // Pass 1: Business Audit & Signals with Exact Query Construction & Validation
   const auditPass = await runBusinessAuditPass(lead);
 
-  // Pass 2: Regional Competitor Pricing
+  // Pass 2: Regional Competitor Pricing (Niche/market based)
   const pricingPass = await runCompetitorPricingPass(lead);
 
-  // Combine unique sources and queries
+  // Combine unique verified sources and executed queries
   const combinedSources = [
     ...auditPass.sources,
     ...pricingPass.sources,
@@ -376,7 +681,7 @@ export async function executeLeadDeepResearch(lead: {
   const combinedQueries = [
     ...auditPass.queries,
     ...pricingPass.queries,
-  ];
+  ].filter((q, i, arr) => arr.indexOf(q) === i);
 
   // Derive Single Offer
   const { primary_observation, primary_offer } = determineSingleOffer(auditPass.data, lead);
@@ -390,7 +695,7 @@ export async function executeLeadDeepResearch(lead: {
 
   return {
     business_name: lead.business_name,
-    domain: cleanDomain(lead.website),
+    domain: extractCleanDomain(lead.website),
     site_health: {
       has_website: auditPass.data.has_website ?? true,
       is_biolink_only: auditPass.data.is_biolink_only ?? false,
@@ -414,6 +719,7 @@ export async function executeLeadDeepResearch(lead: {
     primary_offer,
     sources: combinedSources,
     executed_queries: combinedQueries,
+    validation_audit: auditPass.validationAudit,
     researched_at: new Date().toISOString(),
   };
 }

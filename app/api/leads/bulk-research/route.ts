@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
           website: lead.website,
           phone: lead.phone,
           email: lead.email,
+          address: lead.address,
           city_country: lead.city_country,
           niche_industry: lead.niche_industry,
           rating: lead.rating,
