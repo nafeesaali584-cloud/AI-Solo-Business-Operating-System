@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   Settings,
   ShieldCheck,
@@ -14,9 +15,14 @@ import {
   FileText,
   AlertTriangle,
   Trash2,
+  User,
+  Globe,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
+import { BRAND } from "@/lib/brand/config";
 
 export default function SettingsPage() {
   const { setActiveEntity } = useBusinessBrain();
@@ -176,6 +182,63 @@ export default function SettingsPage() {
           <span>{successMsg}</span>
         </div>
       )}
+
+      {/* SECTION 0: Operator Profile */}
+      <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="relative w-14 h-14 rounded-full overflow-hidden ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--bg)] flex-shrink-0 shadow-md">
+              <Image
+                src={BRAND.profileImage}
+                alt={BRAND.ownerName}
+                width={56}
+                height={56}
+                className="w-full h-full object-cover"
+                priority
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold font-heading text-[var(--text-primary)]">
+                  {BRAND.ownerName}
+                </h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
+                  Active Operator
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] font-medium">
+                {BRAND.tagline}
+              </p>
+              <div className="flex flex-wrap items-center gap-3 pt-0.5 text-xs text-[var(--text-dim)]">
+                <a
+                  href={BRAND.contact.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-[var(--accent)] flex items-center gap-1 transition-colors"
+                >
+                  <Globe className="w-3 h-3" />
+                  <span>nafeesaali.com</span>
+                  <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+                <span>•</span>
+                <a
+                  href={BRAND.contact.whatsapp}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-emerald-500 flex items-center gap-1 transition-colors"
+                >
+                  <Phone className="w-3 h-3" />
+                  <span>{BRAND.contact.waDisplay}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          <div className="sm:text-right text-xs text-[var(--text-dim)] border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--border)]">
+            <span className="block font-medium text-[var(--text-secondary)]">SoloDeskOS Production Edition</span>
+            <span className="text-[11px]">Single-Tenant AI Operating System</span>
+          </div>
+        </div>
+      </div>
 
       {/* SECTION 1: Approval Gate Safety Log (Read-only) */}
       <div className="p-6 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">

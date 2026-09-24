@@ -206,7 +206,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const isLoginPage = pathname === "/login";
+  const isLoginPage = pathname === "/login" || pathname === "/";
 
   const handleLogout = async () => {
     try {

@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   title: "SoloDeskOS — AI Solo-Business Operating System",
   description:
     "SoloDeskOS is an AI-powered operating system for solo service businesses. Manage leads, clients, proposals, invoices and deep research intelligence — all in one place.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
