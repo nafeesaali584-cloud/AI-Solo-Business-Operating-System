@@ -257,28 +257,28 @@ export default function DashboardPage() {
       {/* ── Top Welcome Bar ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div>
-          <h1 className="font-heading text-2xl tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
+          <h1 className="font-heading text-xl sm:text-2xl tracking-tight text-[var(--text-primary)] flex items-center gap-2.5">
             Daily &quot;MY WORK&quot; Dashboard
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-1">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
             Focus strictly on today&apos;s actionable priorities. No rigid hourly scheduling.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={fetchDashboard}
             title="Refresh dashboard data"
             aria-label="Refresh dashboard data"
-            className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+            className="p-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors shrink-0"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => openCopilotWithPrompt("What should I do next?")}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold shadow-lg shadow-[var(--accent)]/20 transition-colors"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs sm:text-sm font-semibold shadow-lg shadow-[var(--accent)]/20 transition-colors"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 shrink-0" />
             <span>Ask Copilot: &quot;What should I do next?&quot;</span>
           </button>
         </div>

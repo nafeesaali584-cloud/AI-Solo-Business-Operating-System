@@ -208,10 +208,10 @@ export default function ClientListPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             <span>S5 — Client List (Workspace B)</span>
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
             Client Conversion &amp; Delivery Engine. Tracking won deals from proposal through delivery and active status.
           </p>
         </div>
@@ -219,31 +219,31 @@ export default function ClientListPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleOpenAdd}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Client</span>
           </button>
           <Link
             href="/proposals/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
           >
-            <FileText className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <FileText className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
             <span>New Proposal</span>
           </Link>
           <Link
             href="/invoices/builder"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
           >
-            <Receipt className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <Receipt className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
             <span>New Invoice</span>
           </Link>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
+      <div className="p-3 sm:p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1 w-full max-w-md">
           <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2.5" />
           <input
             type="text"

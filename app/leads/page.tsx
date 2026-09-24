@@ -376,35 +376,35 @@ export default function LeadListPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+          <h1 className="font-heading text-xl sm:text-2xl font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
             <span>S3 — Lead List (Workspace A)</span>
           </h1>
-          <p className="text-sm text-[var(--text-muted)] mt-0.5">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
             Browse, filter, and assign leads to your daily 3-target focus quota.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Target Quota Meter */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--accent-border)] text-xs">
-            <Target className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="text-[var(--text-muted)]">Daily Target Quota:</span>
+            <Target className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+            <span className="text-[var(--text-muted)]">Daily Quota:</span>
             <span className="font-bold text-[var(--accent)]">{quotaCount} / 3 Active</span>
           </div>
 
           <button
             onClick={handleOpenAdd}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold border border-[var(--border)] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold border border-[var(--border)] transition-colors"
           >
-            <Plus className="w-4 h-4 text-[var(--accent)]" />
+            <Plus className="w-4 h-4 text-[var(--accent)] shrink-0" />
             <span>Add Single Lead</span>
           </button>
 
           <Link
             href="/import"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors"
           >
-            <UploadCloud className="w-4 h-4" />
+            <UploadCloud className="w-4 h-4 shrink-0" />
             <span>Import CSV</span>
           </Link>
         </div>
@@ -418,17 +418,17 @@ export default function LeadListPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Search Box */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-2.5 top-2.5" />
             <input
               type="text"
               placeholder="Search leads, niche, city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)] w-56 transition-colors"
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)] w-full sm:w-56 transition-colors"
             />
           </div>
 
