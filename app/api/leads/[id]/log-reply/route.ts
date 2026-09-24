@@ -163,7 +163,7 @@ Return ONLY a valid JSON object matching this schema (no markdown fences, no ext
               custom_objection ? ` (Notes: ${custom_objection})` : ""
             }`,
           ai_generated: false,
-          confirmed_sent: true,
+          confirmed_sent: false, // Inbound customer logs are not sent outreach messages; Gate 1 applies exclusively to outgoing messages
         },
       });
 

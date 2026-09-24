@@ -556,6 +556,40 @@ export default function LeadDetailPage() {
     }
   };
 
+  // Resume a closed draft from Interaction History (Gate 1 restoration)
+  const handleResumeDraft = (interaction: {
+    id: string;
+    channel: string;
+    content: string;
+  }) => {
+    const ch: "WhatsApp" | "Email" = interaction.channel === "Email" ? "Email" : "WhatsApp";
+    setContactChannel(ch);
+    setCreatedInteractionId(interaction.id);
+
+    // Extract subject and body if formatted as Email or combined
+    let subject = "";
+    let body = interaction.content;
+    const subjectMatch = interaction.content.match(/^Subject:\s*([^\n\r]+)[\n\r]*/i);
+    if (subjectMatch) {
+      subject = subjectMatch[1].trim();
+      body = interaction.content.replace(/^Subject:\s*[^\n\r]+[\n\r]*/i, "").trim();
+    }
+
+    setDraftSubject(subject);
+    setDraftBody(body);
+    setDraftResult({ subject, body });
+    setDrafting(false);
+    setPushStatusMessage("");
+    setPushErrorMessage("");
+
+    const p = getLeadPhone(data?.lead);
+    const e = getLeadEmail(data?.lead);
+    setRecipientPhone(p);
+    setRecipientEmail(e);
+
+    setIsContactModalOpen(true);
+  };
+
   const handleSwitchChannel = async (newChannel: "WhatsApp" | "Email") => {
     if (newChannel === contactChannel && draftResult) return;
     setContactChannel(newChannel);
@@ -1712,29 +1746,55 @@ export default function LeadDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {lead.interactions.map((int) => (
-              <div
-                key={int.id}
-                className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between gap-3"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[var(--text-primary)]">
-                      {int.direction} {int.channel}
-                    </span>
-                    {int.confirmed_sent ? (
-                      <GateBadge gateNumber={1} isUnlocked={true} label="GATE 1: SENT" />
-                    ) : (
-                      <GateBadge gateNumber={1} isUnlocked={false} label="GATE 1: DRAFT (NOT SENT)" />
-                    )}
-                    <span className="text-[11px] text-[var(--text-dim)]">
-                      {new Date(int.created_at).toLocaleString()}
-                    </span>
+            {lead.interactions.map((int) => {
+              const isOutgoing = int.direction === "Outgoing";
+              const isDraft = isOutgoing && !int.confirmed_sent;
+
+              return (
+                <div
+                  key={int.id}
+                  className={`p-3.5 rounded-lg border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                    isDraft
+                      ? "bg-[var(--surface-hover)] border-[var(--accent-border)] hover:border-[var(--accent)] hover:shadow-sm"
+                      : "bg-[var(--surface-hover)] border-[var(--border)]"
+                  }`}
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-semibold text-[var(--text-primary)]">
+                        {int.direction} {int.channel}
+                      </span>
+                      {int.direction === "Incoming" ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                          CUSTOMER INBOUND
+                        </span>
+                      ) : int.confirmed_sent ? (
+                        <GateBadge gateNumber={1} isUnlocked={true} label="GATE 1: SENT" />
+                      ) : (
+                        <GateBadge gateNumber={1} isUnlocked={false} label="GATE 1: DRAFT (NOT SENT)" />
+                      )}
+                      <span className="text-[11px] text-[var(--text-dim)]">
+                        {new Date(int.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap">{int.content}</p>
                   </div>
-                  <p className="text-xs text-[var(--text-secondary)] whitespace-pre-wrap">{int.content}</p>
+
+                  {/* If unsent draft: allow 1-click resume and send in Gate 1 review modal */}
+                  {isDraft && (
+                    <button
+                      type="button"
+                      onClick={() => handleResumeDraft(int)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow-sm transition-colors shrink-0 self-start md:self-center"
+                      title="Reopen this draft in the Gate 1 review modal to edit, push to WhatsApp/email, and send"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Resume &amp; Send Draft</span>
+                    </button>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

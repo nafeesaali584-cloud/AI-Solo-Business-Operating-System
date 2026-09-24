@@ -79,6 +79,7 @@ export async function draftOutreachMessage(params: {
   primary_observation?: string | null;
   primary_offer?: "Website Build" | "Website Redesign" | "SEO" | "WhatsApp Automation" | string | null;
   competitor_pricing_context?: string | null;
+  source_csv_context?: string | null;
 }): Promise<{ subject: string; body: string; primary_offer: string }> {
   const offer = params.primary_offer || "Website Redesign";
   const observation = params.primary_observation || "Modernizing your online customer conversion flow";
@@ -95,12 +96,14 @@ TARGET CONTEXT:
 - Primary Observation Identified: "${observation}"
 - SINGLE ASSIGNED OFFER: "${offer}"
 ${params.competitor_pricing_context ? `- Regional Competitor Pricing Benchmark: ${params.competitor_pricing_context}` : ""}
+${params.source_csv_context ? `- VERIFIED LEAD DATA FROM IMPORT (CSV):\n${params.source_csv_context}` : ""}
 ${params.custom_instruction ? `- Additional Guidance: ${params.custom_instruction}` : ""}
 
 CRITICAL NON-NEGOTIABLE CONSTRAINTS:
 1. DYNAMIC SINGLE-OFFER RULE: You MUST focus 100% of this outreach on exactly ONE service offer: "${offer}". Do NOT mention, list, or cross-pitch any other services (e.g. do not bundle SEO or marketing if offering Website Redesign).
 2. HOMEPAGE CONCEPT HOOK: If the offer is "Website Build" or "Website Redesign", reference a simple homepage visual concept or layout mockup idea inline (e.g. "I put together a quick idea for what your homepage could look like — happy to show you").
-3. NO FABRICATIONS: Never invent prior relationships or make up fake client numbers.
+3. CSV DEPTH LEVERAGE: Use real verified facts from the CSV data above (such as their review volume, service specializations, or neighborhood) to make the opening feel deeply tailored. Never invent or hallucinate metrics not present in the data.
+4. NO FABRICATIONS: Never invent prior relationships or make up fake client numbers.
 4. CHANNEL FORMAT:
    - If WhatsApp: Conversational, personal, 3-5 sentences maximum. No email subject line. End with a low-friction question (e.g., "Would you be open to a quick 3-minute look?").
    - If Email: Compelling, curiosity-inducing subject line (no spammy hype). Body with 2 short paragraphs max.

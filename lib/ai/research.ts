@@ -337,6 +337,21 @@ export function validateLeadMatch(
   };
 }
 
+export function formatCsvContext(source_csv_row: any): string {
+  if (!source_csv_row || typeof source_csv_row !== "object") return "";
+  const entries: string[] = [];
+  const ignoredKeys = new Set(["id", "created_at", "updated_at", "manual"]);
+  for (const [k, v] of Object.entries(source_csv_row)) {
+    if (ignoredKeys.has(k)) continue;
+    if (v === null || v === undefined || v === "" || v === "null" || v === "undefined" || v === "N/A") continue;
+    const strVal = typeof v === "object" ? JSON.stringify(v) : String(v).trim();
+    if (strVal && strVal !== "{}" && strVal !== "[]") {
+      entries.push(`- ${k}: ${strVal}`);
+    }
+  }
+  return entries.join("\n");
+}
+
 /**
  * Execute Pass 1: Business-Specific Research with Exact Query Construction & Match Validation
  */
@@ -362,6 +377,7 @@ export async function runBusinessAuditPass(lead: {
   const { businessAuditQueries, signalQueries } = buildExactLeadQueries(lead);
   const queriesToRun = [...businessAuditQueries, ...signalQueries];
   const executedQueryStrings = queriesToRun.map((q) => q.query);
+  const csvContext = formatCsvContext(lead.source_csv_row);
 
   // Grounding Prompt containing the EXACT queries to execute
   const prompt = `
@@ -374,7 +390,7 @@ TARGET BUSINESS IDENTIFIERS (FACTS):
 - Address: ${lead.address || "Not available"}
 - Location: "${city}"
 - Industry / Services: "${lead.niche_industry || "Service Business"}"
-
+${csvContext ? `\nADDITIONAL PROFILE DATA (FROM IMPORTED CSV):\n${csvContext}\n` : ""}
 MANDATORY EXACT SEARCH QUERIES TO EXECUTE:
 ${queriesToRun.map((q, i) => `${i + 1}. [${q.category}]: ${q.query}`).join("\n")}
 
@@ -536,36 +552,58 @@ Return ONLY a valid JSON array of objects:
  */
 export function determineSingleOffer(
   audit: any,
-  lead: { website?: string | null; source_csv_row?: any }
+  lead: { website?: string | null; niche_industry?: string | null; source_csv_row?: any }
 ): { primary_observation: string; primary_offer: "Website Build" | "Website Redesign" | "SEO" | "WhatsApp Automation" } {
   const website = (lead.website || "").trim().toLowerCase();
   const rawCsv = JSON.stringify(lead.source_csv_row || {}).toLowerCase();
+  const csv = lead.source_csv_row && typeof lead.source_csv_row === "object" ? lead.source_csv_row : {};
+
+  // Extract common rich CSV metrics
+  const reviewCount = csv.review_count || csv.reviews || csv.total_reviews || csv.reviews_count || null;
+  const rating = csv.rating || csv.score || csv.stars || csv.reviews_rating || null;
+  const hasBookingLink = !!(csv.booking_link || csv.reservation_link || csv.appointment_link || csv.order_link);
+  const nicheStr = `${lead.niche_industry || ""} ${csv.category || ""} ${csv.type || ""} ${csv.sub_categories || ""}`.toLowerCase();
+  const isAppointmentNiche = /salon|beauty|spa|dental|clinic|health|fitness|trainer|studio|consult|counsel|therapy|photo|legal|tattoo|massage|aesthetic/i.test(nicheStr);
 
   // 1. No website at all / only a Linktree or bio-link
   if (!website || website === "none" || website === "n/a" || audit.is_biolink_only || website.includes("linktr.ee") || website.includes("bio.site")) {
+    if (reviewCount && rating) {
+      return {
+        primary_observation: `Strong local reputation with ${reviewCount} reviews (${rating}★) on Google Maps, but no dedicated website to convert search traffic into direct bookings.`,
+        primary_offer: "Website Build",
+      };
+    }
     return {
       primary_observation: "No dedicated website exists (only social bio-link or unhosted domain).",
       primary_offer: "Website Build",
     };
   }
 
-  // 2. Website exists but is slow, outdated, or visually broken
+  // 2. Appointment/Service-heavy business with NO online booking/chat flow
+  if (isAppointmentNiche && !hasBookingLink && (audit.signals?.some((s: any) => s.type === "no_chatbot") || !audit.has_chat || rawCsv.includes("manual"))) {
+    return {
+      primary_observation: "Appointment-driven business handling customer inquiries manually without an instant WhatsApp or online booking flow.",
+      primary_offer: "WhatsApp Automation",
+    };
+  }
+
+  // 3. Website exists but is slow, outdated, or visually broken (tech debt)
   if (audit.tech_debt_flag || audit.pain_points?.some((p: string) => p.toLowerCase().includes("slow") || p.toLowerCase().includes("broken") || p.toLowerCase().includes("mobile"))) {
     return {
-      primary_observation: "Website layout is outdated and lacks modern mobile responsiveness.",
+      primary_observation: "Website layout is outdated and lacks modern mobile responsiveness and fast customer intake.",
       primary_offer: "Website Redesign",
     };
   }
 
-  // 3. Weak SEO (few indexed pages, old copyright year, no HTTPS)
-  if (audit.is_weak_seo || (audit.indexed_pages_note && audit.indexed_pages_note.toLowerCase().includes("few"))) {
+  // 4. Weak SEO (few indexed pages, low local Google footprint)
+  if (audit.is_weak_seo || (audit.indexed_pages_note && audit.indexed_pages_note.toLowerCase().includes("few")) || (reviewCount && Number(reviewCount) < 15)) {
     return {
-      primary_observation: "Low Google indexation and weak organic visibility in local search.",
+      primary_observation: "Low Google indexation and weak organic visibility in local search results.",
       primary_offer: "SEO",
     };
   }
 
-  // 4. Unanswered questions/comments on social media
+  // 5. Unanswered questions/comments on social media
   if (audit.signals?.some((s: any) => s.type === "urgency" && s.detail.toLowerCase().includes("comment")) || rawCsv.includes("unanswered")) {
     return {
       primary_observation: "Unanswered customer questions visible on social media channels.",
@@ -573,7 +611,7 @@ export function determineSingleOffer(
     };
   }
 
-  // 5. Running ads but manually replying on WhatsApp
+  // 6. Running ads but manually replying on WhatsApp
   if (rawCsv.includes("ad") || audit.signals?.some((s: any) => s.type === "no_chatbot")) {
     return {
       primary_observation: "Active marketing traffic with manual, delayed chat responses.",
@@ -581,7 +619,7 @@ export function determineSingleOffer(
     };
   }
 
-  // 6. Outdated/old website builder or legacy code
+  // 7. Outdated/old website builder or legacy code (Wix, Weebly, Joomla)
   if (rawCsv.includes("wix") || rawCsv.includes("weebly") || rawCsv.includes("joomla") || audit.indexed_pages_note?.toLowerCase().includes("wix")) {
     return {
       primary_observation: "Built on a legacy site builder with limited speed and conversion flow.",

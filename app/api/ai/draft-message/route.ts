@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     let primary_observation: string | null = null;
     let primary_offer: string | null = null;
     let competitor_pricing_context: string | null = null;
+    let source_csv_context: string | null = null;
 
     if (lead_id) {
       const lead = await db.lead.findUnique({
@@ -28,6 +29,23 @@ export async function POST(req: NextRequest) {
         }
         primary_observation = lead.primary_observation || null;
         primary_offer = lead.primary_offer || null;
+
+        // Extract full non-empty CSV context for deep grounding
+        if (lead.source_csv_row && typeof lead.source_csv_row === "object") {
+          const entries: string[] = [];
+          const ignoredKeys = new Set(["id", "created_at", "updated_at", "manual"]);
+          for (const [k, v] of Object.entries(lead.source_csv_row)) {
+            if (ignoredKeys.has(k)) continue;
+            if (v === null || v === undefined || v === "" || v === "null" || v === "undefined" || v === "N/A") continue;
+            const strVal = typeof v === "object" ? JSON.stringify(v) : String(v).trim();
+            if (strVal && strVal !== "{}" && strVal !== "[]") {
+              entries.push(`- ${k}: ${strVal}`);
+            }
+          }
+          if (entries.length > 0) {
+            source_csv_context = entries.join("\n");
+          }
+        }
 
         // If competitor pricing is stored on lead
         if (Array.isArray(lead.competitor_pricing) && lead.competitor_pricing.length > 0) {
@@ -57,6 +75,7 @@ export async function POST(req: NextRequest) {
       primary_observation,
       primary_offer,
       competitor_pricing_context,
+      source_csv_context,
     });
 
     // We record the interaction with confirmed_sent = false (GATE 1)

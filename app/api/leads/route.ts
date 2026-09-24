@@ -37,9 +37,36 @@ export async function GET(req: NextRequest) {
 
     const leads = await db.lead.findMany({
       where: whereClause,
-      include: {
-        contacts: true,
+      select: {
+        id: true,
+        business_name: true,
+        website: true,
+        phone: true,
+        email: true,
+        city_country: true,
+        niche_industry: true,
+        key_services: true,
+        rating: true,
+        review_count: true,
+        address: true,
+        status: true,
+        is_today_target: true,
+        qualification_tier: true,
+        primary_offer: true,
+        primary_observation: true,
+        created_at: true,
+        updated_at: true,
+        contacts: {
+          select: { id: true, name: true, phone: true, email: true },
+        },
         interactions: {
+          select: {
+            id: true,
+            created_at: true,
+            channel: true,
+            confirmed_sent: true,
+            direction: true,
+          },
           orderBy: { created_at: "desc" },
           take: 1,
         },

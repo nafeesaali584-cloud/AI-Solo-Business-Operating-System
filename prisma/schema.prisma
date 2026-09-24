@@ -45,6 +45,10 @@ model Lead {
 
   @@index([status])
   @@index([is_today_target])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([niche_industry])
+  @@index([city_country])
 }
 
 model Contact {
