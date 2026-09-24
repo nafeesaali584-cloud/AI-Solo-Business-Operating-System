@@ -103,18 +103,49 @@ interface LeadDetailData {
   }>;
 }
 
+function isValidEmail(email: unknown): email is string {
+  if (!email || typeof email !== "string") return false;
+  const trimmed = email.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  const invalidPlaceholders = [
+    "n/a", "na", "none", "nil", "null", "undefined", "-", "--", "---",
+    "unknown", "no email", "not available", "test", "false", "0", "empty"
+  ];
+  if (invalidPlaceholders.includes(lower)) return false;
+  // Standard email validation (must contain valid user, @, domain, and TLD)
+  return /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/.test(trimmed);
+}
+
+function isValidPhone(phone: unknown): phone is string {
+  if (!phone || typeof phone !== "string") return false;
+  const trimmed = phone.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  const invalidPlaceholders = [
+    "n/a", "na", "none", "nil", "null", "undefined", "-", "--", "---",
+    "unknown", "no phone", "not available", "test", "false", "0", "empty"
+  ];
+  if (invalidPlaceholders.includes(lower)) return false;
+  const digits = trimmed.replace(/\D/g, "");
+  // Must have at least 7 digits and not be all identical digits (e.g. 0000000)
+  if (digits.length < 7) return false;
+  if (/^(\d)\1+$/.test(digits)) return false;
+  return true;
+}
+
 function getLeadPhone(leadObj?: any): string {
   if (!leadObj) return "";
   const direct = typeof leadObj.phone === "string" ? leadObj.phone.trim() : "";
-  if (direct) return direct;
+  if (isValidPhone(direct)) return direct;
   const contactPhone =
     (typeof leadObj.contacts?.[0]?.phone === "string" && leadObj.contacts[0].phone.trim()) ||
-    (typeof leadObj.contacts?.[0]?.whatsapp === "string" && leadObj.contacts[0].whatsapp.trim());
-  if (contactPhone) return contactPhone;
+    (typeof leadObj.contacts?.[0]?.whatsapp === "string" && leadObj.contacts[0].whatsapp.trim()) || "";
+  if (isValidPhone(contactPhone)) return contactPhone;
   const raw = leadObj.source_csv_row;
   if (raw && typeof raw === "object") {
     for (const [k, v] of Object.entries(raw)) {
-      if (typeof v === "string" && v.trim() && /phone|mobile|tel|whatsapp/i.test(k)) {
+      if (typeof v === "string" && /phone|mobile|tel|whatsapp/i.test(k) && isValidPhone(v)) {
         return v.trim();
       }
     }
@@ -125,14 +156,14 @@ function getLeadPhone(leadObj?: any): string {
 function getLeadEmail(leadObj?: any): string {
   if (!leadObj) return "";
   const direct = typeof leadObj.email === "string" ? leadObj.email.trim() : "";
-  if (direct) return direct;
+  if (isValidEmail(direct)) return direct;
   const contactEmail =
     typeof leadObj.contacts?.[0]?.email === "string" ? leadObj.contacts[0].email.trim() : "";
-  if (contactEmail) return contactEmail;
+  if (isValidEmail(contactEmail)) return contactEmail;
   const raw = leadObj.source_csv_row;
   if (raw && typeof raw === "object") {
     for (const [k, v] of Object.entries(raw)) {
-      if (typeof v === "string" && v.trim() && /email|mail/i.test(k)) {
+      if (typeof v === "string" && /email|mail/i.test(k) && isValidEmail(v)) {
         return v.trim();
       }
     }
@@ -559,8 +590,8 @@ export default function LeadDetailPage() {
     setPushErrorMessage("");
 
     const phoneTrimmed = recipientPhone.trim();
-    if (!phoneTrimmed) {
-      setPushErrorMessage("Please provide a valid WhatsApp phone number with country code above.");
+    if (!phoneTrimmed || !isValidPhone(phoneTrimmed)) {
+      setPushErrorMessage("Please provide a valid WhatsApp phone number with country code (e.g. +971 50 123 4567 or +92 318 427 4017).");
       return;
     }
 
@@ -605,8 +636,8 @@ export default function LeadDetailPage() {
     setPushErrorMessage("");
 
     const emailTrimmed = recipientEmail.trim();
-    if (!emailTrimmed) {
-      setPushErrorMessage("Please provide a recipient email address above.");
+    if (!emailTrimmed || !isValidEmail(emailTrimmed)) {
+      setPushErrorMessage("Please provide a valid recipient email address (e.g. contact@business.com).");
       return;
     }
 
@@ -633,8 +664,16 @@ export default function LeadDetailPage() {
       }
     }
 
+    // Build standard mailto URL
     const mailtoUrl = `mailto:${encodeURIComponent(emailTrimmed)}?subject=${encodeURIComponent(draftSubject)}&body=${encodeURIComponent(draftBody)}`;
-    window.open(mailtoUrl, "_blank");
+    
+    // Trigger via direct link click in current context to avoid browser creating an orphaned about:blank tab
+    const mailLink = document.createElement("a");
+    mailLink.href = mailtoUrl;
+    mailLink.target = "_self";
+    document.body.appendChild(mailLink);
+    mailLink.click();
+    document.body.removeChild(mailLink);
 
     setPushStatusMessage("Email client launched with draft pre-filled! Review and send in your email client, then click 'Mark as Sent' to unlock Gate 1.");
   };
@@ -832,11 +871,11 @@ export default function LeadDetailPage() {
                   <span>{lead.city_country}</span>
                 </div>
               )}
-              {lead.phone && (
+              {isValidPhone(lead.phone) && (
                 <div className="flex items-center gap-1.5">
                   <Phone className="w-3.5 h-3.5 text-[var(--text-dim)]" />
                   <a
-                    href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`}
+                    href={`https://wa.me/${(lead.phone || "").replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-emerald-500 hover:underline flex items-center gap-1 transition-colors"
@@ -847,11 +886,11 @@ export default function LeadDetailPage() {
                   </a>
                 </div>
               )}
-              {lead.email && (
+              {isValidEmail(lead.email) && (
                 <div className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-[var(--text-dim)]" />
                   <a
-                    href={`mailto:${lead.email}`}
+                    href={`mailto:${lead.email || ""}`}
                     className="hover:text-[var(--accent)] hover:underline flex items-center gap-1 transition-colors"
                     title="Send direct email"
                   >
@@ -1245,29 +1284,75 @@ export default function LeadDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* AI Business Snapshot (2 Cols) */}
         <div className="lg:col-span-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border)] gap-2">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[var(--accent)]" />
               <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)]">AI Business Snapshot</h2>
             </div>
-            <span className="text-[11px] text-[var(--text-dim)]">
-              Grounded in verified facts • No fabrication
-            </span>
+            <div>
+              {lead.research_data?.researched_at ? (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[var(--surface-hover)] text-[var(--accent)] border border-[var(--accent-border)] font-medium inline-flex items-center gap-1">
+                  <span>● Live Web Data</span>
+                  <span className="text-[var(--text-dim)]">•</span>
+                  <span>Researched {new Date(lead.research_data.researched_at).toLocaleDateString()}</span>
+                </span>
+              ) : (
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[var(--surface-hover)] text-[var(--text-muted)] border border-[var(--border)] font-medium inline-flex items-center gap-1">
+                  <span>● Initial CSV Analysis (Pre-Research)</span>
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Section: What we know (Fact) */}
+          {/* Section: What we know (Fact) - STRICTLY RAW VERIFIED CSV DATA */}
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <FactBadge type="fact" label="What we know (Fact)" />
             </div>
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed pl-1">
-              {lead.ai_summary ||
-                `Imported business operating in ${lead.niche_industry || "service industry"} located in ${lead.city_country || "Not available"}. Contact details: ${lead.phone || lead.email || "Not available"}.`}
-            </p>
+            <div className="text-xs text-[var(--text-secondary)] leading-relaxed bg-[var(--surface-hover)] p-3 rounded-lg border border-[var(--border)]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Business: </span>
+                  <span className="text-[var(--text-primary)] font-semibold">{lead.business_name}</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Industry / Niche: </span>
+                  <span className="text-[var(--text-primary)]">{lead.niche_industry || "Not specified in CSV"}</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Location: </span>
+                  <span className="text-[var(--text-primary)]">{lead.city_country || "Not specified in CSV"}</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Phone: </span>
+                  <span className="text-[var(--text-primary)]">{isValidPhone(lead.phone) ? lead.phone : "Not on file"}</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Email: </span>
+                  <span className="text-[var(--text-primary)]">{isValidEmail(lead.email) ? lead.email : "Not on file"}</span>
+                </div>
+                <div>
+                  <span className="text-[var(--text-dim)] font-medium">Website: </span>
+                  <span className="text-[var(--text-primary)]">{lead.website || "Not on file"}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* Section: AI Inferred Overview (Inference) */}
+          {lead.ai_summary && (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2">
+                <FactBadge type="inference" label="AI Inferred Overview (Inference)" />
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed pl-1">
+                {lead.ai_summary}
+              </p>
+            </div>
+          )}
+
           {/* Section: Potential opportunity (Inference) */}
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
               <FactBadge type="inference" label="Potential Opportunity (Inference)" />
             </div>
@@ -1278,7 +1363,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Section: Recommended angle */}
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5 pt-1">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold text-[var(--accent)] uppercase tracking-wider">
                 🎯 Recommended Angle &amp; Contact Strategy
@@ -2245,8 +2330,17 @@ export default function LeadDetailPage() {
                   <span>Analyze Sentiment with AI</span>
                 </button>
                 {aiClassificationResult && (
-                  <span className="text-[11px] text-emerald-400 font-medium">
-                    ✓ Classified as {aiClassificationResult.behavior.replace(/_/g, " ")} ({aiClassificationResult.confidence} confidence)
+                  <span
+                    className={`text-[11px] font-medium flex items-center gap-1 ${
+                      aiClassificationResult.confidence === "Low"
+                        ? "text-amber-400"
+                        : "text-emerald-400"
+                    }`}
+                  >
+                    <span>{aiClassificationResult.confidence === "Low" ? "⚠️" : "✓"}</span>
+                    <span>
+                      Classified as {aiClassificationResult.behavior.replace(/_/g, " ")} ({aiClassificationResult.confidence} confidence)
+                    </span>
                   </span>
                 )}
               </div>
@@ -2254,13 +2348,36 @@ export default function LeadDetailPage() {
 
             {/* AI Classification Insights Card */}
             {aiClassificationResult && (
-              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--accent-border)] space-y-1 text-xs">
+              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--accent-border)] space-y-1.5 text-xs">
                 <div className="flex items-center justify-between font-semibold text-[var(--text-primary)]">
                   <span>Recommended Category:</span>
-                  <span className="capitalize text-[var(--accent)]">
-                    {aiClassificationResult.behavior.replace(/_/g, " ")}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-semibold ${
+                        aiClassificationResult.confidence === "High"
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : aiClassificationResult.confidence === "Medium"
+                          ? "bg-blue-500/20 text-blue-400"
+                          : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                      }`}
+                    >
+                      {aiClassificationResult.confidence} Confidence
+                    </span>
+                    <span className="capitalize text-[var(--accent)] font-bold">
+                      {aiClassificationResult.behavior.replace(/_/g, " ")}
+                    </span>
+                  </div>
                 </div>
+
+                {aiClassificationResult.confidence === "Low" && (
+                  <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-start gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-400" />
+                    <span>
+                      <strong>Ambiguity Warning:</strong> This message was flagged as potentially ambiguous, cryptic, or an internal operator note. Please verify the target behavior and stage selected below before saving.
+                    </span>
+                  </div>
+                )}
+
                 <p className="text-[11px] text-[var(--text-muted)]">
                   <strong>Reasoning:</strong> {aiClassificationResult.reasoning}
                 </p>

@@ -232,12 +232,17 @@ export default function CsvImportPage() {
     duplicates: any[];
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
-  // ─── File upload handler ─────────────────────────────────────────────────
+  // ─── File processor ───────────────────────────────────────────────────────
 
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processFile = useCallback(async (file: File) => {
     if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") {
+      setErrorMsg("Please upload a valid CSV file (.csv).");
+      return;
+    }
 
     setFileName(file.name);
     setErrorMsg("");
@@ -299,6 +304,13 @@ export default function CsvImportPage() {
       },
     });
   }, []);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
 
   // ─── Update a single column's mapping ────────────────────────────────────
 
@@ -450,22 +462,77 @@ export default function CsvImportPage() {
 
       {/* ── Step 1: Upload ── */}
       {step === "upload" && (
-        <div className="p-8 rounded-xl bg-[var(--surface)] border border-[var(--border)] text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] flex items-center justify-center mx-auto">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(true);
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsDragging(false);
+            const droppedFile = e.dataTransfer.files?.[0];
+            if (droppedFile) {
+              processFile(droppedFile);
+            }
+          }}
+          className={`p-10 rounded-xl border-2 border-dashed text-center space-y-4 transition-all duration-200 cursor-pointer ${
+            isDragging
+              ? "border-[var(--accent)] bg-[var(--accent-soft)] ring-4 ring-[var(--accent-soft)] scale-[1.01]"
+              : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--border-hover)]"
+          }`}
+          onClick={(e) => {
+            // Trigger file input click if clicking the container (unless clicked button/label directly)
+            const target = e.target as HTMLElement;
+            if (target.tagName !== "INPUT" && target.tagName !== "LABEL") {
+              const input = document.getElementById("csv-file-input") as HTMLInputElement;
+              input?.click();
+            }
+          }}
+        >
+          <div
+            className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto transition-transform ${
+              isDragging
+                ? "bg-[var(--accent)] text-white scale-110"
+                : "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]"
+            }`}
+          >
             <UploadCloud className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">Select or drop your CSV file</h2>
+            <h2 className="font-heading text-base font-semibold text-[var(--text-primary)]">
+              {isDragging ? "Drop your CSV file here" : "Select or drag & drop your CSV file"}
+            </h2>
             <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto mt-1">
               Supports lead lists from Google Maps, Apollo, LinkedIn, or manual spreadsheets.
               Any column format is accepted — you will map columns manually before import.
             </p>
           </div>
 
-          <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold cursor-pointer transition-colors">
+          <label
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold cursor-pointer transition-colors shadow-sm"
+          >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Choose CSV File</span>
-            <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+            <input
+              id="csv-file-input"
+              type="file"
+              accept=".csv"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
           </label>
         </div>
       )}

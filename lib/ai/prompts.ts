@@ -50,6 +50,10 @@ Return ONLY a valid JSON object (no markdown fences, no code blocks) with these 
   "ai_opportunity": "1-2 sentences identifying potential business needs based strictly on industry/service type.",
   "ai_recommended_angle": "Direct, professional recommendation on how a solo service provider should pitch or reach out to them."
 }
+
+CRITICAL ANTI-HALLUCINATION CONSTRAINTS:
+1. NEVER guess, estimate, or invent employee count, staff size, revenue numbers, or financial metrics (e.g. do NOT write 'estimated 50-100 employees' or '5M-10M AED revenue'). If not explicitly present in the CSV data, do not mention them at all.
+2. ai_summary must be strictly factual based on what was imported.
 `;
 
   const raw = await generateGeminiContent(prompt, CORE_SYSTEM_INSTRUCTION);

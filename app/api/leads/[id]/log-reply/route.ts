@@ -36,35 +36,60 @@ export async function POST(
       }
 
       const prompt = `
-Analyze this actual incoming customer reply to a B2B service outreach and classify it into sales behavior categories:
+You are an expert sales psychologist and conversation classifier for ClientPulse, a B2B sales operating system.
+A solo service provider sent an outreach message to a prospective business client ("${lead.business_name}") offering "${lead.primary_offer || "Digital Services"}".
+The user has logged the following incoming message as the prospect's reply:
 
-CUSTOMER REPLY TEXT:
+INCOMING MESSAGE TEXT:
 "${reply_text}"
 
-TARGET BUSINESS: "${lead.business_name}"
-OFFER: "${lead.primary_offer || "Digital services"}"
+TARGET BUSINESS BEING CONTACTED: "${lead.business_name}"
+OFFER PITCHED: "${lead.primary_offer || "Digital Services"}"
 
-Classify into EXACTLY one of these behavior categories:
-1. "warm_interested": Customer wants more details, pricing, agreed to chat/call, or showed genuine interest.
-2. "replied_hesitant": Customer responded with hesitation or objection (e.g. price/budget concern, too busy, timing bad, already has provider, skeptical).
-3. "seen_no_reply": Customer acknowledged casually, sent a reaction/ok/emoji without commitment, or read without answering.
-4. "no_reply_not_seen": Customer requested to check back next quarter or deferred indefinitely.
-5. "final_follow_up": Customer said "no thank you", "not interested", "remove me", or clearly declined.
+TASK:
+Classify this message into EXACTLY one of these 5 sales behavior categories:
 
-Return ONLY a valid JSON object matching this schema:
+1. "warm_interested": The prospect explicitly expressed interest, asked for pricing/portfolio, requested a call/meeting, or asked how to proceed with the offer.
+   - Example: "Yes, how much do you charge for this?" -> warm_interested, confidence: "High"
+   - Example: "Sounds good, can you call me tomorrow at 3pm?" -> warm_interested, confidence: "High"
+
+2. "replied_hesitant": The prospect answered with an objection, hesitation, skepticism, or delay.
+   - Example: "We already have an in-house developer handling this." -> replied_hesitant, confidence: "High", objection: "Already has provider"
+   - Example: "Budget is really tight right now, not sure." -> replied_hesitant, confidence: "High", objection: "Budget constraints"
+   - Example: "Who are you and where did you get my number?" -> replied_hesitant, confidence: "High", objection: "Skeptical of source"
+
+3. "seen_no_reply": Casual receipt acknowledgment, single emoji, brief neutral reaction without answering or engaging.
+   - Example: "ok", "noted", "👍", "k" -> seen_no_reply, confidence: "High"
+
+4. "no_reply_not_seen": Deferral to a distant date or automated out-of-office.
+   - Example: "I'm out of office until next month" or "Ping me next quarter" -> no_reply_not_seen, confidence: "High"
+
+5. "final_follow_up": Definite rejection or opt-out request.
+   - Example: "Not interested, please remove me." or "Stop texting this number." -> final_follow_up, confidence: "High"
+
+CRITICAL AMBIGUITY & QUALITY RULES:
+1. AMBIGUOUS / GARBLED / INTERNAL NOTE DETECTION:
+   If the incoming text is NOT a clear customer reply to a service pitch (for example, if it looks like an operator note, a search query, a fragmented test, or a user intention like "i just want to get this leads", "test 123", "leads list"):
+   - NEVER classify it as "warm_interested"!
+   - You MUST set "confidence": "Low".
+   - Set "behavior": "replied_hesitant" or "seen_no_reply".
+   - In "reasoning", explain explicitly: "The message appears to be an internal user note or ambiguous fragment rather than an authentic prospect reply to your outreach."
+   - In "recommended_next_step", say: "Review message authenticity or manually select the appropriate behavior stage."
+2. DO NOT assume interest from words like "leads", "want", "get" unless the prospect is explicitly saying they want to hire/buy the service from the sender.
+
+Return ONLY a valid JSON object matching this schema (no markdown fences, no extra text):
 {
   "behavior": "warm_interested | replied_hesitant | seen_no_reply | no_reply_not_seen | final_follow_up",
-  "recommended_stage": 1,
   "confidence": "High | Medium | Low",
-  "detected_objection": "Extracted objection or hesitation in 1 concise phrase, or null if none",
-  "reasoning": "1 sentence explanation of why this category was selected",
+  "detected_objection": "Extracted objection/hesitation in 1 concise phrase, or null if none",
+  "reasoning": "1-2 sentence explanation of why this category and confidence were selected",
   "recommended_next_step": "1 sentence recommendation on what to do next"
 }
 `;
 
       const raw = await generateGeminiContent(
         prompt,
-        "You are an expert sales psychologist and conversation classifier. Return only valid JSON."
+        "You are an expert sales psychologist and conversation classifier. Return only valid JSON without code blocks or markdown."
       );
 
       try {
@@ -90,7 +115,7 @@ Return ONLY a valid JSON object matching this schema:
           classification: {
             behavior: "replied_hesitant",
             recommended_stage: 3,
-            confidence: "Medium",
+            confidence: "Low",
             detected_objection: reply_text.slice(0, 100),
             reasoning: "Classified as customer reply requiring objection handling.",
             recommended_next_step: "Address customer concern and lower friction with a micro-concession.",
