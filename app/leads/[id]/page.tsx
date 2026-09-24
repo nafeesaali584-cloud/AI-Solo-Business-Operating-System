@@ -103,6 +103,43 @@ interface LeadDetailData {
   }>;
 }
 
+function getLeadPhone(leadObj?: any): string {
+  if (!leadObj) return "";
+  const direct = typeof leadObj.phone === "string" ? leadObj.phone.trim() : "";
+  if (direct) return direct;
+  const contactPhone =
+    (typeof leadObj.contacts?.[0]?.phone === "string" && leadObj.contacts[0].phone.trim()) ||
+    (typeof leadObj.contacts?.[0]?.whatsapp === "string" && leadObj.contacts[0].whatsapp.trim());
+  if (contactPhone) return contactPhone;
+  const raw = leadObj.source_csv_row;
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof v === "string" && v.trim() && /phone|mobile|tel|whatsapp/i.test(k)) {
+        return v.trim();
+      }
+    }
+  }
+  return "";
+}
+
+function getLeadEmail(leadObj?: any): string {
+  if (!leadObj) return "";
+  const direct = typeof leadObj.email === "string" ? leadObj.email.trim() : "";
+  if (direct) return direct;
+  const contactEmail =
+    typeof leadObj.contacts?.[0]?.email === "string" ? leadObj.contacts[0].email.trim() : "";
+  if (contactEmail) return contactEmail;
+  const raw = leadObj.source_csv_row;
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof v === "string" && v.trim() && /email|mail/i.test(k)) {
+        return v.trim();
+      }
+    }
+  }
+  return "";
+}
+
 export default function LeadDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -139,6 +176,21 @@ export default function LeadDetailPage() {
   const [customHesitation, setCustomHesitation] = useState("");
   const [generatingFollowUp, setGeneratingFollowUp] = useState(false);
   const [followUpError, setFollowUpError] = useState<string | null>(null);
+
+  // Log Customer Reply & Stage Advance States
+  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
+  const [replyMode, setReplyMode] = useState<"ai" | "manual">("ai");
+  const [replyChannel, setReplyChannel] = useState<"WhatsApp" | "Email" | "Phone Call">("WhatsApp");
+  const [incomingReplyText, setIncomingReplyText] = useState("");
+  const [manualReplyBehavior, setManualReplyBehavior] = useState<
+    "no_reply_not_seen" | "seen_no_reply" | "replied_hesitant" | "final_follow_up" | "warm_interested"
+  >("replied_hesitant");
+  const [manualStageNumber, setManualStageNumber] = useState<number>(1);
+  const [customReplyObjection, setCustomReplyObjection] = useState("");
+  const [classifyingReply, setClassifyingReply] = useState(false);
+  const [savingReply, setSavingReply] = useState(false);
+  const [aiClassificationResult, setAiClassificationResult] = useState<any>(null);
+  const [replyModalError, setReplyModalError] = useState<string | null>(null);
 
   // Note Modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -192,6 +244,17 @@ export default function LeadDetailPage() {
           website: json.lead.website || "",
           key_services: json.lead.key_services || "",
         });
+        const extractedPhone = getLeadPhone(json.lead);
+        const extractedEmail = getLeadEmail(json.lead);
+        setRecipientPhone((prev) => (prev ? prev : extractedPhone));
+        setRecipientEmail((prev) => (prev ? prev : extractedEmail));
+        if (json.lead.customer_behavior) {
+          setFollowUpBehavior(json.lead.customer_behavior as any);
+          setManualReplyBehavior(json.lead.customer_behavior as any);
+        }
+        if (typeof json.lead.follow_up_count === "number") {
+          setManualStageNumber(json.lead.follow_up_count);
+        }
         setActiveEntity({
           type: "lead",
           id: json.lead.id,
@@ -205,6 +268,16 @@ export default function LeadDetailPage() {
       setLoading(false);
     }
   };
+
+  // Pre-fill recipient phone & email whenever Contact modal opens if lead record has data
+  useEffect(() => {
+    if (isContactModalOpen && data?.lead) {
+      const p = getLeadPhone(data.lead);
+      const e = getLeadEmail(data.lead);
+      if (p && !recipientPhone.trim()) setRecipientPhone(p);
+      if (e && !recipientEmail.trim()) setRecipientEmail(e);
+    }
+  }, [isContactModalOpen, data?.lead]);
 
   const handleUpdateLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +381,10 @@ export default function LeadDetailPage() {
         setDraftSubject(followUp.draft.subject || "");
         setDraftBody(followUp.draft.body || "");
         setCreatedInteractionId(json.interaction_id);
+        const p = getLeadPhone(data?.lead);
+        const e = getLeadEmail(data?.lead);
+        if (p) setRecipientPhone(p);
+        if (e) setRecipientEmail(e);
         setIsContactModalOpen(true);
       }
       await fetchLead();
@@ -332,15 +409,8 @@ export default function LeadDetailPage() {
     setPushErrorMessage("");
     setDrafting(true);
 
-    const initialPhone =
-      data?.lead.phone ||
-      data?.lead.contacts?.[0]?.phone ||
-      data?.lead.contacts?.[0]?.whatsapp ||
-      "";
-    const initialEmail =
-      data?.lead.email ||
-      data?.lead.contacts?.[0]?.email ||
-      "";
+    const initialPhone = getLeadPhone(data?.lead);
+    const initialEmail = getLeadEmail(data?.lead);
     setRecipientPhone(initialPhone);
     setRecipientEmail(initialEmail);
 
@@ -364,6 +434,94 @@ export default function LeadDetailPage() {
       console.error("Draft generation failed", err);
     } finally {
       setDrafting(false);
+    }
+  };
+
+  // Open Log Customer Reply modal
+  const handleOpenReplyModal = () => {
+    setReplyModalError(null);
+    setAiClassificationResult(null);
+    setIncomingReplyText("");
+    setCustomReplyObjection(customHesitation || "");
+    if (data?.lead) {
+      setManualStageNumber(data.lead.follow_up_count || 1);
+      if (data.lead.customer_behavior) {
+        setManualReplyBehavior(data.lead.customer_behavior as any);
+      }
+    }
+    setIsReplyModalOpen(true);
+  };
+
+  // Classify reply with AI
+  const handleClassifyReply = async () => {
+    if (!incomingReplyText.trim()) {
+      setReplyModalError("Please enter or paste the customer's reply first.");
+      return;
+    }
+    setClassifyingReply(true);
+    setReplyModalError(null);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/log-reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "classify",
+          reply_text: incomingReplyText,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setReplyModalError(json.error || "Failed to classify customer reply.");
+        return;
+      }
+      if (json.classification) {
+        setAiClassificationResult(json.classification);
+        setManualReplyBehavior(json.classification.behavior);
+        setManualStageNumber(json.classification.recommended_stage);
+        if (json.classification.detected_objection) {
+          setCustomReplyObjection(json.classification.detected_objection);
+        }
+      }
+    } catch (err: any) {
+      setReplyModalError(err.message || "Failed to classify reply.");
+    } finally {
+      setClassifyingReply(false);
+    }
+  };
+
+  // Save reply and advance follow-up engine
+  const handleSaveCustomerReply = async () => {
+    setSavingReply(true);
+    setReplyModalError(null);
+    try {
+      const res = await fetch(`/api/leads/${leadId}/log-reply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save",
+          channel: replyChannel,
+          reply_text: incomingReplyText,
+          behavior: manualReplyBehavior,
+          stage: manualStageNumber,
+          custom_objection: customReplyObjection,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setReplyModalError(json.error || "Failed to save customer reply.");
+        return;
+      }
+      // Sync local engine behavior
+      setFollowUpBehavior(manualReplyBehavior);
+      if (customReplyObjection) {
+        setCustomHesitation(customReplyObjection);
+      }
+      setIsReplyModalOpen(false);
+      await fetchLead();
+    } catch (err: any) {
+      setReplyModalError(err.message || "Failed to save reply.");
+    } finally {
+      setSavingReply(false);
     }
   };
 
@@ -1194,17 +1352,70 @@ export default function LeadDetailPage() {
             </p>
           </div>
 
-          {/* Warm Lead Fast-Path Trigger */}
-          <button
-            type="button"
-            onClick={() => handleGenerateBehaviorFollowUp("warm_interested")}
-            disabled={generatingFollowUp}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-colors shrink-0"
-            title="Lead replied with interest: Prompt immediately to book a call on WhatsApp"
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Customer Interested? Book Call</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Manual Reply Logging & Simulation Trigger */}
+            <button
+              type="button"
+              onClick={handleOpenReplyModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-hover)] text-[var(--accent)] hover:text-white text-xs font-bold border border-[var(--accent-border)] transition-colors shadow-sm"
+              title="Log customer reply via WhatsApp/Email to advance stages, or manually select stage for testing"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Log Customer Reply</span>
+            </button>
+
+            {/* Warm Lead Fast-Path Trigger */}
+            <button
+              type="button"
+              onClick={() => handleGenerateBehaviorFollowUp("warm_interested")}
+              disabled={generatingFollowUp}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition-colors shrink-0"
+              title="Lead replied with interest: Prompt immediately to book a call on WhatsApp"
+            >
+              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Customer Interested? Book Call</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Current State & Progression Indicator Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[var(--text-muted)] font-medium">Logged Customer Behavior:</span>
+            <span className="font-bold text-[var(--text-primary)] capitalize px-2 py-0.5 rounded bg-[var(--surface)] border border-[var(--border)]">
+              {lead.customer_behavior ? lead.customer_behavior.replace(/_/g, " ") : "No reply recorded yet"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-[11px] text-[var(--text-dim)]">
+            <span className="font-medium">Active Stage Progress:</span>
+            <div className="flex items-center gap-1.5">
+              {[
+                { stg: 1, name: "Value Nudge" },
+                { stg: 2, name: "Social Proof" },
+                { stg: 3, name: "Objection Handle" },
+                { stg: 4, name: "Graceful Exit" },
+              ].map(({ stg, name }) => {
+                const count = lead.follow_up_count || 0;
+                const isPassed = count >= stg;
+                const isCurrent = count + 1 === stg || (stg === 4 && count >= 4);
+                return (
+                  <span
+                    key={stg}
+                    className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-all ${
+                      isPassed
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : isCurrent
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] font-bold ring-1 ring-[var(--accent)]"
+                        : "bg-[var(--surface)] text-[var(--text-dim)] border border-[var(--border)]"
+                    }`}
+                    title={`Stage ${stg}: ${name}`}
+                  >
+                    {isPassed ? "✓" : stg} {name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {followUpError && (
@@ -1214,7 +1425,7 @@ export default function LeadDetailPage() {
           </div>
         )}
 
-        {/* Behavior Selector Grid */}
+        {/* Behavior Selector Grid (Visual Stages with Tactic Selection) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
           {/* Behavior 1 */}
           <button
@@ -1226,8 +1437,19 @@ export default function LeadDetailPage() {
                 : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
             }`}
           >
-            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
-              Stage 1: Value-Add Nudge
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[var(--text-primary)]">
+                Stage 1: Value-Add Nudge
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                (lead.follow_up_count || 0) >= 1
+                  ? "text-emerald-400 bg-emerald-500/10"
+                  : (lead.follow_up_count || 0) === 0
+                  ? "text-[var(--accent)] bg-[var(--accent-soft)]"
+                  : "text-[var(--text-dim)]"
+              }`}>
+                {(lead.follow_up_count || 0) >= 1 ? "✓ Sent" : (lead.follow_up_count || 0) === 0 ? "● Active Stage" : "Upcoming"}
+              </span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               No reply &amp; haven&apos;t opened. Offers quick insight/audit with zero pressure.
@@ -1244,8 +1466,19 @@ export default function LeadDetailPage() {
                 : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
             }`}
           >
-            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
-              Stage 2: Social Proof
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[var(--text-primary)]">
+                Stage 2: Social Proof
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                (lead.follow_up_count || 0) >= 2
+                  ? "text-emerald-400 bg-emerald-500/10"
+                  : (lead.follow_up_count || 0) === 1
+                  ? "text-[var(--accent)] bg-[var(--accent-soft)]"
+                  : "text-[var(--text-dim)]"
+              }`}>
+                {(lead.follow_up_count || 0) >= 2 ? "✓ Sent" : (lead.follow_up_count || 0) === 1 ? "● Active Stage" : "Upcoming"}
+              </span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               Opened/seen, but ghosted. Shares peer benchmark, competitor data, or case story.
@@ -1262,8 +1495,19 @@ export default function LeadDetailPage() {
                 : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
             }`}
           >
-            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
-              Stage 3: Objection Handle
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[var(--text-primary)]">
+                Stage 3: Objection Handle
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                (lead.follow_up_count || 0) >= 3
+                  ? "text-emerald-400 bg-emerald-500/10"
+                  : (lead.follow_up_count || 0) === 2
+                  ? "text-[var(--accent)] bg-[var(--accent-soft)]"
+                  : "text-[var(--text-dim)]"
+              }`}>
+                {(lead.follow_up_count || 0) >= 3 ? "✓ Sent" : (lead.follow_up_count || 0) === 2 ? "● Active Stage" : "Upcoming"}
+              </span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               Replied hesitant (&quot;busy&quot;, &quot;price&quot;). Validates &amp; lowers commitment.
@@ -1280,8 +1524,19 @@ export default function LeadDetailPage() {
                 : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--border-hover)]"
             }`}
           >
-            <div className="text-xs font-bold text-[var(--text-primary)] mb-1">
-              Stage 4: Graceful Exit
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-[var(--text-primary)]">
+                Stage 4: Graceful Exit
+              </span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                (lead.follow_up_count || 0) >= 4
+                  ? "text-emerald-400 bg-emerald-500/10"
+                  : (lead.follow_up_count || 0) === 3
+                  ? "text-[var(--accent)] bg-[var(--accent-soft)]"
+                  : "text-[var(--text-dim)]"
+              }`}>
+                {(lead.follow_up_count || 0) >= 4 ? "✓ Sent" : (lead.follow_up_count || 0) === 3 ? "● Active Stage" : "Upcoming"}
+              </span>
             </div>
             <div className="text-[11px] text-[var(--text-muted)] leading-relaxed">
               Final touchpoint. Closes the loop cleanly, preserves brand equity, leaves door open.
@@ -1313,7 +1568,7 @@ export default function LeadDetailPage() {
               </span>
             ) : (
               <span>
-                Gate 1 applies: Generated draft opens in review modal before being sent.
+                Gate 1 applies: Generated draft opens in review modal before being sent. Click <strong>&quot;Log Customer Reply&quot;</strong> above to record incoming replies or advance stages.
               </span>
             )}
           </div>
@@ -1336,14 +1591,23 @@ export default function LeadDetailPage() {
 
       {/* Interaction History Feed */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-[var(--text-muted)]" />
             <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)]">Interaction History</h2>
+            <span className="text-xs text-[var(--text-dim)]">
+              ({lead.interactions.length} touchpoints)
+            </span>
           </div>
-          <span className="text-xs text-[var(--text-dim)]">
-            {lead.interactions.length} recorded touchpoint(s)
-          </span>
+          <button
+            type="button"
+            onClick={handleOpenReplyModal}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-semibold border border-[var(--border)] transition-colors self-start sm:self-auto"
+            title="Log an incoming response or customer communication"
+          >
+            <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
+            <span>Log Customer Reply</span>
+          </button>
         </div>
 
         {lead.interactions.length === 0 ? (
@@ -1499,34 +1763,69 @@ export default function LeadDetailPage() {
             <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] space-y-1.5">
               {contactChannel === "WhatsApp" ? (
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-emerald-500" />
-                    <span>Recipient WhatsApp / Phone Number:</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Recipient WhatsApp / Phone Number:</span>
+                    </label>
+                    {data?.lead && getLeadPhone(data.lead) ? (
+                      <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Auto-filled from lead record</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 font-medium">
+                        ⚠️ No phone on file — enter recipient number
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={recipientPhone}
                     onChange={(e) => setRecipientPhone(e.target.value)}
-                    placeholder="e.g. +971 50 123 4567 or +92 318 427 4017"
+                    placeholder={
+                      data?.lead && getLeadPhone(data.lead)
+                        ? "e.g. +971 50 123 4567 or +92 318 427 4017"
+                        : "No phone on file — enter recipient WhatsApp number"
+                    }
                     className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent)]"
                   />
                   <p className="text-[10px] text-[var(--text-dim)]">
-                    Must include country code. Clicking &quot;Push to WhatsApp&quot; opens your chat with this number and pre-loads your message draft.
+                    Must include country code. Fully editable in case you need to override for a specific contact person.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-blue-500" />
-                    <span>Recipient Email Address:</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Recipient Email Address:</span>
+                    </label>
+                    {data?.lead && getLeadEmail(data.lead) ? (
+                      <span className="text-[10px] text-blue-400 font-semibold flex items-center gap-1">
+                        <Check className="w-3 h-3 text-blue-400" />
+                        <span>Auto-filled from lead record</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-400 font-medium">
+                        ⚠️ No email on file — enter recipient email
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="email"
                     value={recipientEmail}
                     onChange={(e) => setRecipientEmail(e.target.value)}
-                    placeholder="e.g. contact@business.com"
+                    placeholder={
+                      data?.lead && getLeadEmail(data.lead)
+                        ? "e.g. contact@business.com"
+                        : "No email on file — enter recipient email address"
+                    }
                     className="w-full bg-[var(--surface)] border border-[var(--border)] rounded px-3 py-1.5 text-xs text-[var(--text-primary)] font-mono outline-none focus:border-[var(--accent)]"
                   />
+                  <p className="text-[10px] text-[var(--text-dim)]">
+                    Fully editable in case you need to override for a specific contact person.
+                  </p>
                 </div>
               )}
             </div>
@@ -1821,6 +2120,244 @@ export default function LeadDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── LOG CUSTOMER REPLY & ADVANCE STAGE MODAL ─── */}
+      {isReplyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-lg bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4 my-8">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[var(--accent)]" />
+                <h3 className="text-sm font-bold text-[var(--text-primary)] font-heading">
+                  Log Customer Reply &amp; Advance Stage
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReplyModalOpen(false)}
+                className="text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              Record a response received outside SoloDeskOS (via WhatsApp, Email, or Phone). SoloDeskOS will classify the behavior, log the incoming touchpoint, advance the follow-up stage (1–4), and prepare the matching response strategy.
+            </p>
+
+            {/* Mode Switcher: AI Classification vs Direct Manual Selection */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--surface-hover)] rounded-lg border border-[var(--border)] text-xs">
+              <button
+                type="button"
+                onClick={() => setReplyMode("ai")}
+                className={`py-1.5 px-3 rounded-md font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                  replyMode === "ai"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm font-semibold"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Paste Reply (AI Classify)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setReplyMode("manual")}
+                className={`py-1.5 px-3 rounded-md font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                  replyMode === "manual"
+                    ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm font-semibold"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 text-blue-400" />
+                <span>Direct Stage / QA Test</span>
+              </button>
+            </div>
+
+            {/* Channel Selector */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-[var(--text-secondary)]">Reply Channel:</label>
+              <div className="flex items-center gap-2 text-xs">
+                {(["WhatsApp", "Email", "Phone Call"] as const).map((ch) => (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => setReplyChannel(ch)}
+                    className={`px-3 py-1 rounded-lg border transition-colors ${
+                      replyChannel === ch
+                        ? "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent-border)] font-semibold"
+                        : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {ch}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reply Text Field */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-[var(--text-secondary)]">
+                {replyMode === "ai"
+                  ? "Paste Customer's Incoming Message:"
+                  : "Interaction Note / Customer Words (Optional):"}
+              </label>
+              <textarea
+                rows={3}
+                value={incomingReplyText}
+                onChange={(e) => setIncomingReplyText(e.target.value)}
+                placeholder={
+                  replyMode === "ai"
+                    ? "e.g. 'Can you send pricing details?' or 'We are currently working with another agency, thanks' or 'Sounds interesting, call me tomorrow'"
+                    : "e.g. 'Customer replied on WhatsApp: too busy right now, asked to follow up next month.'"
+                }
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded-lg p-2.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)] resize-none font-sans"
+              />
+            </div>
+
+            {/* If AI Mode: Button to Analyze */}
+            {replyMode === "ai" && (
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handleClassifyReply}
+                  disabled={classifyingReply || !incomingReplyText.trim()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                >
+                  {classifyingReply ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  <span>Analyze Sentiment with AI</span>
+                </button>
+                {aiClassificationResult && (
+                  <span className="text-[11px] text-emerald-400 font-medium">
+                    ✓ Classified as {aiClassificationResult.behavior.replace(/_/g, " ")} ({aiClassificationResult.confidence} confidence)
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* AI Classification Insights Card */}
+            {aiClassificationResult && (
+              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--accent-border)] space-y-1 text-xs">
+                <div className="flex items-center justify-between font-semibold text-[var(--text-primary)]">
+                  <span>Recommended Category:</span>
+                  <span className="capitalize text-[var(--accent)]">
+                    {aiClassificationResult.behavior.replace(/_/g, " ")}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  <strong>Reasoning:</strong> {aiClassificationResult.reasoning}
+                </p>
+                {aiClassificationResult.detected_objection && (
+                  <p className="text-[11px] text-amber-400">
+                    <strong>Extracted Objection:</strong> {aiClassificationResult.detected_objection}
+                  </p>
+                )}
+                <p className="text-[11px] text-emerald-400">
+                  <strong>Next Action:</strong> {aiClassificationResult.recommended_next_step}
+                </p>
+              </div>
+            )}
+
+            {/* Behavior & Stage Selection (Visible in Manual mode or as editable confirmation after AI classify) */}
+            <div className="space-y-2 pt-1 border-t border-[var(--border)]">
+              <label className="text-[11px] font-semibold text-[var(--text-secondary)]">
+                Target Behavior &amp; Stage to Set:
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {[
+                  { id: "warm_interested", label: "🟢 Warm / Interested", stage: lead.follow_up_count || 1 },
+                  { id: "replied_hesitant", label: "🟡 Replied Hesitant (Stage 3)", stage: 3 },
+                  { id: "seen_no_reply", label: "🔵 Seen / Ghosted (Stage 2)", stage: 2 },
+                  { id: "no_reply_not_seen", label: "⚪ No Reply / Unread (Stage 1)", stage: 1 },
+                  { id: "final_follow_up", label: "🔴 Declined / Final (Stage 4)", stage: 4 },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setManualReplyBehavior(item.id as any);
+                      setManualStageNumber(item.stage);
+                    }}
+                    className={`p-2 rounded-lg text-left border transition-all ${
+                      manualReplyBehavior === item.id
+                        ? "bg-[var(--accent-soft)] border-[var(--accent-border)] ring-1 ring-[var(--accent)] font-semibold text-[var(--text-primary)]"
+                        : "bg-[var(--surface-hover)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Manual Stage Override */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Stage Override (QA Test):</span>
+                <div className="flex items-center gap-1.5">
+                  {[1, 2, 3, 4].map((stg) => (
+                    <button
+                      key={stg}
+                      type="button"
+                      onClick={() => setManualStageNumber(stg)}
+                      className={`w-7 h-7 rounded-lg text-xs font-bold border transition-colors ${
+                        manualStageNumber === stg
+                          ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                          : "bg-[var(--surface-hover)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {stg}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {manualReplyBehavior === "replied_hesitant" && (
+                <div className="space-y-1 pt-1">
+                  <label className="text-[11px] font-semibold text-[var(--text-secondary)]">
+                    Customer Objection / Reason:
+                  </label>
+                  <input
+                    type="text"
+                    value={customReplyObjection}
+                    onChange={(e) => setCustomReplyObjection(e.target.value)}
+                    placeholder="e.g. 'Too expensive' or 'Busy until next month'"
+                    className="w-full bg-[var(--surface-hover)] border border-[var(--border)] rounded px-2.5 py-1.5 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {replyModalError && (
+              <div className="p-2.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)] flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{replyModalError}</span>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setIsReplyModalOpen(false)}
+                className="px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveCustomerReply}
+                disabled={savingReply}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold transition-colors shadow disabled:opacity-50"
+              >
+                {savingReply ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Save &amp; Advance Stage</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

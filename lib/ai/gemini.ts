@@ -165,6 +165,9 @@ export async function generateWithSearchGrounding(
   const apiKey = getApiKey();
   const modelsToTry = [PRIMARY_MODEL, ...FALLBACK_MODELS];
 
+  let quotaExceeded = false;
+  let lastErrorMessage = "";
+
   for (const m of modelsToTry) {
     try {
       const res = await fetch(
@@ -181,6 +184,19 @@ export async function generateWithSearchGrounding(
       );
 
       const data = await res.json();
+
+      // Check specifically for rate limiting or quota exhaustion
+      if (
+        res.status === 429 ||
+        data.error?.code === 429 ||
+        data.error?.status === "RESOURCE_EXHAUSTED" ||
+        data.error?.message?.toLowerCase()?.includes("quota")
+      ) {
+        quotaExceeded = true;
+        lastErrorMessage = data.error?.message || "Search quota exhausted";
+        continue;
+      }
+
       if (data.candidates && data.candidates[0]) {
         const candidate = data.candidates[0];
         const text = candidate.content?.parts?.[0]?.text || "";
@@ -208,17 +224,21 @@ export async function generateWithSearchGrounding(
           searchQueries,
         };
       }
-    } catch (err) {
+    } catch (err: any) {
+      lastErrorMessage = err?.message || String(err);
       // Fall through to next model
     }
   }
 
-  // Fallback to standard generation if search grounding fails
-  const text = await generateGeminiContent(prompt, systemInstruction);
-  return {
-    text,
-    isWebSearch: false,
-    sources: [],
-    searchQueries: [],
-  };
+  // Under quota exhaustion, NEVER present an ungrounded guess as live web data
+  if (quotaExceeded) {
+    throw new Error("Research could not be completed — search quota limit reached, try again later");
+  }
+
+  // If search tool is unavailable or failed due to network, fail cleanly
+  throw new Error(
+    lastErrorMessage
+      ? `Research could not be completed: ${lastErrorMessage}`
+      : "Research could not be completed — live search tool unavailable."
+  );
 }

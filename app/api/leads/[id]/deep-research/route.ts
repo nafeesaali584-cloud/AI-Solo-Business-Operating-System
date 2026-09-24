@@ -68,9 +68,13 @@ export async function POST(
     });
   } catch (error: any) {
     console.error("Deep research error:", error);
+    const isQuota =
+      error?.message?.toLowerCase().includes("quota") ||
+      error?.message?.toLowerCase().includes("rate limit") ||
+      error?.status === 429;
     return NextResponse.json(
       { error: error.message || "Failed to execute deep research" },
-      { status: 500 }
+      { status: isQuota ? 429 : 500 }
     );
   }
 }
