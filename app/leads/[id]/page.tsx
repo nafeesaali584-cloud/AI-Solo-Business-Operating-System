@@ -575,13 +575,19 @@ export default function LeadDetailPage() {
       return;
     }
 
-    // Sync edited phone back to lead record if it was newly provided or changed
-    if (phoneTrimmed !== (data?.lead.phone || "")) {
+    // IMMUTABILITY RULE: Never overwrite lead.phone or source_csv_row.
+    // If the recipient phone is different from the primary imported phone, record it as a linked Contact record.
+    if (phoneTrimmed && phoneTrimmed !== (data?.lead.phone || "")) {
       try {
-        await fetch(`/api/leads/${leadId}`, {
-          method: "PATCH",
+        await fetch(`/api/leads/${leadId}/contacts`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: phoneTrimmed }),
+          body: JSON.stringify({
+            name: "Direct Contact",
+            role: "WhatsApp Outreach Recipient",
+            phone: phoneTrimmed,
+            whatsapp: phoneTrimmed,
+          }),
         });
       } catch (e) {
         // non-blocking
@@ -609,13 +615,18 @@ export default function LeadDetailPage() {
       return;
     }
 
-    // Sync edited email back to lead record if changed
-    if (emailTrimmed !== (data?.lead.email || "")) {
+    // IMMUTABILITY RULE: Never overwrite lead.email or source_csv_row.
+    // If the recipient email is different from the primary imported email, record it as a linked Contact record.
+    if (emailTrimmed && emailTrimmed !== (data?.lead.email || "")) {
       try {
-        await fetch(`/api/leads/${leadId}`, {
-          method: "PATCH",
+        await fetch(`/api/leads/${leadId}/contacts`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: emailTrimmed }),
+          body: JSON.stringify({
+            name: "Direct Contact",
+            role: "Email Outreach Recipient",
+            email: emailTrimmed,
+          }),
         });
       } catch (e) {
         // non-blocking
