@@ -1771,7 +1771,14 @@ export default function LeadDetailPage() {
                       ) : int.confirmed_sent ? (
                         <GateBadge gateNumber={1} isUnlocked={true} label="GATE 1: SENT" />
                       ) : (
-                        <GateBadge gateNumber={1} isUnlocked={false} label="GATE 1: DRAFT (NOT SENT)" />
+                        <button
+                          type="button"
+                          onClick={() => handleResumeDraft(int)}
+                          className="hover:scale-105 transition-transform cursor-pointer"
+                          title="Click to reopen and edit this draft in Gate 1 review modal"
+                        >
+                          <GateBadge gateNumber={1} isUnlocked={false} label="GATE 1: DRAFT (NOT SENT)" />
+                        </button>
                       )}
                       <span className="text-[11px] text-[var(--text-dim)]">
                         {new Date(int.created_at).toLocaleString()}
