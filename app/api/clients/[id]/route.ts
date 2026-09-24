@@ -21,6 +21,30 @@ export async function GET(
       return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
+    // Auto-create onboarding checklist if payment settled and onboarding record missing
+    const isPaid = client.payment_status === "Paid" || client.stage === "Onboarding" || client.invoices.some((i) => i.status === "Paid");
+    if (isPaid && !client.onboarding) {
+      try {
+        const createdOnboarding = await db.onboarding.create({
+          data: {
+            client_id: client.id,
+            checklist: [
+              { item: "Kickoff Call & Strategy Alignment", status: "pending" },
+              { item: "Collect Brand Assets & Logo Files", status: "pending" },
+              { item: "DNS & Domain Access Verification", status: "pending" },
+              { item: "WhatsApp Business Account Integration", status: "pending" },
+              { item: "Initial Delivery Milestone Review", status: "pending" },
+              { item: "Final Handover & Client Approval", status: "pending" },
+            ],
+            status: "In Progress",
+          },
+        });
+        (client as any).onboarding = createdOnboarding;
+      } catch (e) {
+        console.warn("Could not auto-create onboarding record:", e);
+      }
+    }
+
     // Build complete chronological timeline events
     const timelineEvents: Array<{
       id: string;

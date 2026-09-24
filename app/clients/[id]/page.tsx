@@ -253,10 +253,10 @@ export default function ClientDetailPage() {
               </button>
             )}
 
-            {/* 3. View Onboarding (Gated: enabled once Invoice = Paid) */}
-            {isInvoicePaid && client.onboarding ? (
+            {/* 3. View Onboarding (Gated: enabled once Invoice = Paid or Onboarding exists) */}
+            {client.onboarding || isInvoicePaid ? (
               <Link
-                href={`/onboarding/${client.onboarding.id}`}
+                href={client.onboarding ? `/onboarding/${client.onboarding.id}` : `/onboarding/${client.id}`}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -417,28 +417,58 @@ export default function ClientDetailPage() {
               )}
             </div>
 
-            {/* Onboarding Summary */}
-            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
-              <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
-                Onboarding Setup
-              </h3>
-              {client.onboarding ? (
-                <div className="p-2.5 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-medium text-[var(--success)]">
-                      Status: {client.onboarding.status}
-                    </div>
-                    <div className="text-[11px] text-[var(--text-muted)]">
-                      {client.onboarding.checklist.length} checklist items
-                    </div>
-                  </div>
+            {/* Onboarding Summary & Tasks */}
+            <div className="space-y-3 pt-2 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
+                  Onboarding Checklist
+                </h3>
+                {client.onboarding && (
                   <Link
                     href={`/onboarding/${client.onboarding.id}`}
-                    className="text-[var(--success)] hover:underline inline-flex items-center gap-1"
+                    className="text-[var(--success)] hover:underline inline-flex items-center gap-1 text-xs font-semibold"
                   >
-                    <span>Checklist</span>
+                    <span>Full Hub</span>
                     <ExternalLink className="w-3 h-3" />
                   </Link>
+                )}
+              </div>
+              {client.onboarding ? (
+                <div className="space-y-2">
+                  <div className="p-2.5 rounded-lg bg-[var(--success-soft)] border border-[var(--success-border)] flex items-center justify-between text-xs">
+                    <div>
+                      <div className="font-medium text-[var(--success)]">
+                        Status: {client.onboarding.status}
+                      </div>
+                      <div className="text-[11px] text-[var(--text-muted)]">
+                        {Array.isArray(client.onboarding.checklist) ? client.onboarding.checklist.length : 0} onboarding tasks
+                      </div>
+                    </div>
+                  </div>
+                  {/* Visibly render checklist tasks directly on client page */}
+                  {Array.isArray(client.onboarding.checklist) && (
+                    <div className="space-y-1.5 pt-1">
+                      {client.onboarding.checklist.map((item: any, idx: number) => {
+                        const isDone = item.status === "done";
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-2 p-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isDone}
+                              readOnly
+                              className="rounded border-[var(--border)] text-emerald-500 focus:ring-0 cursor-default"
+                            />
+                            <span className={isDone ? "line-through text-[var(--text-dim)]" : "text-[var(--text-primary)]"}>
+                              {item.item}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-xs text-[var(--text-dim)]">

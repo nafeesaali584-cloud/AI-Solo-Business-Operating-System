@@ -108,11 +108,11 @@ export async function PATCH(
         },
       });
 
-      // Update lead status to Won and record converted_client_id
+      // Update lead status to Proposal and record converted_client_id
       const updatedLead = await db.lead.update({
         where: { id: lead.id },
         data: {
-          status: "Won",
+          status: "Proposal",
           converted_client_id: client.id,
           is_today_target: false,
         },

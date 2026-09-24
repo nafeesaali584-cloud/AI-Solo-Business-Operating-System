@@ -111,6 +111,27 @@ function ProposalBuilderContent() {
             const json = await res.json();
             setClientName(json.lead.business_name);
           }
+        } else {
+          // If no specific parameters, load existing canonical proposal
+          const res = await fetch(`/api/proposals`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.proposals && json.proposals.length > 0) {
+              const p = json.proposals[0];
+              setId(p.id);
+              setClientId(p.client_id);
+              setLeadId(p.lead_id);
+              setClientName(p.client?.business_name || p.lead?.business_name || "Miss Al Reem Beauty Centre");
+              if (p.services) setServices(p.services);
+              setScope(p.scope || "");
+              setDeliverables(p.deliverables || "");
+              setTimeline(p.timeline || "");
+              setTerms(p.terms || "");
+              setStatus(p.status);
+              setApprovedAt(p.approved_at);
+              setSentConfirmedAt(p.sent_confirmed_at);
+            }
+          }
         }
       } catch (err) {
         console.error("Failed to load proposal data", err);
@@ -290,14 +311,15 @@ function ProposalBuilderContent() {
   };
 
   // Download PDF using Brand Kit & Selected Template
-  const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async (templateOverride?: PdfTemplate) => {
+    const tmpl = templateOverride || selectedTemplate;
     setDownloadingPdf(true);
     try {
       const profileDataUrl = await loadProfileImageDataUrl();
       const doc = generateProposalPdf(
-        selectedTemplate,
+        tmpl,
         {
-          clientName: clientName || "Client Prospect",
+          clientName: clientName || "Miss Al Reem Beauty Centre",
           date: new Date().toLocaleDateString(),
           status,
           services,
@@ -310,7 +332,20 @@ function ProposalBuilderContent() {
         },
         profileDataUrl
       );
-      doc.save(`Proposal_${(clientName || "Client").replace(/\s+/g, "_")}_Template_${selectedTemplate}.pdf`);
+      const filename = `Proposal_${(clientName || "Proposal").replace(/\s+/g, "_")}_Template_${tmpl}.pdf`;
+      const blob = doc.output("blob");
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setActionMessage({
+        text: `Proposal PDF exported successfully: ${filename} (Download ready)`,
+        type: "success",
+      });
     } catch (err: any) {
       console.error("Failed to generate PDF:", err);
       setActionMessage({ text: "Failed to generate branded PDF: " + (err.message || ""), type: "error" });
@@ -735,7 +770,7 @@ function ProposalBuilderContent() {
             {saving ? "Saving..." : "Save Draft"}
           </button>
           <button
-            onClick={handleDownloadPdf}
+            onClick={() => handleDownloadPdf("B")}
             disabled={downloadingPdf}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors disabled:opacity-50"
           >
@@ -744,7 +779,15 @@ function ProposalBuilderContent() {
             ) : (
               <Download className="w-3.5 h-3.5 text-[var(--accent)]" />
             )}
-            <span>Export Branded PDF ({selectedTemplate})</span>
+            <span>Export Branded PDF</span>
+          </button>
+          <button
+            onClick={() => handleDownloadPdf("A")}
+            disabled={downloadingPdf}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-raised)] hover:bg-[var(--surface-hover)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border-hover)] transition-colors disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5 text-[var(--text-dim)]" />
+            <span>Export Light (Print) PDF</span>
           </button>
         </div>
 

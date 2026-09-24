@@ -23,19 +23,23 @@ export function DocumentPreviewShowcase({
   const [activeDoc, setActiveDoc] = useState<"proposal" | "invoice">(initialDocument);
   const [themeMode, setThemeMode] = useState<ThemeMode>(initialTheme);
   const [downloading, setDownloading] = useState(false);
+  const [actionMessage, setActionMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Export PDF according to current active view & theme
   const handleExportPdf = async () => {
     setDownloading(true);
+    setActionMessage(null);
     try {
       const profileDataUrl = await loadProfileImageDataUrl();
       const pdfTemplate = themeMode === "dark" ? "B" : "A";
+      let filename = "";
 
       if (activeDoc === "proposal") {
+        const clientName = proposalData?.clientName || "Miss Al Reem Beauty Centre";
         const doc = generateProposalPdf(
           pdfTemplate,
           {
-            clientName: proposalData?.clientName || "Miss Al Reem Beauty Centre",
+            clientName,
             date: proposalData?.date || "18 September 2026",
             status: "Approved",
             services: proposalData?.services || [
@@ -52,13 +56,23 @@ export function DocumentPreviewShowcase({
           },
           profileDataUrl
         );
-        doc.save(`Proposal_Miss_Al_Reem_${themeMode.toUpperCase()}.pdf`);
+        filename = `Proposal_${clientName.replace(/\s+/g, "_")}_${themeMode.toUpperCase()}.pdf`;
+        const blob = doc.output("blob");
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } else {
+        const clientName = invoiceData?.clientName || "Miss Al Reem Beauty Centre";
+        const invNumber = invoiceData?.invoiceNumber || "INV-0118";
         const doc = generateInvoicePdf(
           pdfTemplate,
           {
-            clientName: invoiceData?.clientName || "Miss Al Reem Beauty Centre",
-            invoiceNumber: invoiceData?.invoiceNumber || "#INV-0118",
+            clientName,
+            invoiceNumber: invNumber,
             date: invoiceData?.issueDate || "18 Sep 2026",
             dueDate: invoiceData?.dueDate || "25 Sep 2026",
             lineItems: invoiceData?.lineItems || [
@@ -72,10 +86,27 @@ export function DocumentPreviewShowcase({
           },
           profileDataUrl
         );
-        doc.save(`Invoice_INV-0118_${themeMode.toUpperCase()}.pdf`);
+        filename = `Invoice_${invNumber.replace(/[^\w-]/g, "_")}_${themeMode.toUpperCase()}.pdf`;
+        const blob = doc.output("blob");
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-    } catch (err) {
+
+      setActionMessage({
+        text: `PDF exported successfully: ${filename} (Download ready)`,
+        type: "success",
+      });
+    } catch (err: any) {
       console.error("Failed to export PDF:", err);
+      setActionMessage({
+        text: "Failed to export PDF: " + (err.message || ""),
+        type: "error",
+      });
     } finally {
       setDownloading(false);
     }
@@ -160,6 +191,27 @@ export function DocumentPreviewShowcase({
           </button>
         </div>
       </div>
+
+      {/* Visible Action/Download Success Notification */}
+      {actionMessage && (
+        <div
+          role="status"
+          className={`w-full max-w-[840px] mb-4 p-3 rounded-xl border text-xs flex items-center justify-between gap-2 shadow-sm ${
+            actionMessage.type === "success"
+              ? "bg-[var(--success-soft)] border-[var(--success-border)] text-[var(--success)]"
+              : "bg-[var(--danger-soft)] border-[var(--danger-border)] text-[var(--danger)]"
+          }`}
+        >
+          <span className="font-medium">{actionMessage.text}</span>
+          <button
+            type="button"
+            onClick={() => setActionMessage(null)}
+            className="text-[var(--text-dim)] hover:text-[var(--text-primary)] text-xs font-semibold px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Document Shell Container ── */}
       <div className="w-full flex justify-center pb-8">

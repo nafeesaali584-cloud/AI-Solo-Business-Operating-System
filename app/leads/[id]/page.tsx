@@ -794,7 +794,20 @@ export default function LeadDetailPage() {
       });
       if (res.ok) {
         const json = await res.json();
-        router.push(`/proposals/builder?client_id=${json.client.id}&lead_id=${leadId}`);
+        // Immediately update local state so badge reflects Proposal and button is replaced
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                lead: {
+                  ...prev.lead,
+                  status: "Proposal",
+                  converted_client_id: json.client?.id || prev.lead.converted_client_id,
+                },
+              }
+            : null
+        );
+        router.push(`/proposals/builder?client_id=${json.client?.id || ""}&lead_id=${leadId}`);
       }
     } catch (err) {
       console.error("Failed to convert lead to proposal", err);
@@ -984,13 +997,23 @@ export default function LeadDetailPage() {
             >
               Book Call
             </button>
-            <button
-              onClick={handleMoveToProposal}
-              className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[color-mix(in_srgb,#8b5cf6_12%,transparent)] hover:bg-[color-mix(in_srgb,#8b5cf6_20%,transparent)] text-[#a78bfa] text-xs font-medium border border-[color-mix(in_srgb,#8b5cf6_30%,transparent)] transition-colors"
-            >
-              <span>Move to Proposal</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
+            {lead.status !== "Proposal" && lead.status !== "Won" && !lead.converted_client_id ? (
+              <button
+                onClick={handleMoveToProposal}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[color-mix(in_srgb,#8b5cf6_12%,transparent)] hover:bg-[color-mix(in_srgb,#8b5cf6_20%,transparent)] text-[#a78bfa] text-xs font-medium border border-[color-mix(in_srgb,#8b5cf6_30%,transparent)] transition-colors"
+              >
+                <span>Move to Proposal</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            ) : (
+              <Link
+                href={`/proposals/builder?client_id=${lead.converted_client_id || ""}&lead_id=${lead.id}`}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[#a78bfa] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                <span>View Proposal</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
             <button
               onClick={() => setIsLostModalOpen(true)}
               className="px-2.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] text-xs font-medium border border-[var(--border)] transition-colors"
