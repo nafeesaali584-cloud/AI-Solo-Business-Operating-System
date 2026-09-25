@@ -23,6 +23,8 @@ import {
   Trash2,
   AlertTriangle,
   X,
+  Lock,
+  Info,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
@@ -247,14 +249,25 @@ export default function ClientDetailPage() {
                 <span>Create Invoice</span>
               </Link>
             ) : (
-              <button
-                disabled
-                title="Enabled once a proposal is marked Accepted"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] text-[var(--text-dim)] text-xs font-medium border border-[var(--border)] cursor-not-allowed"
-              >
-                <Receipt className="w-3.5 h-3.5" />
-                <span>Create Invoice (Locked)</span>
-              </button>
+              <div className="inline-flex items-center gap-2 group">
+                <button
+                  disabled
+                  aria-disabled="true"
+                  title="Locked until a proposal has been created and accepted for this client"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--surface-hover)] text-[var(--text-dim)] text-xs font-medium border border-[var(--border)] cursor-not-allowed opacity-80"
+                >
+                  <Lock className="w-3.5 h-3.5 text-[var(--text-dim)]" />
+                  <span>Create Invoice (Locked)</span>
+                </button>
+                <span
+                  role="note"
+                  className="inline-flex items-center gap-1 text-[11px] text-[var(--text-muted)] bg-[var(--surface-raised)] border border-[var(--border)] rounded-md px-2.5 py-1.5"
+                  title="Locked until a proposal has been created and accepted for this client"
+                >
+                  <Info className="w-3 h-3 text-[var(--info)] shrink-0" />
+                  <span>Locked until a proposal has been created and accepted for this client</span>
+                </span>
+              </div>
             )}
 
             {/* 3. View Onboarding (Gated: enabled once Invoice = Paid or Onboarding exists) */}

@@ -63,6 +63,7 @@ export async function PATCH(
       rating,
       review_count,
       key_services,
+      call_notes,
     } = body;
 
     // Check quota if is_today_target is being enabled
@@ -138,12 +139,32 @@ export async function PATCH(
     if (review_count !== undefined) updateData.review_count = review_count;
     if (key_services !== undefined) updateData.key_services = key_services;
 
+    let createdInteraction = null;
+    if (call_notes !== undefined || (status === "Booking" && !body.skip_interaction)) {
+      const trimmed = String(call_notes || "").trim();
+      const content = trimmed ? `Scheduled Call: ${trimmed}` : "Discovery / Intro Call Scheduled";
+      createdInteraction = await db.interaction.create({
+        data: {
+          lead_id: params.id,
+          channel: "Call",
+          direction: "Outgoing",
+          content,
+          confirmed_sent: true,
+          ai_generated: false,
+        },
+      });
+    }
+
     const updatedLead = await db.lead.update({
       where: { id: params.id },
       data: updateData,
     });
 
-    return NextResponse.json({ success: true, lead: updatedLead });
+    return NextResponse.json({
+      success: true,
+      lead: updatedLead,
+      ...(createdInteraction ? { interaction: createdInteraction } : {}),
+    });
   } catch (error: any) {
     console.error("Lead update error:", error);
     return NextResponse.json(

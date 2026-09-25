@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 
 interface SearchResults {
-  leads: Array<{ id: string; business_name: string; status: string; city_country?: string; url?: string }>;
   clients: Array<{ id: string; business_name: string; stage: string; payment_status: string; url?: string }>;
+  leads: Array<{ id: string; business_name: string; status: string; city_country?: string; url?: string }>;
   proposals: Array<{
     id: string;
     proposal_number?: string;
@@ -40,6 +40,7 @@ interface SearchResults {
     channel: string;
     content: string;
     target_name: string;
+    target_type?: "Client" | "Lead";
     created_at: string;
     url?: string;
   }>;
@@ -47,7 +48,8 @@ interface SearchResults {
 
 interface FlatResultItem {
   id: string;
-  category: "lead" | "client" | "proposal" | "invoice" | "interaction";
+  category: "client" | "lead" | "proposal" | "invoice" | "interaction";
+  entityTag: string;
   title: string;
   subtitle?: string;
   badge?: string;
@@ -64,32 +66,24 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [results, setResults] = useState<SearchResults>({
-    leads: [],
     clients: [],
+    leads: [],
     proposals: [],
     invoices: [],
     interactions: [],
   });
 
   // Build ordered flat list for keyboard navigation and aria-activedescendant
+  // PRIORITY ORDER: Clients -> Leads -> Proposals -> Invoices -> Interactions
   const flatItems: FlatResultItem[] = useMemo(() => {
     const list: FlatResultItem[] = [];
 
-    results.leads.forEach((l) =>
-      list.push({
-        id: l.id,
-        category: "lead",
-        title: l.business_name,
-        subtitle: l.city_country || "Location unknown",
-        badge: l.status,
-        url: l.url || `/leads/${l.id}`,
-      })
-    );
-
-    results.clients.forEach((c) =>
+    // 1. Clients
+    (results.clients || []).forEach((c) =>
       list.push({
         id: c.id,
         category: "client",
+        entityTag: "CLIENT",
         title: c.business_name,
         subtitle: `Stage: ${c.stage} • Payment: ${c.payment_status}`,
         badge: c.stage,
@@ -97,33 +91,52 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
       })
     );
 
-    results.proposals.forEach((p) =>
+    // 2. Leads
+    (results.leads || []).forEach((l) =>
+      list.push({
+        id: l.id,
+        category: "lead",
+        entityTag: "LEAD",
+        title: l.business_name,
+        subtitle: l.city_country || "Location unknown",
+        badge: l.status,
+        url: l.url || `/leads/${l.id}`,
+      })
+    );
+
+    // 3. Proposals
+    (results.proposals || []).forEach((p) =>
       list.push({
         id: p.id,
         category: "proposal",
+        entityTag: "PROPOSAL",
         title: p.title || `Proposal for ${p.client_name}`,
-        subtitle: `$${p.total_investment.toLocaleString()} • ${p.proposal_number || ""}`,
+        subtitle: `$${p.total_investment?.toLocaleString() || 0} • ${p.proposal_number || ""}`,
         badge: p.status,
         url: p.url || `/proposals/builder?id=${p.id}`,
       })
     );
 
-    results.invoices.forEach((inv) =>
+    // 4. Invoices
+    (results.invoices || []).forEach((inv) =>
       list.push({
         id: inv.id,
         category: "invoice",
+        entityTag: "INVOICE",
         title: inv.title || `${inv.invoice_number} — ${inv.client_name}`,
-        subtitle: `$${inv.amount.toLocaleString()}`,
+        subtitle: `$${inv.amount?.toLocaleString() || 0}`,
         badge: inv.status,
         url: inv.url || `/invoices/builder?id=${inv.id}`,
       })
     );
 
-    results.interactions.forEach((i) =>
+    // 5. Interactions
+    (results.interactions || []).forEach((i) =>
       list.push({
         id: i.id,
         category: "interaction",
-        title: `${i.channel} with ${i.target_name}`,
+        entityTag: "INTERACTION",
+        title: `${i.channel} with ${i.target_name} (${i.target_type || "Lead"})`,
         subtitle: i.content,
         badge: new Date(i.created_at).toLocaleDateString(),
         url: i.url || "#",
@@ -165,7 +178,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
   // Fetch search query
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
-      setResults({ leads: [], clients: [], proposals: [], invoices: [], interactions: [] });
+      setResults({ clients: [], leads: [], proposals: [], invoices: [], interactions: [] });
       return;
     }
 
@@ -175,7 +188,13 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
         const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
         if (res.ok) {
           const data = await res.json();
-          setResults(data);
+          setResults({
+            clients: data.clients || [],
+            leads: data.leads || [],
+            proposals: data.proposals || [],
+            invoices: data.invoices || [],
+            interactions: data.interactions || [],
+          });
         }
       } catch (err) {
         console.error("Search fetch failed", err);
@@ -234,7 +253,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search leads, clients, proposals, invoices, messages... (Ctrl+K)"
+            placeholder="Search clients, leads, proposals, invoices, messages... (Ctrl+K)"
             className="flex-1 bg-transparent border-none outline-none text-[var(--text-primary)] placeholder-[var(--text-dim)] text-base"
           />
           {loading && <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin mr-2 flex-shrink-0" />}
@@ -261,65 +280,12 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             </div>
           )}
 
-          {/* Group: Leads */}
-          {results.leads.length > 0 && (
+          {/* 1. Group: Clients (Top Priority) */}
+          {results.clients && results.clients.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                <Users className="w-3.5 h-3.5 text-[var(--info)]" />
-                Leads ({results.leads.length})
-              </div>
-              <div className="space-y-1.5">
-                {results.leads.map((lead) => {
-                  const itemIndex = flatItems.findIndex((i) => i.id === lead.id && i.category === "lead");
-                  const isSelected = selectedIndex === itemIndex;
-                  const itemUrl = lead.url || `/leads/${lead.id}`;
-                  return (
-                    <button
-                      key={lead.id}
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      tabIndex={0}
-                      onClick={() => navigateTo(itemUrl)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          navigateTo(itemUrl);
-                        }
-                      }}
-                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-colors group cursor-pointer ${
-                        isSelected
-                          ? "bg-[var(--surface-raised)] border-[var(--accent)]"
-                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-[var(--border-hover)]"
-                      }`}
-                    >
-                      <div>
-                        <div className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                          {lead.business_name}
-                        </div>
-                        <div className="text-xs text-[var(--text-dim)]">
-                          {lead.city_country || "Location unknown"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
-                          {lead.status}
-                        </span>
-                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)]" />
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Group: Clients */}
-          {results.clients.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                <Briefcase className="w-3.5 h-3.5 text-[var(--success)]" />
-                Clients ({results.clients.length})
+                <Briefcase className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Clients ({results.clients.length})</span>
               </div>
               <div className="space-y-1.5">
                 {results.clients.map((client) => {
@@ -331,6 +297,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                       key={client.id}
                       type="button"
                       role="option"
+                      aria-label={`Client record: ${client.business_name}`}
                       aria-selected={isSelected}
                       tabIndex={0}
                       onClick={() => navigateTo(itemUrl)}
@@ -340,20 +307,30 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                           navigateTo(itemUrl);
                         }
                       }}
-                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-colors group cursor-pointer ${
+                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-all group cursor-pointer ${
                         isSelected
-                          ? "bg-[var(--surface-raised)] border-[var(--success)]"
-                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-[var(--border-hover)]"
+                          ? "bg-[var(--surface-raised)] border-emerald-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-emerald-500/40"
                       }`}
                     >
-                      <div className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[var(--success)] transition-colors">
-                        {client.business_name}
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider shrink-0">
+                            CLIENT
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-emerald-400 transition-colors truncate">
+                            {client.business_name}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[var(--text-dim)] pl-0.5">
+                          Stage: {client.stage} • Payment: {client.payment_status}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
                           {client.stage}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)]" />
+                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-emerald-400 transition-colors" />
                       </div>
                     </button>
                   );
@@ -362,12 +339,71 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             </div>
           )}
 
-          {/* Group: Proposals */}
-          {results.proposals.length > 0 && (
+          {/* 2. Group: Leads */}
+          {results.leads && results.leads.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                <FileText className="w-3.5 h-3.5 text-[var(--accent)]" />
-                Proposals ({results.proposals.length})
+                <Users className="w-3.5 h-3.5 text-blue-400" />
+                <span>Leads ({results.leads.length})</span>
+              </div>
+              <div className="space-y-1.5">
+                {results.leads.map((lead) => {
+                  const itemIndex = flatItems.findIndex((i) => i.id === lead.id && i.category === "lead");
+                  const isSelected = selectedIndex === itemIndex;
+                  const itemUrl = lead.url || `/leads/${lead.id}`;
+                  return (
+                    <button
+                      key={lead.id}
+                      type="button"
+                      role="option"
+                      aria-label={`Lead record: ${lead.business_name}`}
+                      aria-selected={isSelected}
+                      tabIndex={0}
+                      onClick={() => navigateTo(itemUrl)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigateTo(itemUrl);
+                        }
+                      }}
+                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-all group cursor-pointer ${
+                        isSelected
+                          ? "bg-[var(--surface-raised)] border-blue-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-blue-500/40"
+                      }`}
+                    >
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 uppercase tracking-wider shrink-0">
+                            LEAD
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-blue-400 transition-colors truncate">
+                            {lead.business_name}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[var(--text-dim)] pl-0.5">
+                          {lead.city_country || "Location unknown"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
+                          {lead.status}
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-blue-400 transition-colors" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Group: Proposals */}
+          {results.proposals && results.proposals.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                <FileText className="w-3.5 h-3.5 text-purple-400" />
+                <span>Proposals ({results.proposals.length})</span>
               </div>
               <div className="space-y-1.5">
                 {results.proposals.map((p) => {
@@ -379,6 +415,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                       key={p.id}
                       type="button"
                       role="option"
+                      aria-label={`Proposal: ${p.title || p.client_name}`}
                       aria-selected={isSelected}
                       tabIndex={0}
                       onClick={() => navigateTo(itemUrl)}
@@ -388,25 +425,30 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                           navigateTo(itemUrl);
                         }
                       }}
-                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-colors group cursor-pointer ${
+                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-all group cursor-pointer ${
                         isSelected
-                          ? "bg-[var(--surface-raised)] border-[var(--accent)]"
-                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-[var(--border-hover)]"
+                          ? "bg-[var(--surface-raised)] border-purple-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-purple-500/40"
                       }`}
                     >
-                      <div>
-                        <div className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
-                          {p.title || `Proposal for ${p.client_name}`}
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 uppercase tracking-wider shrink-0">
+                            PROPOSAL
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-purple-400 transition-colors truncate">
+                            {p.title || `Proposal for ${p.client_name}`}
+                          </span>
                         </div>
-                        <div className="text-xs text-[var(--text-dim)]">
-                          ${p.total_investment?.toLocaleString()} {p.proposal_number ? `• ${p.proposal_number}` : ""}
+                        <div className="text-xs text-[var(--text-dim)] pl-0.5">
+                          ${p.total_investment?.toLocaleString() || 0} {p.proposal_number ? `• ${p.proposal_number}` : ""}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
                           {p.status}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)]" />
+                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-purple-400 transition-colors" />
                       </div>
                     </button>
                   );
@@ -415,12 +457,12 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             </div>
           )}
 
-          {/* Group: Invoices */}
-          {results.invoices.length > 0 && (
+          {/* 4. Group: Invoices */}
+          {results.invoices && results.invoices.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                <Receipt className="w-3.5 h-3.5 text-[#a78bfa]" />
-                Invoices ({results.invoices.length})
+                <Receipt className="w-3.5 h-3.5 text-amber-400" />
+                <span>Invoices ({results.invoices.length})</span>
               </div>
               <div className="space-y-1.5">
                 {results.invoices.map((inv) => {
@@ -432,6 +474,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                       key={inv.id}
                       type="button"
                       role="option"
+                      aria-label={`Invoice: ${inv.invoice_number}`}
                       aria-selected={isSelected}
                       tabIndex={0}
                       onClick={() => navigateTo(itemUrl)}
@@ -441,23 +484,30 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                           navigateTo(itemUrl);
                         }
                       }}
-                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-colors group cursor-pointer ${
+                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-all group cursor-pointer ${
                         isSelected
-                          ? "bg-[var(--surface-raised)] border-[#a78bfa]"
-                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-[var(--border-hover)]"
+                          ? "bg-[var(--surface-raised)] border-amber-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-amber-500/40"
                       }`}
                     >
-                      <div>
-                        <div className="font-medium text-sm text-[var(--text-primary)] group-hover:text-[#a78bfa] transition-colors">
-                          {inv.title || `${inv.invoice_number} — ${inv.client_name}`}
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider shrink-0">
+                            INVOICE
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-amber-400 transition-colors truncate">
+                            {inv.title || `${inv.invoice_number} — ${inv.client_name}`}
+                          </span>
                         </div>
-                        <div className="text-xs text-[var(--text-dim)]">${inv.amount?.toLocaleString()}</div>
+                        <div className="text-xs text-[var(--text-dim)] pl-0.5">
+                          ${inv.amount?.toLocaleString() || 0}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
                           {inv.status}
                         </span>
-                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-[var(--text-secondary)]" />
+                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-amber-400 transition-colors" />
                       </div>
                     </button>
                   );
@@ -466,39 +516,54 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             </div>
           )}
 
-          {/* Group: Interactions */}
-          {results.interactions.length > 0 && (
+          {/* 5. Group: Interactions (Distinct entity tag to prevent confusion with Client records) */}
+          {results.interactions && results.interactions.length > 0 && (
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-                <MessageSquare className="w-3.5 h-3.5 text-[var(--info)]" />
-                Interactions ({results.interactions.length})
+                <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Interactions &amp; Messages ({results.interactions.length})</span>
               </div>
               <div className="space-y-1.5">
                 {results.interactions.map((msg) => {
                   const itemIndex = flatItems.findIndex((i) => i.id === msg.id && i.category === "interaction");
                   const isSelected = selectedIndex === itemIndex;
                   const itemUrl = msg.url || "#";
+                  const targetType = msg.target_type || "Lead";
                   return (
                     <button
                       key={msg.id}
                       type="button"
                       role="option"
+                      aria-label={`Interaction message for ${targetType}: ${msg.target_name}`}
                       aria-selected={isSelected}
                       tabIndex={0}
                       onClick={() => navigateTo(itemUrl)}
-                      className={`w-full text-left p-2.5 rounded-lg border transition-colors ${
+                      className={`w-full text-left p-2.5 rounded-lg border transition-all ${
                         isSelected
-                          ? "bg-[var(--surface-raised)] border-[var(--info)]"
-                          : "bg-[var(--surface-hover)] border-[var(--border)]"
+                          ? "bg-[var(--surface-raised)] border-indigo-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-[var(--border)] hover:border-indigo-500/40"
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-1">
-                        <span className="font-semibold text-[var(--text-secondary)]">
-                          {msg.channel} with {msg.target_name}
+                        <div className="flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 uppercase tracking-wider">
+                            INTERACTION
+                          </span>
+                          <span className="font-semibold text-[var(--text-secondary)]">
+                            {msg.channel} with {msg.target_name} ({targetType})
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-[var(--text-dim)]">
+                          {new Date(msg.created_at).toLocaleDateString()}
                         </span>
-                        <span>{new Date(msg.created_at).toLocaleDateString()}</span>
                       </div>
-                      <div className="text-xs text-[var(--text-muted)] line-clamp-2">{msg.content}</div>
+                      <div className="text-xs text-[var(--text-muted)] line-clamp-2 italic mb-1.5 pl-0.5">
+                        &ldquo;{msg.content}&rdquo;
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-indigo-400 font-medium pt-1 border-t border-[var(--border)]">
+                        <span>Opens {targetType} Record</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
                     </button>
                   );
                 })}

@@ -230,6 +230,8 @@ export default function LeadDetailPage() {
   // Book Call Modal
   const [isBookCallModalOpen, setIsBookCallModalOpen] = useState(false);
   const [callNotes, setCallNotes] = useState("");
+  const [bookingCall, setBookingCall] = useState(false);
+  const [bookCallSuccessMessage, setBookCallSuccessMessage] = useState<string | null>(null);
 
   // Mark Lost Modal
   const [isLostModalOpen, setIsLostModalOpen] = useState(false);
@@ -757,16 +759,27 @@ export default function LeadDetailPage() {
 
   // Book Call
   const handleBookCall = async () => {
+    setBookingCall(true);
     try {
-      await fetch(`/api/leads/${leadId}`, {
-        method: "PATCH",
+      const res = await fetch(`/api/leads/${leadId}/book-call`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Booking" }),
+        body: JSON.stringify({ call_notes: callNotes }),
       });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error || "Failed to book call");
+      }
       setIsBookCallModalOpen(false);
-      fetchLead();
-    } catch (err) {
+      setCallNotes("");
+      setBookCallSuccessMessage("Call booked successfully! Interaction logged to history.");
+      setTimeout(() => setBookCallSuccessMessage(null), 6000);
+      await fetchLead();
+    } catch (err: any) {
       console.error("Failed to book call", err);
+      alert(err.message || "Failed to book call");
+    } finally {
+      setBookingCall(false);
     }
   };
 
@@ -1056,6 +1069,22 @@ export default function LeadDetailPage() {
         </div>
       )}
 
+      {/* Booking Success Banner */}
+      {bookCallSuccessMessage && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 flex items-center justify-between gap-2 shadow-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="font-semibold">{bookCallSuccessMessage}</span>
+          </div>
+          <button
+            onClick={() => setBookCallSuccessMessage(null)}
+            className="text-emerald-400/70 hover:text-emerald-300 text-xs"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* ─── DYNAMIC SINGLE-OFFER BANNER ─── */}
       {lead.primary_offer && (
         <div className="rounded-xl bg-[var(--surface)] border border-[var(--accent-border)] p-5 space-y-3 relative overflow-hidden">
@@ -1336,6 +1365,50 @@ export default function LeadDetailPage() {
               )}
             </div>
           )}
+
+          {/* 4. Verified Sources & Online Footprint */}
+          <div className="space-y-2.5 pt-3 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[var(--text-primary)] uppercase tracking-wider">
+                Verified Sources &amp; Online Footprint:
+              </span>
+              <span className="text-[11px] text-[var(--text-dim)]">
+                {lead.research_data.sources?.length || 0} source citation(s)
+              </span>
+            </div>
+            {lead.research_data.sources && lead.research_data.sources.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                {lead.research_data.sources.map((src: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={src.url?.startsWith("http") ? src.url : `https://${src.url || ""}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] border border-[var(--border)] hover:border-[var(--accent)] transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] uppercase">
+                          Source
+                        </span>
+                        <span className="font-semibold text-xs text-[var(--text-primary)] truncate group-hover:text-[var(--accent)]">
+                          {src.title || src.url}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-[var(--text-dim)] truncate block">
+                        {src.url}
+                      </span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent)] shrink-0" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs text-[var(--text-dim)] italic">
+                No matching verified footprint found for this business online.
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1392,7 +1465,21 @@ export default function LeadDetailPage() {
                 </div>
                 <div>
                   <span className="text-[var(--text-dim)] font-medium">Website: </span>
-                  <span className="text-[var(--text-primary)]">{lead.website || "Not on file"}</span>
+                  {lead.website ? (
+                    <a
+                      href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium"
+                    >
+                      <span>{lead.website}</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  ) : lead.research_data ? (
+                    <span className="text-[var(--text-dim)] italic">Not on file (No verified footprint found)</span>
+                  ) : (
+                    <span className="text-[var(--text-primary)]">Not on file</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1765,6 +1852,13 @@ export default function LeadDetailPage() {
           </button>
         </div>
 
+        {bookCallSuccessMessage && (
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 font-medium animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{bookCallSuccessMessage}</span>
+          </div>
+        )}
+
         {lead.interactions.length === 0 ? (
           <div className="p-8 text-center text-[var(--text-dim)] text-xs">
             No interactions recorded yet. Click &quot;Contact&quot; above to draft your first outreach.
@@ -1831,8 +1925,8 @@ export default function LeadDetailPage() {
         )}
       </div>
 
-      {/* Full Imported Data (Raw CSV Record) */}
-      {lead.source_csv_row && Object.keys(lead.source_csv_row).length > 0 && (
+      {/* Full Imported & Enriched Data */}
+      {((lead.source_csv_row && Object.keys(lead.source_csv_row).length > 0) || lead.research_data) && (
         <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden">
           <button
             onClick={() => setShowRawData((p) => !p)}
@@ -1842,8 +1936,13 @@ export default function LeadDetailPage() {
               <Database className="w-4 h-4 text-[var(--text-dim)]" />
               <span className="text-sm font-semibold text-[var(--text-secondary)]">Full Imported Data</span>
               <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-[var(--text-muted)] border border-[var(--border)]">
-                Raw CSV Record — {Object.keys(lead.source_csv_row).length} columns
+                {lead.source_csv_row ? `${Object.keys(lead.source_csv_row).length} attributes` : "Lead Profile"}
               </span>
+              {lead.research_data && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  Enriched via Web Research
+                </span>
+              )}
             </div>
             {showRawData ? (
               <ChevronDown className="w-4 h-4 text-[var(--text-dim)]" />
@@ -1853,27 +1952,117 @@ export default function LeadDetailPage() {
           </button>
 
           {showRawData && (
-            <div className="px-6 pb-6 space-y-2">
+            <div className="px-6 pb-6 space-y-4">
               <p className="text-[11px] text-[var(--text-dim)] pb-2 border-b border-[var(--border)]">
-                Every column from the original CSV is preserved here, including unmapped fields. This is the immutable source of truth for this lead.
+                Every column from the original CSV is preserved here, along with enriched data discovered via live web research.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {Object.entries(lead.source_csv_row as Record<string, unknown>).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="flex gap-2 p-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)]"
-                  >
-                    <span className="text-[11px] font-medium text-[var(--text-muted)] shrink-0 min-w-[100px] max-w-[140px] truncate">
-                      {key}
-                    </span>
-                    <span className="text-[11px] text-[var(--text-primary)] break-words min-w-0">
-                      {value !== null && value !== undefined && String(value) !== ""
-                        ? String(value)
-                        : <span className="text-[var(--text-dim)] italic">empty</span>}
-                    </span>
+
+              {/* Enriched Web Research Attributes & Sources */}
+              {lead.research_data && (
+                <div className="p-4 rounded-xl bg-[var(--surface-hover)] border border-[var(--accent-border)] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                      <span className="text-xs font-semibold text-[var(--text-primary)]">Enriched Research Attributes</span>
+                    </div>
+                    {lead.research_data.researched_at && (
+                      <span className="text-[10px] text-[var(--text-dim)]">
+                        Researched: {new Date(lead.research_data.researched_at).toLocaleString()}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
+                      <span className="text-[var(--text-muted)] font-medium">Verified Website:</span>
+                      {lead.website ? (
+                        <a
+                          href={lead.website.startsWith("http") ? lead.website : `https://${lead.website}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-semibold"
+                        >
+                          <span>{lead.website}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      ) : (
+                        <span className="text-[var(--text-dim)] italic">No matching verified footprint found</span>
+                      )}
+                    </div>
+                    <div className="p-2.5 rounded bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
+                      <span className="text-[var(--text-muted)] font-medium">Domain:</span>
+                      <span className="text-[var(--text-primary)] font-mono">{lead.research_data.domain || "None detected"}</span>
+                    </div>
+                    <div className="p-2.5 rounded bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
+                      <span className="text-[var(--text-muted)] font-medium">Qualification Tier:</span>
+                      <span className="text-[var(--text-primary)] font-semibold">{lead.research_data.qualification_tier || lead.qualification_tier || "Warm"}</span>
+                    </div>
+                    <div className="p-2.5 rounded bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
+                      <span className="text-[var(--text-muted)] font-medium">Primary Offer:</span>
+                      <span className="text-[var(--text-primary)] font-semibold">{lead.research_data.primary_offer || lead.primary_offer || "WhatsApp Automation"}</span>
+                    </div>
+                  </div>
+
+                  {/* Sources List with Links */}
+                  <div className="pt-2 border-t border-[var(--border)]">
+                    <span className="text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider block mb-2">
+                      Verified Research Sources &amp; Citations:
+                    </span>
+                    {lead.research_data.sources && lead.research_data.sources.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {lead.research_data.sources.map((s: any, idx: number) => (
+                          <a
+                            key={idx}
+                            href={s.url?.startsWith("http") ? s.url : `https://${s.url || ""}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 rounded bg-[var(--surface)] hover:bg-[var(--surface-raised)] border border-[var(--border)] hover:border-[var(--accent)] text-xs flex items-center justify-between gap-2 group transition-all"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] block truncate">
+                                {s.title || s.url}
+                              </span>
+                              <span className="text-[10px] text-[var(--text-dim)] block truncate">
+                                {s.url}
+                              </span>
+                            </div>
+                            <ExternalLink className="w-3 h-3 text-[var(--text-muted)] shrink-0 group-hover:text-[var(--accent)]" />
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--text-dim)] italic">
+                        No matching verified footprint found for this business online.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Raw CSV Record Fields */}
+              {lead.source_csv_row && Object.keys(lead.source_csv_row).length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
+                    Raw CSV Record Fields ({Object.keys(lead.source_csv_row).length} keys):
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {Object.entries(lead.source_csv_row as Record<string, unknown>).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className="flex gap-2 p-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)]"
+                      >
+                        <span className="text-[11px] font-medium text-[var(--text-muted)] shrink-0 min-w-[100px] max-w-[140px] truncate">
+                          {key}
+                        </span>
+                        <span className="text-[11px] text-[var(--text-primary)] break-words min-w-0">
+                          {value !== null && value !== undefined && String(value) !== ""
+                            ? String(value)
+                            : <span className="text-[var(--text-dim)] italic">empty</span>}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -2152,9 +2341,11 @@ export default function LeadDetailPage() {
               </button>
               <button
                 onClick={handleBookCall}
-                className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors"
+                disabled={bookingCall}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold transition-colors disabled:opacity-50"
               >
-                Confirm Call Booking
+                {bookingCall && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{bookingCall ? "Booking Call..." : "Confirm Call Booking"}</span>
               </button>
             </div>
           </div>

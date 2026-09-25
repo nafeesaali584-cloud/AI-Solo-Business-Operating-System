@@ -20,101 +20,131 @@ export async function GET(req: NextRequest) {
     }
 
     const q = query.trim();
+    const lowerQ = q.toLowerCase();
     // Auto-seed canonical records if not yet present
     await ensureCanonicalSeed();
 
     const uuidQ = q.replace(/^(prop|prp|inv)[-_#]?/i, "").trim();
 
-    // 1. Leads — exclude converted leads (they surface as Clients instead)
-    const leads = await db.lead.findMany({
-      where: {
-        AND: [
-          {
-            OR: [
-              { business_name: { contains: q, mode: "insensitive" } },
-              { email: { contains: q, mode: "insensitive" } },
-              { niche_industry: { contains: q, mode: "insensitive" } },
-              { city_country: { contains: q, mode: "insensitive" } },
-            ],
-          },
-          // Only show leads that haven't been converted to a client record
-          { converted_client_id: null },
-        ],
-      },
-      take: 6,
+    // Check if the user is searching by entity keyword
+    const isClientKeyword = ["client", "clients"].includes(lowerQ);
+    const isLeadKeyword = ["lead", "leads"].includes(lowerQ);
+    const isProposalKeyword = ["proposal", "proposals", "prop"].includes(lowerQ);
+    const isInvoiceKeyword = ["invoice", "invoices", "inv"].includes(lowerQ);
+
+    // 1. Clients (Workspace B)
+    const clientWhere = isClientKeyword
+      ? {}
+      : {
+          OR: [
+            { business_name: { contains: q, mode: "insensitive" as const } },
+            { email: { contains: q, mode: "insensitive" as const } },
+            { primary_contact: { contains: q, mode: "insensitive" as const } },
+          ],
+        };
+
+    const clients = await db.client.findMany({
+      where: clientWhere,
+      orderBy: { created_at: "desc" },
+      take: 8,
     });
 
-    // 2. Clients
-    const clients = await db.client.findMany({
-      where: {
-        OR: [
-          { business_name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { primary_contact: { contains: q, mode: "insensitive" } },
-        ],
-      },
-      take: 6,
+    // 2. Leads (Workspace A — exclude converted leads)
+    const leadWhere = isLeadKeyword
+      ? { converted_client_id: null }
+      : {
+          AND: [
+            {
+              OR: [
+                { business_name: { contains: q, mode: "insensitive" as const } },
+                { email: { contains: q, mode: "insensitive" as const } },
+                { niche_industry: { contains: q, mode: "insensitive" as const } },
+                { city_country: { contains: q, mode: "insensitive" as const } },
+              ],
+            },
+            { converted_client_id: null },
+          ],
+        };
+
+    const leads = await db.lead.findMany({
+      where: leadWhere,
+      orderBy: { created_at: "desc" },
+      take: 8,
     });
 
     // 3. Proposals
-    const proposalOrClauses: any[] = [
-      { client: { business_name: { contains: q, mode: "insensitive" } } },
-      { lead: { business_name: { contains: q, mode: "insensitive" } } },
-      { scope: { contains: q, mode: "insensitive" } },
-      { deliverables: { contains: q, mode: "insensitive" } },
-    ];
-    if (uuidQ && uuidQ.length >= 2) {
-      proposalOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+    let proposalWhere: any = {};
+    if (isProposalKeyword) {
+      proposalWhere = {};
+    } else {
+      const proposalOrClauses: any[] = [
+        { client: { business_name: { contains: q, mode: "insensitive" } } },
+        { lead: { business_name: { contains: q, mode: "insensitive" } } },
+        { scope: { contains: q, mode: "insensitive" } },
+        { deliverables: { contains: q, mode: "insensitive" } },
+      ];
+      if (uuidQ && uuidQ.length >= 2) {
+        proposalOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+      }
+      proposalWhere = { OR: proposalOrClauses };
     }
 
     const proposals = await db.proposal.findMany({
-      where: {
-        OR: proposalOrClauses,
-      },
+      where: proposalWhere,
       include: { client: true, lead: true },
-      take: 6,
+      orderBy: { created_at: "desc" },
+      take: 8,
     });
 
     // 4. Invoices
-    const invoiceOrClauses: any[] = [
-      { invoice_number: { contains: q, mode: "insensitive" } },
-      { client: { business_name: { contains: q, mode: "insensitive" } } },
-    ];
-    if (uuidQ && uuidQ.length >= 2) {
-      invoiceOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+    let invoiceWhere: any = {};
+    if (isInvoiceKeyword) {
+      invoiceWhere = {};
+    } else {
+      const invoiceOrClauses: any[] = [
+        { invoice_number: { contains: q, mode: "insensitive" } },
+        { client: { business_name: { contains: q, mode: "insensitive" } } },
+      ];
+      if (uuidQ && uuidQ.length >= 2) {
+        invoiceOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+      }
+      invoiceWhere = { OR: invoiceOrClauses };
     }
 
     const invoices = await db.invoice.findMany({
-      where: {
-        OR: invoiceOrClauses,
-      },
+      where: invoiceWhere,
       include: { client: true },
-      take: 6,
+      orderBy: { created_at: "desc" },
+      take: 8,
     });
 
-    // 5. Interactions
-    const interactions = await db.interaction.findMany({
-      where: {
-        content: { contains: q, mode: "insensitive" },
-      },
-      include: { client: true, lead: true },
-      take: 6,
-    });
+    // 5. Interactions (Only if not purely searching an entity category like "client" or "lead")
+    let interactions: any[] = [];
+    if (!isClientKeyword && !isLeadKeyword && !isProposalKeyword && !isInvoiceKeyword) {
+      interactions = await db.interaction.findMany({
+        where: {
+          content: { contains: q, mode: "insensitive" },
+        },
+        include: { client: true, lead: true },
+        orderBy: { created_at: "desc" },
+        take: 6,
+      });
+    }
 
     return NextResponse.json({
-      leads: leads.map((l) => ({
-        id: l.id,
-        business_name: l.business_name,
-        status: l.status,
-        city_country: l.city_country,
-        url: `/leads/${l.id}`,
-      })),
       clients: clients.map((c) => ({
         id: c.id,
         business_name: c.business_name,
         stage: c.stage,
         payment_status: c.payment_status,
         url: `/clients/${c.id}`,
+      })),
+      leads: leads.map((l) => ({
+        id: l.id,
+        business_name: l.business_name,
+        status: l.status,
+        city_country: l.city_country,
+        url: `/leads/${l.id}`,
       })),
       proposals: proposals.map((p) => {
         const clientName = p.client?.business_name || p.lead?.business_name || "Prospect";
@@ -143,6 +173,7 @@ export async function GET(req: NextRequest) {
         channel: i.channel,
         content: i.content,
         target_name: i.client?.business_name || i.lead?.business_name || "Contact",
+        target_type: i.client_id ? "Client" : "Lead",
         created_at: i.created_at,
         url: i.client_id ? `/clients/${i.client_id}` : i.lead_id ? `/leads/${i.lead_id}` : "#",
       })),
@@ -155,4 +186,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
