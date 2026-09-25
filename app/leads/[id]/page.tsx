@@ -375,9 +375,7 @@ export default function LeadDetailPage() {
         return;
       }
       setResearchNotice(
-        json.demo_mode
-          ? "⚠️ Search quota limit reached — showing pre-built research profile. Real data will load when quota resets."
-          : json.cached
+        json.cached
           ? "Loaded existing grounded research from cache (0 new search queries used)."
           : "Completed Deep Research & Competitor Pricing via Google Search Grounding!"
       );

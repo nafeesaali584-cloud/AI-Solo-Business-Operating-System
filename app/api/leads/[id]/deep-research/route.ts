@@ -2,125 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { executeLeadDeepResearch } from "@/lib/ai/research";
 
-/** Demo research result returned when Google Search quota is exceeded or mock fallback is triggered */
-function buildDemoResearch(lead: {
-  business_name: string;
-  city_country?: string | null;
-  niche_industry?: string | null;
-  website?: string | null;
-}) {
-  const city = lead.city_country || "Dubai, UAE";
-  const niche = lead.niche_industry || "Service Business";
-  const cleanName = lead.business_name.trim();
-  const encodedName = encodeURIComponent(cleanName);
-  const domain = lead.website
-    ? lead.website.replace(/https?:\/\/(www\.)?/, "").replace(/\/$/, "")
-    : `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
-  const discoveredWebsite = lead.website || `https://${domain}`;
-
-  const sources = [
-    {
-      title: `${cleanName} - Official Web Footprint & Profile`,
-      url: discoveredWebsite,
-    },
-    {
-      title: `${cleanName} - Google Business & Regional Directory`,
-      url: `https://www.google.com/search?q=${encodedName}+${encodeURIComponent(city)}`,
-    },
-    {
-      title: `${city} Commercial Directory - ${cleanName}`,
-      url: `https://www.google.com/search?q=${encodedName}+directory+${encodeURIComponent(city)}`,
-    },
-  ];
-
-  const validationAudit = [
-    {
-      title: `${cleanName} (${city})`,
-      url: discoveredWebsite,
-      matched: true,
-      reason: `Verified commercial digital presence matching "${cleanName}" in ${city}.`,
-    },
-    {
-      title: `${cleanName} Directory Listing`,
-      url: `https://www.google.com/search?q=${encodedName}+${encodeURIComponent(city)}`,
-      matched: true,
-      reason: `Verified regional commercial record and business footprint in ${city}.`,
-    },
-  ];
-
-  return {
-    business_name: lead.business_name,
-    domain: domain,
-    site_health: {
-      has_website: true,
-      is_biolink_only: false,
-      indexed_pages_note: lead.website
-        ? `Website is indexed with limited SEO visibility in ${city} regional search.`
-        : `Verified web presence found at ${domain}. Lacks mobile conversion funnel.`,
-      is_weak_seo: true,
-      tech_debt_flag: "Existing site lacks automated WhatsApp booking intake and conversion funnel.",
-    },
-    reputation: {
-      summary: `${lead.business_name} has a verified commercial presence in ${city} with customer footfall. Online reputation management is active but unoptimized.`,
-      pain_points: [
-        "No online booking or WhatsApp auto-response for customer inquiries.",
-        "Limited visibility in local Google search results.",
-      ],
-      positive_notes: [
-        "Established local business with repeat clientele.",
-        `Active in the ${niche} niche in ${city}.`,
-      ],
-    },
-    recent_news: null,
-    social_presence: [
-      {
-        platform: "Instagram",
-        url: `https://instagram.com/${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
-      },
-    ],
-    competitor_pricing: [
-      {
-        competitor_name: `${city} Regional Market Benchmark`,
-        price_range: "AED 2,500 – 6,500",
-        source_url: `https://www.google.com/search?q=${encodeURIComponent(niche + " pricing " + city)}`,
-        notes: `Standard regional rate for professional ${niche} digital services.`,
-      },
-    ],
-    qualification_signals: [
-      {
-        type: "no_chatbot" as const,
-        label: "No Automated Intake",
-        detail: "No online booking or chat automation detected on website or social profiles.",
-        confidence: "High" as const,
-      },
-      {
-        type: "tech_debt" as const,
-        label: "Weak Digital Presence",
-        detail: "Limited indexed pages and low local SEO footprint.",
-        confidence: "Medium" as const,
-      },
-    ],
-    qualification_tier: "Warm" as const,
-    qualification_score: 65,
-    qualification_reasoning: [
-      "Established local business with existing customer footfall (baseline score).",
-      "No automated WhatsApp booking creates immediate pitch leverage.",
-      "Anchored against regional competitor pricing benchmark.",
-    ],
-    primary_observation: "Website lacks a streamlined customer conversion funnel and WhatsApp automation for instant lead capture.",
-    primary_offer: "WhatsApp Automation" as const,
-    sources,
-    executed_queries: [
-      `"${cleanName}" ${city} website OR online booking OR portal`,
-      `"${cleanName}" review OR complaint OR feedback ${city}`,
-      `"${cleanName}" ${city} "whatsapp" OR "chat" OR "book online"`,
-    ],
-    validation_audit: validationAudit,
-    researched_at: new Date().toISOString(),
-    _demo_mode: true,
-  };
-}
-
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -165,50 +46,37 @@ export async function POST(
         source_csv_row: lead.source_csv_row,
       });
     } catch (researchErr: any) {
+      const errMsg = researchErr?.message || "";
       const isQuota =
-        researchErr?.message?.toLowerCase().includes("quota") ||
-        researchErr?.message?.toLowerCase().includes("rate limit") ||
+        errMsg.toLowerCase().includes("quota") ||
+        errMsg.toLowerCase().includes("rate limit") ||
         researchErr?.status === 429 ||
         researchErr?.code === 429;
 
-      if (!isQuota) {
-        throw researchErr;
+      // ANTI-FABRICATION RULE:
+      // When search hits quota or fails, NEVER synthesize fake data or domains.
+      // Return explicit error to user and do NOT mutate the database.
+      if (isQuota) {
+        return NextResponse.json(
+          {
+            error: "Research could not be completed — search quota limit reached, try again later",
+          },
+          { status: 429 }
+        );
       }
-      researchResult = buildDemoResearch(lead);
+
+      return NextResponse.json(
+        {
+          error: researchErr.message || "Failed to execute deep research",
+        },
+        { status: 500 }
+      );
     }
 
-    // If sources is empty, attach grounded regional search sources so citations are never null/empty
-    const cleanName = lead.business_name.trim();
-    const city = lead.city_country || "Dubai, UAE";
-    const leadDomain = researchResult.domain || (lead.website ? lead.website.replace(/https?:\/\/(www\.)?/, "") : `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`);
-    const discoveredWebsite = lead.website || (leadDomain ? `https://${leadDomain}` : null);
+    // Only genuine results from executeLeadDeepResearch reach here
+    const genuineSources = Array.isArray(researchResult.sources) ? researchResult.sources : [];
 
-    if (!researchResult.sources || researchResult.sources.length === 0) {
-      researchResult.sources = [
-        {
-          title: `${cleanName} - Verified Web Footprint`,
-          url: discoveredWebsite || `https://www.google.com/search?q=${encodeURIComponent(cleanName)}`,
-        },
-        {
-          title: `${cleanName} - Google Search & Directory Footprint`,
-          url: `https://www.google.com/search?q=${encodeURIComponent(cleanName + " " + city)}`,
-        },
-      ];
-    }
-
-    // Build enriched CSV data to persist alongside raw CSV data
-    const existingCsv = (lead.source_csv_row as Record<string, unknown>) || {};
-    const updatedCsvRow = {
-      ...existingCsv,
-      ...(discoveredWebsite ? { enriched_website: discoveredWebsite } : {}),
-      ...(leadDomain ? { enriched_domain: leadDomain } : {}),
-      enriched_reputation_summary: researchResult.reputation?.summary || "",
-      enriched_primary_offer: researchResult.primary_offer,
-      enriched_qualification: researchResult.qualification_tier,
-      enriched_sources_count: researchResult.sources?.length || 0,
-      deep_research_verified: true,
-    };
-
+    // Only update website if lead did not have one AND a genuine domain was verified from research
     const updateData: any = {
       research_data: researchResult as any,
       competitor_pricing: researchResult.competitor_pricing as any,
@@ -219,12 +87,11 @@ export async function POST(
       ai_summary: `${researchResult.reputation?.summary || ""} ${researchResult.site_health?.indexed_pages_note || ""}`.trim(),
       ai_opportunity: `Single prioritized observation: ${researchResult.primary_observation}`,
       ai_recommended_angle: `Focus 100% on offering "${researchResult.primary_offer}". Do not cross-pitch secondary services in initial outreach.`,
-      source_csv_row: updatedCsvRow,
     };
 
-    // Update website if missing on file
-    if (!lead.website && discoveredWebsite) {
-      updateData.website = discoveredWebsite;
+    // If genuine research verified an official domain, attach it
+    if (!lead.website && researchResult.domain) {
+      updateData.website = `https://${researchResult.domain}`;
     }
 
     // Persist enriched research directly to the Lead record in PostgreSQL
@@ -236,12 +103,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       cached: false,
-      demo_mode: !!(researchResult as any)._demo_mode,
-      message: (researchResult as any)._demo_mode
-        ? "Search quota limit reached — showing pre-built grounded research profile. Enriched data persisted to database."
-        : "Deep research completed and persisted to database.",
       research: researchResult,
       lead: updatedLead,
+      sources_count: genuineSources.length,
     });
   } catch (error: any) {
     console.error("Deep research error:", error);
