@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { COLOR_TOKENS, ThemeMode } from "@/lib/brand/tokens";
@@ -31,11 +31,11 @@ export interface InvoiceDocumentProps {
 
 export function InvoiceDocument({
   mode = "dark",
-  clientName = "Miss Al Reem Beauty Centre",
-  clientAddress = "Ajman, UAE",
-  clientPhone = "+971 50 xxx xxxx",
-  invoiceNumber = "#INV-0118",
-  relatedProposalNumber = "#PRP-0042",
+  clientName = "Valued Client",
+  clientAddress = "",
+  clientPhone = "",
+  invoiceNumber = "#INV-0001",
+  relatedProposalNumber = "",
   issueDate = "18 Sep 2026",
   dueDate = "25 Sep 2026",
   status = "Awaiting payment",

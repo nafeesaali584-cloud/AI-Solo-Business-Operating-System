@@ -212,7 +212,7 @@ export default function DashboardPage() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/dashboard");
+      const res = await fetch("/api/dashboard", { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -292,25 +292,39 @@ export default function DashboardPage() {
             <CardHeader
               icon={Target}
               title="New Targets"
-              iconColor="var(--accent)"
+              iconColor={quota.current > quota.max ? "var(--danger, #ef4444)" : "var(--accent)"}
               rightSlot={
                 <StatBadge
                   value={`${quota.current} / ${quota.max}`}
-                  label="today"
-                  variant="accent"
+                  label={quota.current > quota.max ? "over quota" : "today"}
+                  variant={quota.current > quota.max ? "danger" : "accent"}
                 />
               }
             />
 
-            <p className="text-xs text-[var(--text-muted)] mb-4">
+            <p className="text-xs text-[var(--text-muted)] mb-3">
               Your daily outreach quota. Focus on high-value prospects.
             </p>
+
+            {quota.current > quota.max && (
+              <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <p className="font-semibold text-amber-300">
+                    Over Quota ({quota.current}/{quota.max})
+                  </p>
+                  <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                    Quota was lowered in Settings. Please unflag {quota.current - quota.max} target{quota.current - quota.max === 1 ? "" : "s"} in the Lead List to bring your targets within limit.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {quota.targets.length === 0 ? (
               <EmptyState
                 icon={Target}
                 message="No targets selected yet for today."
-                cta="Pick 3 targets from Lead Engine"
+                cta={`Pick ${quota.max} targets from Lead Engine`}
                 ctaHref="/leads"
               />
             ) : (
@@ -343,7 +357,11 @@ export default function DashboardPage() {
 
           <CardFooter>
             <div className="flex items-center justify-between">
-              <span>Max {quota.max} active</span>
+              <span className={quota.current > quota.max ? "text-amber-400 font-semibold" : ""}>
+                {quota.current > quota.max
+                  ? `Over by ${quota.current - quota.max} (Cap: ${quota.max})`
+                  : `Max ${quota.max} active`}
+              </span>
               <Link href="/leads" className="text-[var(--accent)] hover:underline">
                 Browse all leads &rarr;
               </Link>

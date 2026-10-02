@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { COLOR_TOKENS, ThemeMode } from "@/lib/brand/tokens";
@@ -25,14 +25,14 @@ export interface ProposalDocumentProps {
 
 export function ProposalDocument({
   mode = "dark",
-  clientName = "Miss Al Reem Beauty Centre",
-  proposalNumber = "#PRP-0042",
+  clientName = "Valued Client",
+  proposalNumber = "#PRP-0001",
   date = "18 September 2026",
   validUntil = "2 October 2026",
-  headline = "A website that works while you sleep.",
-  subtitle = "Prepared for Miss Al Reem Beauty Centre — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.",
-  whatWeFound = "Your current site has no online booking and no way to capture a visitor before they leave. Most inquiries currently come through Instagram DMs, which are easy to miss during busy salon hours.",
-  findingTags = ["No booking system", "Mobile load: 6.2s", "Instagram-only contact"],
+  headline = "Customized Service Proposal",
+  subtitle = "Tailored proposal designed to address your core operational requirements and drive measurable business growth.",
+  whatWeFound = "Scope of services and identified requirements based on preliminary business assessment.",
+  findingTags = [],
   services = [
     {
       name: "Website redesign",

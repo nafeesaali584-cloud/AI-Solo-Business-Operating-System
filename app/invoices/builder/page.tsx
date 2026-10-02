@@ -97,6 +97,7 @@ function InvoiceBuilderContent() {
   const [paymentMethod, setPaymentMethod] = useState<string>("sadapay");
   const [notes, setNotes] = useState("Thank you for partnering with us. We look forward to executing this milestone.");
   const [status, setStatus] = useState<"Draft" | "Sent" | "Paid" | "Pending" | "Overdue">("Draft");
+  const [currency, setCurrency] = useState<string>("USD");
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
   const [paidConfirmedAt, setPaidConfirmedAt] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
@@ -134,30 +135,85 @@ function InvoiceBuilderContent() {
               data: inv,
             });
           }
-        } else if (proposalIdParam) {
-          const res = await fetch(`/api/proposals?id=${proposalIdParam}`);
-          if (res.ok) {
-            const json = await res.json();
-            const p = json.proposal;
-            setClientName(p.client?.business_name || p.lead?.business_name || "Client");
-            setClientId(p.client_id);
-            if (p.services && Array.isArray(p.services)) {
-              setLineItems(
-                p.services.map((s: any) => ({
-                  description: s.name,
-                  quantity: 1,
-                  unit_price: Number(s.price) || 0,
-                  total: Number(s.price) || 0,
-                }))
-              );
-            }
+        } else if (clientIdParam || proposalIdParam) {
+          // FIX 5: Resolve existing invoice on param URLs first
+          const invRes = await fetch(
+            clientIdParam ? `/api/invoices?client_id=${clientIdParam}` : `/api/invoices`
+          );
+          let existingInv = null;
+          if (invRes.ok) {
+            const invJson = await invRes.json();
+            existingInv = (invJson.invoices || []).find((i: any) =>
+              proposalIdParam ? i.proposal_id === proposalIdParam : i.client_id === clientIdParam
+            );
           }
-        } else if (clientIdParam) {
-          const res = await fetch(`/api/clients/${clientIdParam}`);
-          if (res.ok) {
-            const json = await res.json();
-            setClientName(json.client.business_name);
-            setClientId(json.client.id);
+
+          if (existingInv) {
+            setId(existingInv.id);
+            setClientId(existingInv.client_id);
+            setProposalId(existingInv.proposal_id);
+            setClientName(existingInv.client?.business_name || "Client");
+            setInvoiceNumber(existingInv.invoice_number);
+            if (existingInv.line_items) setLineItems(existingInv.line_items);
+            if (existingInv.due_date)
+              setDueDate(new Date(existingInv.due_date).toISOString().split("T")[0]);
+            setPaymentInstructions(existingInv.payment_instructions || "");
+            if (existingInv.payment_method) setPaymentMethod(existingInv.payment_method);
+            setNotes(existingInv.notes || "");
+            setStatus(existingInv.status);
+            setSentConfirmedAt(existingInv.sent_confirmed_at);
+            setPaidConfirmedAt(existingInv.paid_confirmed_at);
+
+            setActiveEntity({
+              type: "invoice",
+              id: existingInv.id,
+              name: `Invoice ${existingInv.invoice_number} for ${existingInv.client?.business_name || "Client"}`,
+              data: existingInv,
+            });
+          } else {
+            // New invoice pre-fill from Proposal or Client
+            let leadOrClientDataStr = "";
+            if (proposalIdParam) {
+              const res = await fetch(`/api/proposals?id=${proposalIdParam}`);
+              if (res.ok) {
+                const json = await res.json();
+                const p = json.proposal;
+                setClientName(p.client?.business_name || p.lead?.business_name || "Client");
+                setClientId(p.client_id);
+                setProposalId(p.id);
+                leadOrClientDataStr += JSON.stringify(p);
+                if (p.services && Array.isArray(p.services)) {
+                  setLineItems(
+                    p.services.map((s: any) => ({
+                      description: s.name,
+                      quantity: 1,
+                      unit_price: Number(s.price) || 0,
+                      total: Number(s.price) || 0,
+                    }))
+                  );
+                }
+              }
+            } else if (clientIdParam) {
+              const res = await fetch(`/api/clients/${clientIdParam}`);
+              if (res.ok) {
+                const json = await res.json();
+                setClientName(json.client.business_name);
+                setClientId(json.client.id);
+                leadOrClientDataStr += JSON.stringify(json.client);
+              }
+            }
+
+            // FIX 13: Detect marketplace-sourced clients (Upwork/Fiverr) vs direct
+            const isMarketplace =
+              leadOrClientDataStr.toLowerCase().includes("upwork") ||
+              leadOrClientDataStr.toLowerCase().includes("fiverr") ||
+              leadOrClientDataStr.toLowerCase().includes("marketplace");
+
+            if (isMarketplace) {
+              setPaymentMethod("payoneer");
+              const payoneerConfig = PAYMENT_METHODS.find((m) => m.id === "payoneer");
+              if (payoneerConfig) setPaymentInstructions(payoneerConfig.instructions);
+            }
           }
         } else {
           // If no specific parameters, load existing canonical invoice
@@ -169,7 +225,7 @@ function InvoiceBuilderContent() {
               setId(inv.id);
               setClientId(inv.client_id);
               setProposalId(inv.proposal_id);
-              setClientName(inv.client?.business_name || "Miss Al Reem Beauty Centre");
+              setClientName(inv.client?.business_name || "Client");
               setInvoiceNumber(inv.invoice_number);
               if (inv.line_items) setLineItems(inv.line_items);
               if (inv.due_date) setDueDate(new Date(inv.due_date).toISOString().split("T")[0]);
@@ -183,7 +239,7 @@ function InvoiceBuilderContent() {
               setActiveEntity({
                 type: "invoice",
                 id: inv.id,
-                name: `Invoice ${inv.invoice_number} for ${inv.client?.business_name}`,
+                name: `Invoice ${inv.invoice_number} for ${inv.client?.business_name || "Client"}`,
                 data: inv,
               });
             }
@@ -377,7 +433,7 @@ function InvoiceBuilderContent() {
       const doc = generateInvoicePdf(
         tmpl,
         {
-          clientName: clientName || "Miss Al Reem Beauty Centre",
+          clientName: clientName || "Valued Client",
           invoiceNumber,
           date: new Date().toLocaleDateString(),
           dueDate,
@@ -539,19 +595,19 @@ function InvoiceBuilderContent() {
         <div className="py-2">
           <InvoiceDocument
             mode={previewTheme}
-            clientName={clientName || "Miss Al Reem Beauty Centre"}
-            clientAddress="Ajman, UAE"
-            clientPhone="+971 50 xxx xxxx"
-            invoiceNumber={invoiceNumber || "#INV-0118"}
-            relatedProposalNumber={proposalId ? `#PRP-${proposalId.slice(0, 4).toUpperCase()}` : "#PRP-0042"}
+            clientName={clientName || "Client"}
+            clientAddress=""
+            clientPhone=""
+            invoiceNumber={invoiceNumber || "#INV-0001"}
+            relatedProposalNumber={proposalId ? `#PRP-${proposalId.slice(0, 8).toUpperCase()}` : ""}
             issueDate={new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-            dueDate={dueDate ? new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "25 Sep 2026"}
+            dueDate={dueDate ? new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : ""}
             status={status === "Paid" ? "Paid" : "Awaiting payment"}
             lineItems={lineItems}
             subtotal={totalAmount}
             depositPaid={totalAmount > 2000 ? Math.round(totalAmount * 0.5) : 0}
             amountDue={totalAmount > 2000 ? Math.round(totalAmount * 0.5) : totalAmount}
-            currency="AED"
+            currency={currency}
             bankDetails={paymentInstructions}
             referenceNumber={invoiceNumber.replace("#", "")}
           />

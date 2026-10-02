@@ -50,7 +50,7 @@ export default function SettingsPage() {
     async function loadSettings() {
       setLoading(true);
       try {
-        const res = await fetch("/api/settings");
+        const res = await fetch("/api/settings", { cache: "no-store" });
         if (res.ok) {
           const json = await res.json();
           const s = json.settings;
@@ -318,18 +318,18 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-[var(--text-secondary)]">
-                Daily Focus Target Quota (Default: 3)
+                Daily Focus Target Quota
               </label>
               <input
                 type="number"
                 min="1"
-                max="10"
+                max="20"
                 value={dailyQuota}
-                onChange={(e) => setDailyQuota(parseInt(e.target.value) || 3)}
+                onChange={(e) => setDailyQuota(Math.max(1, parseInt(e.target.value) || 1))}
                 className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
               />
               <p className="text-[11px] text-[var(--text-dim)]">
-                Caps how many active leads can be flagged as today&apos;s priority targets simultaneously.
+                Configured number of active daily priority outreach targets (e.g. 1–20).
               </p>
             </div>
 

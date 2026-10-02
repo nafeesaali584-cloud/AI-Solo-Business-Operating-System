@@ -28,6 +28,7 @@ import {
 } from "@/lib/brand/pdf-templates";
 import { ProposalDocument } from "@/components/brand/ProposalDocument";
 import { ThemeMode } from "@/lib/brand/tokens";
+import UnresponsiveAdvanceWarningModal from "@/components/common/UnresponsiveAdvanceWarningModal";
 
 interface ServiceItem {
   name: string;
@@ -64,6 +65,8 @@ function ProposalBuilderContent() {
   const [status, setStatus] = useState<"Draft" | "Approved" | "Sent" | "Accepted" | "Rejected">("Draft");
   const [approvedAt, setApprovedAt] = useState<string | null>(null);
   const [sentConfirmedAt, setSentConfirmedAt] = useState<string | null>(null);
+  const [leadCustomerBehavior, setLeadCustomerBehavior] = useState<string | null>(null);
+  const [isUnresponsiveSentWarningOpen, setIsUnresponsiveSentWarningOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<PdfTemplate>("B");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [activeView, setActiveView] = useState<"preview" | "editor">("preview");
@@ -91,6 +94,7 @@ function ProposalBuilderContent() {
             setStatus(p.status);
             setApprovedAt(p.approved_at);
             setSentConfirmedAt(p.sent_confirmed_at);
+            setLeadCustomerBehavior(p.lead?.customer_behavior || null);
 
             setActiveEntity({
               type: "proposal",
@@ -99,17 +103,55 @@ function ProposalBuilderContent() {
               data: p,
             });
           }
-        } else if (clientIdParam) {
-          const res = await fetch(`/api/clients/${clientIdParam}`);
-          if (res.ok) {
-            const json = await res.json();
-            setClientName(json.client.business_name);
+        } else if (clientIdParam || leadIdParam) {
+          // FIX 5: Resolve existing proposal first on param URLs
+          const propRes = await fetch(
+            clientIdParam ? `/api/proposals?client_id=${clientIdParam}` : `/api/proposals?lead_id=${leadIdParam}`
+          );
+          let existingFound = false;
+          if (propRes.ok) {
+            const propJson = await propRes.json();
+            if (propJson.proposals && propJson.proposals.length > 0) {
+              const p = propJson.proposals[0];
+              setId(p.id);
+              setClientId(p.client_id);
+              setLeadId(p.lead_id);
+              setClientName(p.client?.business_name || p.lead?.business_name || "Client");
+              if (p.services) setServices(p.services);
+              setScope(p.scope || "");
+              setDeliverables(p.deliverables || "");
+              setTimeline(p.timeline || "");
+              setTerms(p.terms || "");
+              setStatus(p.status);
+              setApprovedAt(p.approved_at);
+              setSentConfirmedAt(p.sent_confirmed_at);
+              setLeadCustomerBehavior(p.lead?.customer_behavior || null);
+              existingFound = true;
+              setActiveEntity({
+                type: "proposal",
+                id: p.id,
+                name: `Proposal for ${p.client?.business_name || p.lead?.business_name || "Client"}`,
+                data: p,
+              });
+            }
           }
-        } else if (leadIdParam) {
-          const res = await fetch(`/api/leads/${leadIdParam}`);
-          if (res.ok) {
-            const json = await res.json();
-            setClientName(json.lead.business_name);
+
+          if (!existingFound) {
+            if (clientIdParam) {
+              const res = await fetch(`/api/clients/${clientIdParam}`);
+              if (res.ok) {
+                const json = await res.json();
+                setClientName(json.client.business_name);
+                setLeadCustomerBehavior(json.lead_customer_behavior || null);
+              }
+            } else if (leadIdParam) {
+              const res = await fetch(`/api/leads/${leadIdParam}`);
+              if (res.ok) {
+                const json = await res.json();
+                setClientName(json.lead.business_name);
+                setLeadCustomerBehavior(json.lead?.customer_behavior || null);
+              }
+            }
           }
         } else {
           // If no specific parameters, load existing canonical proposal
@@ -130,6 +172,7 @@ function ProposalBuilderContent() {
               setStatus(p.status);
               setApprovedAt(p.approved_at);
               setSentConfirmedAt(p.sent_confirmed_at);
+              setLeadCustomerBehavior(p.lead?.customer_behavior || null);
             }
           }
         }
@@ -261,6 +304,15 @@ function ProposalBuilderContent() {
       }
     } catch (err: any) {
       setActionMessage({ text: err.message || "Gate 2 failed", type: "error" });
+    }
+  };
+
+  // Safeguard check before Gate 3 (Item 2)
+  const handleMarkSentGate3Click = () => {
+    if (leadCustomerBehavior !== "warm_interested") {
+      setIsUnresponsiveSentWarningOpen(true);
+    } else {
+      handleMarkSentGate3();
     }
   };
 
@@ -483,13 +535,13 @@ function ProposalBuilderContent() {
         <div className="py-2">
           <ProposalDocument
             mode={previewTheme}
-            clientName={clientName || "Miss Al Reem Beauty Centre"}
-            proposalNumber={id ? `#PRP-${id.slice(0, 4).toUpperCase()}` : "#PRP-0042"}
+            clientName={clientName || "Client"}
+            proposalNumber={id ? `#PRP-${id.slice(0, 8).toUpperCase()}` : "#PRP-0001"}
             date={new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
             validUntil={new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
-            headline="A website that works while you sleep."
-            subtitle={`Prepared for ${clientName || "Miss Al Reem Beauty Centre"} — a redesigned booking site with WhatsApp automation, built to turn visitors into confirmed appointments.`}
-            whatWeFound={scope || "Your current site has no online booking and no way to capture a visitor before they leave. Most inquiries currently come through Instagram DMs, which are easy to miss during busy salon hours."}
+            headline="Tailored Client Proposal"
+            subtitle={`Prepared for ${clientName || "Client"} — proposal tailored to client objectives and operational requirements.`}
+            whatWeFound={scope || "Scope of services tailored to meet client objectives based on preliminary assessment."}
             services={services}
             totalInvestment={totalInvestment}
           />
@@ -805,7 +857,7 @@ function ProposalBuilderContent() {
 
           {/* Gate 3: Mark Proposal as Sent (strictly disabled until Approved) */}
           <button
-            onClick={handleMarkSentGate3}
+            onClick={handleMarkSentGate3Click}
             disabled={!approvedAt || status === "Sent" || status === "Accepted"}
             title={!approvedAt ? "Locked until Gate 2 (Approve) is cleared" : "Confirm manual dispatch"}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -835,6 +887,19 @@ function ProposalBuilderContent() {
           )}
         </div>
       </div>
+
+      {/* ─── UNRESPONSIVE ADVANCE WARNING MODAL (Item 2) ─── */}
+      <UnresponsiveAdvanceWarningModal
+        isOpen={isUnresponsiveSentWarningOpen}
+        onClose={() => setIsUnresponsiveSentWarningOpen(false)}
+        onConfirm={() => {
+          setIsUnresponsiveSentWarningOpen(false);
+          handleMarkSentGate3();
+        }}
+        behavior={leadCustomerBehavior}
+        actionTitle="Mark Proposal as Sent (Gate 3)"
+        actionButtonText="Confirm & Mark Sent"
+      />
     </div>
   );
 }

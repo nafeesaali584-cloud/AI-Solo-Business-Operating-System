@@ -22,6 +22,13 @@ export async function POST(req: NextRequest) {
         include: { contacts: true },
       });
       if (lead) {
+        // FIX 3: 4-touchpoint follow-up cap enforced server-side
+        if ((lead.follow_up_count || 0) >= 4) {
+          return NextResponse.json(
+            { error: "Follow-up cap of 4 touchpoints reached for this lead." },
+            { status: 429 }
+          );
+        }
         business_name = lead.business_name;
         niche_industry = lead.niche_industry;
         if (lead.contacts && lead.contacts.length > 0) {

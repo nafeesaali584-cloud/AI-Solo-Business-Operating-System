@@ -13,14 +13,25 @@ export async function POST(req: NextRequest) {
 
     const createdLeads = [];
     const duplicates = [];
+    const seenInBatch = new Set<string>();
+
+    const normalizeField = (val: any): string | null => {
+      if (val === null || val === undefined) return null;
+      const s = String(val).trim();
+      if (!s || s === "null" || s === "undefined" || s.toLowerCase() === "n/a" || s === "-" || s === "–" || s === "—") {
+        return null;
+      }
+      return s;
+    };
 
     for (const row of rows) {
-      const business_name = row.business_name || row.BusinessName || row.Company || row.name || "Untitled Lead";
-      const website = row.website || row.Website || null;
-      const phone = row.phone || row.Phone || null;
-      const email = row.email || row.Email || null;
-      const city_country = row.city || row.City || row.location || row.city_country || null;
-      const niche_industry =
+      const rawBusinessName = row.business_name || row.BusinessName || row.Company || row.name || "Untitled Lead";
+      const business_name = normalizeField(rawBusinessName) || "Untitled Lead";
+      const website = normalizeField(row.website || row.Website);
+      const phone = normalizeField(row.phone || row.Phone);
+      const email = normalizeField(row.email || row.Email);
+      const city_country = normalizeField(row.city || row.City || row.location || row.city_country);
+      const niche_industry = normalizeField(
         row.niche ||
         row.industry ||
         row.Niche ||
@@ -28,8 +39,8 @@ export async function POST(req: NextRequest) {
         row.specialization ||
         row.Specialization ||
         row.key_services ||
-        row.services ||
-        null;
+        row.services
+      );
 
       // Extract rating, review count, key services, address
       let rating: number | null = null;
@@ -44,20 +55,34 @@ export async function POST(req: NextRequest) {
         if (!isNaN(parsed)) review_count = parsed;
       }
 
-      const key_services = row.key_services || row.services || null;
-      const address = row.address || row.Address || row.street || null;
+      const key_services = normalizeField(row.key_services || row.services);
+      const address = normalizeField(row.address || row.Address || row.street);
 
-      // Duplicate Check: check if lead already exists by website, phone, or email
+      // FIX 12: In-batch duplicate check
+      const batchKey = (website || phone || email || business_name).toLowerCase();
+      if (seenInBatch.has(batchKey)) {
+        duplicates.push({
+          business_name,
+          existing_id: "in_batch_duplicate",
+          reason: "Duplicate row found within the same imported batch.",
+        });
+        continue;
+      }
+      seenInBatch.add(batchKey);
+
+      // FIX 12: Database duplicate check by website, phone, email, OR business_name
+      const orConditions: any[] = [];
+      if (website) orConditions.push({ website: { equals: website, mode: "insensitive" } });
+      if (phone) orConditions.push({ phone: { equals: phone } });
+      if (email) orConditions.push({ email: { equals: email, mode: "insensitive" } });
+      if (business_name && business_name !== "Untitled Lead") {
+        orConditions.push({ business_name: { equals: business_name, mode: "insensitive" } });
+      }
+
       let existing = null;
-      if (website || phone || email) {
+      if (orConditions.length > 0) {
         existing = await db.lead.findFirst({
-          where: {
-            OR: [
-              website ? { website: { equals: website, mode: "insensitive" } } : {},
-              phone ? { phone: { equals: phone } } : {},
-              email ? { email: { equals: email, mode: "insensitive" } } : {},
-            ],
-          },
+          where: { OR: orConditions },
         });
       }
 
@@ -65,7 +90,9 @@ export async function POST(req: NextRequest) {
         duplicates.push({
           business_name,
           existing_id: existing.id,
-          reason: "Matching website, phone, or email already exists.",
+          reason: website || phone || email
+            ? "Matching website, phone, or email already exists."
+            : "Exact business name already exists in database.",
         });
         continue;
       }

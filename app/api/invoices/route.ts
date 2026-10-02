@@ -55,29 +55,64 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "client_id is required" }, { status: 400 });
     }
 
-    // Generate sequential invoice number: e.g. INV-2026-0001
-    const count = await db.invoice.count();
-    const year = new Date().getFullYear();
-    const invoice_number = `INV-${year}-${String(count + 1).padStart(4, "0")}`;
-
-    const invoice = await db.invoice.create({
-      data: {
+    // FIX 5: Upsert instead of insert blindly
+    const existingInvoice = await db.invoice.findFirst({
+      where: {
         client_id,
-        proposal_id: proposal_id || null,
-        invoice_number,
-        line_items: line_items || [],
-        amount: amount || 0,
-        due_date: due_date ? new Date(due_date) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days default
-        payment_instructions:
-          payment_instructions ||
-          "Bank Transfer / Wire or Online Payment. Payment due within specified due date.",
-        payment_method: payment_method || "sadapay",
-        payment_method_note: payment_method_note || null,
-        notes: notes || null,
-        status: "Draft",
+        ...(proposal_id ? { proposal_id } : {}),
       },
-      include: { client: true },
+      orderBy: { created_at: "desc" },
     });
+
+    let invoice;
+    if (existingInvoice) {
+      invoice = await db.invoice.update({
+        where: { id: existingInvoice.id },
+        data: {
+          line_items: line_items !== undefined ? line_items : existingInvoice.line_items,
+          amount: amount !== undefined ? amount : existingInvoice.amount,
+          due_date: due_date ? new Date(due_date) : existingInvoice.due_date,
+          payment_instructions:
+            payment_instructions !== undefined
+              ? payment_instructions
+              : existingInvoice.payment_instructions,
+          payment_method:
+            payment_method !== undefined ? payment_method : existingInvoice.payment_method,
+          payment_method_note:
+            payment_method_note !== undefined
+              ? payment_method_note
+              : existingInvoice.payment_method_note,
+          notes: notes !== undefined ? notes : existingInvoice.notes,
+          currency: body.currency || existingInvoice.currency || "USD",
+        },
+        include: { client: true },
+      });
+    } else {
+      // Generate sequential invoice number: e.g. INV-2026-0001
+      const count = await db.invoice.count();
+      const year = new Date().getFullYear();
+      const invoice_number = `INV-${year}-${String(count + 1).padStart(4, "0")}`;
+
+      invoice = await db.invoice.create({
+        data: {
+          client_id,
+          proposal_id: proposal_id || null,
+          invoice_number,
+          currency: body.currency || "USD",
+          line_items: line_items || [],
+          amount: amount || 0,
+          due_date: due_date ? new Date(due_date) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days default
+          payment_instructions:
+            payment_instructions ||
+            "Bank Transfer / Wire or Online Payment. Payment due within specified due date.",
+          payment_method: payment_method || "sadapay",
+          payment_method_note: payment_method_note || null,
+          notes: notes || null,
+          status: "Draft",
+        },
+        include: { client: true },
+      });
+    }
 
     return NextResponse.json({ success: true, invoice });
   } catch (error: any) {

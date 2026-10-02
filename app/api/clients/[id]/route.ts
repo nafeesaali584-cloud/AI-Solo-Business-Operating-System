@@ -155,18 +155,33 @@ export async function GET(
     // Sort timeline chronologically
     timelineEvents.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    // Documents linked
+    // Documents linked (including documents attached during Lead stage)
     const documents = await db.document.findMany({
       where: {
-        related_id: client.id,
+        OR: [
+          { related_id: client.id },
+          ...(client.lead_id ? [{ related_id: client.lead_id }] : []),
+        ],
       },
+      orderBy: { created_at: "desc" },
     });
+
+    // Associated lead customer behavior
+    let leadCustomerBehavior: string | null = null;
+    if (client.lead_id) {
+      const leadRec = await db.lead.findUnique({
+        where: { id: client.lead_id },
+        select: { customer_behavior: true },
+      });
+      leadCustomerBehavior = leadRec?.customer_behavior || null;
+    }
 
     return NextResponse.json({
       success: true,
       client,
       timeline: timelineEvents,
       documents,
+      lead_customer_behavior: leadCustomerBehavior,
     });
   } catch (error: any) {
     console.error("Client detail fetch error:", error);

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lead_id, client_id, content, channel = "Note" } = body;
+    const { lead_id, client_id, content, channel = "Note", direction = "Incoming", confirmed_sent = true } = body;
 
     if (!lead_id && !client_id) {
       return NextResponse.json(
@@ -23,10 +23,10 @@ export async function POST(req: NextRequest) {
         lead_id: lead_id || null,
         client_id: client_id || null,
         channel,
-        direction: "Incoming",
+        direction,
         content,
         ai_generated: false,
-        confirmed_sent: true,
+        confirmed_sent: Boolean(confirmed_sent),
       },
     });
 

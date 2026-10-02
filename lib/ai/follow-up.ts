@@ -71,6 +71,9 @@ export async function generateBehaviorFollowUp(params: {
   primary_offer?: string | null;
   last_message_summary?: string | null;
   custom_hesitation_notes?: string | null;
+  niche_industry?: string | null;
+  city_country?: string | null;
+  source_csv_context?: string | null;
 }): Promise<FollowUpGenerationResult> {
   const currentCount = params.current_follow_up_count || 0;
   const nextStageNumber = Math.min(currentCount + 1, 4);
@@ -130,9 +133,12 @@ Draft a sales-psychology grounded follow-up message.
 - TACTIC TO USE: "${tacticConfig.tactic_name}"
 - Psychology Objective: "${tacticConfig.psychology_goal}"
 - Guidelines: ${tacticConfig.default_instructions}
+${params.niche_industry ? `- Industry: "${params.niche_industry}"` : ""}
+${params.city_country ? `- Location: "${params.city_country}"` : ""}
 ${params.primary_offer ? `- Single Service Offered: "${params.primary_offer}"` : ""}
 ${params.custom_hesitation_notes ? `- Customer's Stated Hesitation: "${params.custom_hesitation_notes}"` : ""}
 ${params.last_message_summary ? `- Prior Outreach Summary: "${params.last_message_summary}"` : ""}
+${params.source_csv_context ? `- Verified Business Background:\n${params.source_csv_context}` : ""}
 
 CRITICAL RULES:
 1. Stay 100% true to the assigned tactic and psychology objective.

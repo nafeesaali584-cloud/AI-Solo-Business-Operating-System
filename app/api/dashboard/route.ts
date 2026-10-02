@@ -70,11 +70,18 @@ export async function GET() {
       }
     });
 
+    const quotaMax = Math.max(1, settings.daily_target_quota || 3);
+    const currentTargets = targets.length;
+    const isOverQuota = currentTargets > quotaMax;
+    const overCount = Math.max(0, currentTargets - quotaMax);
+
     return NextResponse.json({
       success: true,
       quota: {
-        current: targets.length,
-        max: settings.daily_target_quota,
+        current: currentTargets,
+        max: quotaMax,
+        is_over_quota: isOverQuota,
+        over_count: overCount,
         targets,
       },
       follow_ups: followUps,

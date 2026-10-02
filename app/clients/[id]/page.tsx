@@ -25,9 +25,12 @@ import {
   X,
   Lock,
   Info,
+  Paperclip,
+  FileUp,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
+import UnresponsiveAdvanceWarningModal from "@/components/common/UnresponsiveAdvanceWarningModal";
 
 interface TimelineEvent {
   id: string;
@@ -75,7 +78,9 @@ interface ClientDetail {
     type: string;
     title: string;
     file_url: string;
+    created_at?: string;
   }>;
+  lead_customer_behavior?: string | null;
 }
 
 export default function ClientDetailPage() {
@@ -86,6 +91,14 @@ export default function ClientDetailPage() {
 
   const [data, setData] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Unresponsive Lead Safeguard Modal (Item 2)
+  const [isUnresponsiveInvoiceWarningOpen, setIsUnresponsiveInvoiceWarningOpen] = useState(false);
+
+  // Client Documents & Attachments (Item 3)
+  const [uploadingClientDoc, setUploadingClientDoc] = useState(false);
+  const [clientDocUploadError, setClientDocUploadError] = useState<string | null>(null);
+  const [clientDocUploadSuccess, setClientDocUploadSuccess] = useState<string | null>(null);
 
   // Edit / Delete states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -100,6 +113,60 @@ export default function ClientDetailPage() {
     stage: "Proposal",
     payment_status: "Pending",
   });
+
+  const handleCreateInvoiceClick = () => {
+    if (data?.lead_customer_behavior !== "warm_interested") {
+      setIsUnresponsiveInvoiceWarningOpen(true);
+    } else {
+      router.push(`/invoices/builder?client_id=${clientId}&proposal_id=${data?.client.proposals[0]?.id || ""}`);
+    }
+  };
+
+  const handleUploadClientDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setClientDocUploadError("File exceeds 10MB limit.");
+      return;
+    }
+    setUploadingClientDoc(true);
+    setClientDocUploadError(null);
+    setClientDocUploadSuccess(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/clients/${clientId}/documents`, {
+        method: "POST",
+        body: fd,
+      });
+      if (res.ok) {
+        setClientDocUploadSuccess(`Uploaded "${file.name}" successfully!`);
+        await fetchClient();
+        setTimeout(() => setClientDocUploadSuccess(null), 4000);
+      } else {
+        const err = await res.json();
+        setClientDocUploadError(err.error || "Failed to upload document");
+      }
+    } catch (err: any) {
+      setClientDocUploadError(err.message || "Upload error");
+    } finally {
+      setUploadingClientDoc(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeleteClientDocument = async (docId: string) => {
+    try {
+      const res = await fetch(`/api/clients/${clientId}/documents?document_id=${docId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await fetchClient();
+      }
+    } catch (err) {
+      console.error("Failed to delete document", err);
+    }
+  };
 
   const fetchClient = async () => {
     setLoading(true);
@@ -190,10 +257,10 @@ export default function ClientDetailPage() {
 
   // Gate readiness checks for progressive buttons
   const latestProposal = client.proposals[0];
-  // Proposal accepted check: also consider stages that are only reachable post-acceptance
-  const advancedStages = ["Invoice", "Paid", "Onboarding", "Completed"];
+  const advancedStages = ["Invoice", "Paid", "Onboarding", "Active"];
+  // Proposal accepted or ready for invoicing check (FIX 14: unlock on Sent or Approved)
   const isProposalAccepted =
-    client.proposals.some((p) => p.status === "Accepted") ||
+    client.proposals.some((p) => ["Approved", "Sent", "Accepted"].includes(p.status)) ||
     advancedStages.includes(client.stage);
   const isInvoicePaid = client.payment_status === "Paid" || client.invoices.some((i) => i.status === "Paid");
 
@@ -241,13 +308,14 @@ export default function ClientDetailPage() {
 
             {/* 2. Create Invoice (Gated: enabled once Proposal = Accepted) */}
             {isProposalAccepted ? (
-              <Link
-                href={`/invoices/builder?client_id=${client.id}&proposal_id=${latestProposal?.id || ""}`}
+              <button
+                type="button"
+                onClick={handleCreateInvoiceClick}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow transition-colors"
               >
                 <Receipt className="w-3.5 h-3.5" />
                 <span>Create Invoice</span>
-              </Link>
+              </button>
             ) : (
               <div className="inline-flex items-center gap-2 group">
                 <button
@@ -429,6 +497,90 @@ export default function ClientDetailPage() {
                       <span>Open</span>
                       <ExternalLink className="w-3 h-3" />
                     </Link>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Attached Documents / Files (Item 3: Persists permanently from Lead stage) */}
+            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Attached Documents &amp; Mockups ({documents?.length || 0})</span>
+                </h3>
+                <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline font-medium">
+                  <FileUp className="w-3 h-3" />
+                  <span>{uploadingClientDoc ? "Uploading..." : "Upload File"}</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    onChange={handleUploadClientDocument}
+                    disabled={uploadingClientDoc}
+                    accept=".pdf,image/*,.doc,.docx"
+                  />
+                </label>
+              </div>
+
+              {clientDocUploadSuccess && (
+                <div className="p-2 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] flex items-center justify-between">
+                  <span>{clientDocUploadSuccess}</span>
+                  <button onClick={() => setClientDocUploadSuccess(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {clientDocUploadError && (
+                <div className="p-2 rounded bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[11px] flex items-center justify-between">
+                  <span>{clientDocUploadError}</span>
+                  <button onClick={() => setClientDocUploadError(null)}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {!documents || documents.length === 0 ? (
+                <p className="text-xs text-[var(--text-dim)]">No documents or pitch mockups uploaded yet.</p>
+              ) : (
+                documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="p-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] flex items-center justify-between text-xs gap-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] uppercase shrink-0">
+                          {doc.type}
+                        </span>
+                        <div className="font-medium text-[var(--text-primary)] truncate" title={doc.title}>
+                          {doc.title}
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-[var(--text-dim)]">
+                        {doc.created_at ? new Date(doc.created_at).toLocaleDateString() : "Persisted file"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <a
+                        href={doc.file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="text-[#a78bfa] hover:underline inline-flex items-center gap-1 p-1 rounded hover:bg-[var(--surface-raised)]"
+                        title="Download / View Document"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteClientDocument(doc.id)}
+                        className="text-[var(--text-dim)] hover:text-[var(--danger)] p-1 rounded hover:bg-[var(--danger-soft)] transition-colors"
+                        title="Delete Document"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -651,6 +803,19 @@ export default function ClientDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ─── UNRESPONSIVE ADVANCE WARNING MODAL (Item 2) ─── */}
+      <UnresponsiveAdvanceWarningModal
+        isOpen={isUnresponsiveInvoiceWarningOpen}
+        onClose={() => setIsUnresponsiveInvoiceWarningOpen(false)}
+        onConfirm={() => {
+          setIsUnresponsiveInvoiceWarningOpen(false);
+          router.push(`/invoices/builder?client_id=${clientId}&proposal_id=${latestProposal?.id || ""}`);
+        }}
+        behavior={data?.lead_customer_behavior}
+        actionTitle="Create Invoice"
+        actionButtonText="Proceed to Invoice"
+      />
     </div>
   );
 }

@@ -49,6 +49,8 @@ export default function OnboardingChecklistPage() {
   const [customItem, setCustomItem] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
 
   const fetchOnboarding = async () => {
     setLoading(true);
@@ -137,24 +139,37 @@ export default function OnboardingChecklistPage() {
     }
   };
 
-  // Mark Onboarding Complete -> promotes Client stage to "Active"
-  const handleCompleteOnboarding = async () => {
+  // Mark Onboarding Complete -> promotes Client stage to "Active" (FIX 14: Require all tasks or override)
+  const handleCompleteOnboarding = async (forceOverride = false) => {
+    if (!record) return;
+    const pendingItems = record.checklist.filter((i) => i.status !== "done");
+    if (pendingItems.length > 0 && !forceOverride) {
+      setShowOverrideModal(true);
+      return;
+    }
+
     setSaving(true);
+    setErrorMessage(null);
     try {
       const res = await fetch(`/api/onboarding/${onboardingId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ complete_onboarding: true }),
+        body: JSON.stringify({ complete_onboarding: true, override: forceOverride }),
       });
 
       if (res.ok) {
+        setShowOverrideModal(false);
         setMessage("🎉 Onboarding Completed! Client status is now ACTIVE.");
         setTimeout(() => {
           if (record?.client_id) router.push(`/clients/${record.client_id}`);
         }, 1500);
+      } else {
+        const errJson = await res.json();
+        setErrorMessage(errJson.error || "Failed to complete onboarding.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to complete onboarding", err);
+      setErrorMessage(err.message || "Failed to complete onboarding");
     } finally {
       setSaving(false);
     }
@@ -288,6 +303,18 @@ export default function OnboardingChecklistPage() {
         </form>
       </div>
 
+      {errorMessage && (
+        <div className="p-3.5 rounded-lg bg-[var(--danger-soft)] border border-[var(--danger-border)] text-xs text-[var(--danger)] flex items-center justify-between">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-[var(--danger)] font-bold hover:underline ml-2"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Completion Action */}
       <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
         <div>
@@ -298,7 +325,7 @@ export default function OnboardingChecklistPage() {
         </div>
 
         <button
-          onClick={handleCompleteOnboarding}
+          onClick={() => handleCompleteOnboarding(false)}
           disabled={saving || record.status === "Completed"}
           className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors disabled:opacity-50"
         >
@@ -306,6 +333,47 @@ export default function OnboardingChecklistPage() {
           <span>{record.status === "Completed" ? "Onboarding Complete (Active)" : "Mark Onboarding Complete"}</span>
         </button>
       </div>
+
+      {/* Override Confirmation Modal (FIX 14) */}
+      {showOverrideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2 text-amber-400">
+              <AlertCircle className="w-5 h-5" />
+              <h3 className="font-heading font-bold text-sm text-[var(--text-primary)]">
+                Unfinished Checklist Tasks
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              There are still{" "}
+              <strong className="text-[var(--text-primary)]">
+                {record.checklist.filter((i) => i.status !== "done").length} incomplete checklist items
+              </strong>
+              . Standard operational policy requires all onboarding tasks to be completed before promoting to Active.
+            </p>
+            <p className="text-xs text-[var(--text-dim)]">
+              Would you like to apply an explicit operational override and promote this client to Active anyway?
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setShowOverrideModal(false)}
+                className="px-3.5 py-1.5 rounded-lg border border-[var(--border)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                Go Back &amp; Finish
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCompleteOnboarding(true)}
+                disabled={saving}
+                className="px-4 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow"
+              >
+                {saving ? "Overriding..." : "Confirm Override & Activate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

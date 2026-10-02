@@ -34,6 +34,7 @@ model Lead {
   customer_behavior     String?       // no_reply_not_seen, seen_no_reply, replied_hesitant, final_follow_up, warm_interested
   status                String        @default("Imported") // Imported, Qualified, Target Today, Contacted, Replied, Booking, Proposal, Won, Lost
   is_today_target       Boolean       @default(false)
+  cleared_fields        Json?         // e.g. ["phone", "email"] — tracks fields explicitly cleared by user to prevent fallback to raw CSV
   converted_client_id   String?
   created_at            DateTime      @default(now())
   updated_at            DateTime      @updatedAt
@@ -79,6 +80,7 @@ model Interaction {
   content         String
   ai_generated    Boolean   @default(false)
   confirmed_sent  Boolean   @default(false) // GATE 1: only true after manual confirmation
+  sent_confirmed_at DateTime? // GATE 1: manual confirmation timestamp
   created_at      DateTime  @default(now())
 
   lead            Lead?     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
@@ -154,6 +156,7 @@ model Proposal {
   deliverables        String?
   timeline            String?
   terms               String?
+  currency            String    @default("USD")
   total_investment    Decimal   @default(0)
   document_url        String?
   status              String    @default("Draft") // Draft, Approved, Sent, Accepted, Rejected
@@ -176,6 +179,7 @@ model Invoice {
   client_id             String
   proposal_id           String?
   invoice_number        String    @unique
+  currency              String    @default("USD")
   line_items            Json      // [{ description, quantity, unit_price, total }]
   amount                Decimal   @default(0)
   due_date              DateTime

@@ -36,10 +36,14 @@ import {
   Target,
   DollarSign,
   Layers,
+  RotateCcw,
+  Paperclip,
+  FileUp,
 } from "lucide-react";
 import { FactBadge } from "@/components/ui/FactBadge";
 import { GateBadge } from "@/components/ui/GateBadge";
 import { useBusinessBrain } from "@/context/BusinessBrainContext";
+import UnresponsiveAdvanceWarningModal from "@/components/common/UnresponsiveAdvanceWarningModal";
 
 interface LeadDetailData {
   lead: {
@@ -68,6 +72,7 @@ interface LeadDetailData {
     customer_behavior?: string | null;
     status: string;
     is_today_target: boolean;
+    cleared_fields?: string[] | null;
     converted_client_id?: string | null;
     created_at: string;
     contacts: Array<{
@@ -100,6 +105,13 @@ interface LeadDetailData {
     type: string;
     ai_suggested_tactic?: string;
     due_date?: string;
+  }>;
+  documents?: Array<{
+    id: string;
+    type: string;
+    title: string;
+    file_url: string;
+    created_at: string;
   }>;
 }
 
@@ -136,6 +148,11 @@ function isValidPhone(phone: unknown): phone is string {
 
 function getLeadPhone(leadObj?: any): string {
   if (!leadObj) return "";
+  // If user explicitly cleared the phone field, respect as current truth: DO NOT fall back to raw CSV
+  const cleared = Array.isArray(leadObj.cleared_fields) ? leadObj.cleared_fields : [];
+  if (cleared.includes("phone")) {
+    return "";
+  }
   const direct = typeof leadObj.phone === "string" ? leadObj.phone.trim() : "";
   if (isValidPhone(direct)) return direct;
   const contactPhone =
@@ -155,6 +172,11 @@ function getLeadPhone(leadObj?: any): string {
 
 function getLeadEmail(leadObj?: any): string {
   if (!leadObj) return "";
+  // If user explicitly cleared the email field, respect as current truth: DO NOT fall back to raw CSV
+  const cleared = Array.isArray(leadObj.cleared_fields) ? leadObj.cleared_fields : [];
+  if (cleared.includes("email")) {
+    return "";
+  }
   const direct = typeof leadObj.email === "string" ? leadObj.email.trim() : "";
   if (isValidEmail(direct)) return direct;
   const contactEmail =
@@ -237,6 +259,20 @@ export default function LeadDetailPage() {
   const [isLostModalOpen, setIsLostModalOpen] = useState(false);
   const [lostReason, setLostReason] = useState("");
 
+  // Reactivate Lost Lead Modal
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
+  const [reactivateReason, setReactivateReason] = useState("");
+  const [reactivating, setReactivating] = useState(false);
+
+  // Unresponsive Lead Safeguard Modal (Item 2)
+  const [isUnresponsiveProposalWarningOpen, setIsUnresponsiveProposalWarningOpen] = useState(false);
+  const [convertingToProposal, setConvertingToProposal] = useState(false);
+
+  // Lead Documents & Attachments (Item 3)
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [docUploadError, setDocUploadError] = useState<string | null>(null);
+  const [docUploadSuccess, setDocUploadSuccess] = useState<string | null>(null);
+
   // Edit / Delete Lead Modal States
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -279,8 +315,8 @@ export default function LeadDetailPage() {
         });
         const extractedPhone = getLeadPhone(json.lead);
         const extractedEmail = getLeadEmail(json.lead);
-        setRecipientPhone((prev) => (prev ? prev : extractedPhone));
-        setRecipientEmail((prev) => (prev ? prev : extractedEmail));
+        setRecipientPhone(extractedPhone);
+        setRecipientEmail(extractedEmail);
         if (json.lead.customer_behavior) {
           setFollowUpBehavior(json.lead.customer_behavior as any);
           setManualReplyBehavior(json.lead.customer_behavior as any);
@@ -307,8 +343,8 @@ export default function LeadDetailPage() {
     if (isContactModalOpen && data?.lead) {
       const p = getLeadPhone(data.lead);
       const e = getLeadEmail(data.lead);
-      if (p && !recipientPhone.trim()) setRecipientPhone(p);
-      if (e && !recipientEmail.trim()) setRecipientEmail(e);
+      setRecipientPhone(p);
+      setRecipientEmail(e);
     }
   }, [isContactModalOpen, data?.lead]);
 
@@ -429,11 +465,25 @@ export default function LeadDetailPage() {
   };
 
   // Generate AI Outreach Draft (GATE 1 Prep)
-  const handleOpenContactModal = async (channelOverride?: "WhatsApp" | "Email" | unknown) => {
+  // Generate AI Outreach Draft (GATE 1 Prep)
+  const handleOpenContactModal = async (channelOverride?: "WhatsApp" | "Email" | unknown, forceRegenerate = false) => {
     const channel: "WhatsApp" | "Email" =
       channelOverride === "WhatsApp" || channelOverride === "Email"
         ? channelOverride
         : contactChannel;
+    setContactChannel(channel);
+
+    // FIX 15: Check if there is an unsent draft interaction already in history for this lead and channel
+    if (!forceRegenerate) {
+      const existingDraft = data?.lead?.interactions?.find(
+        (i: any) => i.direction === "Outgoing" && !i.confirmed_sent && i.channel === channel
+      );
+      if (existingDraft) {
+        handleResumeDraft(existingDraft);
+        return;
+      }
+    }
+
     setIsContactModalOpen(true);
     setDraftResult(null);
     setDraftSubject("");
@@ -592,9 +642,20 @@ export default function LeadDetailPage() {
     setIsContactModalOpen(true);
   };
 
-  const handleSwitchChannel = async (newChannel: "WhatsApp" | "Email") => {
-    if (newChannel === contactChannel && draftResult) return;
+  const handleSwitchChannel = async (newChannel: "WhatsApp" | "Email", forceRegenerate = false) => {
+    if (newChannel === contactChannel && draftResult && !forceRegenerate) return;
     setContactChannel(newChannel);
+
+    if (!forceRegenerate) {
+      const existingDraft = data?.lead?.interactions?.find(
+        (i: any) => i.direction === "Outgoing" && !i.confirmed_sent && i.channel === newChannel
+      );
+      if (existingDraft) {
+        handleResumeDraft(existingDraft);
+        return;
+      }
+    }
+
     setPushStatusMessage("");
     setPushErrorMessage("");
     setDrafting(true);
@@ -797,9 +858,35 @@ export default function LeadDetailPage() {
     }
   };
 
+  // Reactivate Lost Lead
+  const handleReactivateLead = async () => {
+    if (!reactivateReason.trim()) return;
+    setReactivating(true);
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reactivate_lead: true,
+          reactivate_reason: reactivateReason.trim(),
+        }),
+      });
+      if (res.ok) {
+        setIsReactivateModalOpen(false);
+        setReactivateReason("");
+        fetchLead();
+      }
+    } catch (err) {
+      console.error("Failed to reactivate lead", err);
+    } finally {
+      setReactivating(false);
+    }
+  };
+
   // Move to Proposal -> Converts Lead to Client & opens S7
   const handleMoveToProposal = async () => {
     try {
+      setConvertingToProposal(true);
       const res = await fetch(`/api/leads/${leadId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -824,6 +911,66 @@ export default function LeadDetailPage() {
       }
     } catch (err) {
       console.error("Failed to convert lead to proposal", err);
+    } finally {
+      setConvertingToProposal(false);
+      setIsUnresponsiveProposalWarningOpen(false);
+    }
+  };
+
+  // Safe check before moving to proposal (Item 2 Safeguard)
+  const handleMoveToProposalClick = () => {
+    if (lead?.customer_behavior !== "warm_interested") {
+      setIsUnresponsiveProposalWarningOpen(true);
+    } else {
+      handleMoveToProposal();
+    }
+  };
+
+  // Upload Document to Lead (Item 3)
+  const handleUploadDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setDocUploadError("File exceeds 10MB limit.");
+      return;
+    }
+    setUploadingDoc(true);
+    setDocUploadError(null);
+    setDocUploadSuccess(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/leads/${leadId}/documents`, {
+        method: "POST",
+        body: fd,
+      });
+      if (res.ok) {
+        setDocUploadSuccess(`Uploaded "${file.name}" successfully!`);
+        await fetchLead();
+        setTimeout(() => setDocUploadSuccess(null), 4000);
+      } else {
+        const err = await res.json();
+        setDocUploadError(err.error || "Failed to upload document");
+      }
+    } catch (err: any) {
+      setDocUploadError(err.message || "Upload error");
+    } finally {
+      setUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
+
+  // Delete Document from Lead (Item 3)
+  const handleDeleteDocument = async (docId: string) => {
+    try {
+      const res = await fetch(`/api/leads/${leadId}/documents?document_id=${docId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await fetchLead();
+      }
+    } catch (err) {
+      console.error("Failed to delete document", err);
     }
   };
 
@@ -849,9 +996,16 @@ export default function LeadDetailPage() {
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--surface-hover)] text-[var(--text-secondary)] border border-[var(--border)]">
                 {lead.status}
               </span>
+              {lead.interactions?.some((i) => i.channel === "Reactivation") && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reactivated (2nd Attempt)</span>
+                </span>
+              )}
               {lead.is_today_target && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)]">
-                  Target Today (1/3)
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] flex items-center gap-1">
+                  <Target className="w-3 h-3" />
+                  <span>Today&apos;s Target</span>
                 </span>
               )}
               {lead.qualification_tier && (
@@ -1012,7 +1166,7 @@ export default function LeadDetailPage() {
             </button>
             {lead.status !== "Proposal" && lead.status !== "Won" && !lead.converted_client_id ? (
               <button
-                onClick={handleMoveToProposal}
+                onClick={handleMoveToProposalClick}
                 className="flex items-center gap-1 px-3 py-2 rounded-lg bg-[color-mix(in_srgb,#8b5cf6_12%,transparent)] hover:bg-[color-mix(in_srgb,#8b5cf6_20%,transparent)] text-[#a78bfa] text-xs font-medium border border-[color-mix(in_srgb,#8b5cf6_30%,transparent)] transition-colors"
               >
                 <span>Move to Proposal</span>
@@ -1027,12 +1181,26 @@ export default function LeadDetailPage() {
                 <ArrowRight className="w-3 h-3" />
               </Link>
             )}
-            <button
-              onClick={() => setIsLostModalOpen(true)}
-              className="px-2.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] text-xs font-medium border border-[var(--border)] transition-colors"
-            >
-              Mark Lost
-            </button>
+            {lead.status === "Lost" ? (
+              <button
+                onClick={() => {
+                  setReactivateReason("");
+                  setIsReactivateModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition-colors"
+                title="Reactivate this lost lead and reset to Qualified"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reactivate Lead</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsLostModalOpen(true)}
+                className="px-2.5 py-2 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] text-xs font-medium border border-[var(--border)] transition-colors"
+              >
+                Mark Lost
+              </button>
+            )}
             <button
               onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--surface-hover)] hover:bg-[var(--surface-raised)] text-[var(--text-primary)] text-xs font-medium border border-[var(--border)] transition-colors"
@@ -1881,7 +2049,12 @@ export default function LeadDetailPage() {
                       <span className="text-xs font-semibold text-[var(--text-primary)]">
                         {int.direction} {int.channel}
                       </span>
-                      {int.direction === "Incoming" ? (
+                      {int.channel === "Reactivation" ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider flex items-center gap-1">
+                          <RotateCcw className="w-3 h-3" />
+                          <span>LEAD REACTIVATED (SECOND ATTEMPT)</span>
+                        </span>
+                      ) : int.direction === "Incoming" ? (
                         <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
                           CUSTOMER INBOUND
                         </span>
@@ -1919,6 +2092,109 @@ export default function LeadDetailPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* ─── LEAD DOCUMENTS & ATTACHMENTS (Item 3) ─── */}
+      <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[var(--border)] gap-2">
+          <div className="flex items-center gap-2">
+            <Paperclip className="w-4 h-4 text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold font-heading text-[var(--text-primary)]">
+              Documents &amp; Outreach Attachments
+            </h2>
+            <span className="text-xs text-[var(--text-dim)]">
+              ({data?.documents?.length || 0} files)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-semibold shadow transition-colors">
+              <FileUp className="w-3.5 h-3.5" />
+              <span>{uploadingDoc ? "Uploading..." : "Upload Document"}</span>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleUploadDocument}
+                disabled={uploadingDoc}
+                accept=".pdf,image/*,.doc,.docx"
+              />
+            </label>
+          </div>
+        </div>
+
+        {docUploadSuccess && (
+          <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>{docUploadSuccess}</span>
+            </div>
+            <button onClick={() => setDocUploadSuccess(null)} className="text-emerald-400/60 hover:text-emerald-300">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {docUploadError && (
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>{docUploadError}</span>
+            </div>
+            <button onClick={() => setDocUploadError(null)} className="text-rose-400/60 hover:text-rose-300">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {(!data?.documents || data.documents.length === 0) ? (
+          <div className="p-8 text-center text-xs text-[var(--text-dim)] space-y-1 bg-[var(--surface-hover)] rounded-lg border border-[var(--border)] border-dashed">
+            <Paperclip className="w-6 h-6 mx-auto text-[var(--text-dim)] opacity-40 mb-1" />
+            <p className="font-medium text-[var(--text-secondary)]">No documents attached to this lead yet.</p>
+            <p className="text-[11px]">Attach website redesign mockups, audit PDFs, or decks to share during Gate 1 outreach.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {data.documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="p-3.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] flex items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent-border)] uppercase shrink-0">
+                      {doc.type}
+                    </span>
+                    <span className="font-semibold text-[var(--text-primary)] truncate" title={doc.title}>
+                      {doc.title}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-dim)]">
+                    Uploaded: {new Date(doc.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download
+                    className="p-1.5 rounded-lg bg-[var(--surface)] hover:bg-[var(--surface-raised)] text-[var(--accent)] border border-[var(--border)] transition-colors"
+                    title="Download / View Document"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteDocument(doc.id)}
+                    className="p-1.5 rounded-lg bg-[var(--surface)] hover:bg-[var(--danger-soft)] text-[var(--text-dim)] hover:text-[var(--danger)] border border-[var(--border)] hover:border-[var(--danger-border)] transition-colors"
+                    title="Remove Document"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -2090,6 +2366,44 @@ export default function LeadDetailPage() {
               </p>
             </div>
 
+            {/* Item 3: Attached Document Reminder Banner */}
+            {data?.documents && data.documents.length > 0 && (
+              <div className="p-3.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2.5 shadow-sm">
+                <Paperclip className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-amber-300 leading-snug">
+                    📎 You have {data.documents.length === 1 ? "a document" : `${data.documents.length} documents`} attached to this lead ({data.documents.map((d) => d.title).join(", ")}) — remember to manually attach {data.documents.length === 1 ? "it" : "them"} in WhatsApp/Email before sending, since it can&apos;t be attached automatically via this link.
+                  </p>
+                  <p className="text-[11px] text-amber-200/80">
+                    Browser security and URL schemes (wa.me and mailto:) do not permit automatic file attachment.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Attach in Gate 1 modal */}
+            <div className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] text-xs">
+              <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+                <Paperclip className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>
+                  {data?.documents && data.documents.length > 0
+                    ? `${data.documents.length} document(s) attached`
+                    : "Attach pitch deck, audit, or mockup image"}
+                </span>
+              </div>
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[var(--surface-raised)] hover:bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] text-[11px] font-medium transition-colors">
+                <FileUp className="w-3 h-3 text-[var(--accent)]" />
+                <span>{uploadingDoc ? "Uploading..." : "Attach File"}</span>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleUploadDocument}
+                  disabled={uploadingDoc}
+                  accept=".pdf,image/*,.doc,.docx"
+                />
+              </label>
+            </div>
+
             {/* Channel Selector */}
             <div className="flex items-center justify-between text-xs pt-1">
               <div className="flex items-center gap-2.5">
@@ -2123,7 +2437,7 @@ export default function LeadDetailPage() {
               {draftResult && (
                 <button
                   type="button"
-                  onClick={() => handleSwitchChannel(contactChannel)}
+                  onClick={() => handleSwitchChannel(contactChannel, true)}
                   disabled={drafting}
                   className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 disabled:opacity-50"
                   title="Regenerate draft with Gemini"
@@ -2378,6 +2692,60 @@ export default function LeadDetailPage() {
                 className="px-4 py-2 rounded-lg bg-[var(--danger)] hover:opacity-90 text-white text-xs font-semibold disabled:opacity-50 transition-colors"
               >
                 Confirm Lost
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Reactivate Lost Lead */}
+      {isReactivateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-[var(--surface)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-base font-bold font-heading text-[var(--text-primary)]">Reactivate Lost Lead</h3>
+              </div>
+              <button
+                onClick={() => setIsReactivateModalOpen(false)}
+                className="p-1 rounded text-[var(--text-dim)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              Reset this lead back to <strong>Qualified</strong> status and restart the 4-stage follow-up engine. All prior touchpoints, interactions, and deep research data will remain permanently in your history.
+            </p>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--text-secondary)]">
+                Reactivation Reason (Mandatory) *
+              </label>
+              <textarea
+                rows={3}
+                value={reactivateReason}
+                onChange={(e) => setReactivateReason(e.target.value)}
+                placeholder="e.g. Following up after 3 months — new decision maker, or requested re-engagement..."
+                className="w-full bg-[var(--surface-hover)] border border-[var(--border-hover)] rounded-lg p-2.5 text-xs text-[var(--text-primary)] outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setIsReactivateModalOpen(false)}
+                className="px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReactivateLead}
+                disabled={!reactivateReason.trim() || reactivating}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold disabled:opacity-50 transition-colors shadow"
+              >
+                {reactivating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Confirm Reactivation</span>
               </button>
             </div>
           </div>
@@ -2811,6 +3179,20 @@ export default function LeadDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ─── UNRESPONSIVE ADVANCE WARNING MODAL (Item 2) ─── */}
+      <UnresponsiveAdvanceWarningModal
+        isOpen={isUnresponsiveProposalWarningOpen}
+        onClose={() => setIsUnresponsiveProposalWarningOpen(false)}
+        onConfirm={() => {
+          setIsUnresponsiveProposalWarningOpen(false);
+          handleMoveToProposal();
+        }}
+        behavior={lead.customer_behavior}
+        actionTitle="Create Proposal"
+        actionButtonText="Proceed to Proposal"
+        isLoading={convertingToProposal}
+      />
     </div>
   );
 }

@@ -50,6 +50,23 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status;
 
     if (complete_onboarding) {
+      const currentList: any[] = Array.isArray(checklist)
+        ? checklist
+        : Array.isArray(onboarding.checklist)
+        ? (onboarding.checklist as any[])
+        : [];
+      const pendingItems = currentList.filter((i) => i.status !== "done");
+
+      if (pendingItems.length > 0 && !body.override) {
+        return NextResponse.json(
+          {
+            error: `Cannot complete onboarding: ${pendingItems.length} checklist items are still pending. Complete all items or confirm with explicit override.`,
+            pending_count: pendingItems.length,
+          },
+          { status: 409 }
+        );
+      }
+
       updateData.status = "Completed";
       updateData.completed_at = new Date();
 

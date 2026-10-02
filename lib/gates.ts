@@ -1,5 +1,14 @@
 import { db } from "./db";
 
+export class InvalidStateTransitionError extends Error {
+  statusCode: number;
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidStateTransitionError";
+    this.statusCode = 409;
+  }
+}
+
 /**
  * DEFAULT ONBOARDING CHECKLIST ITEMS
  * Auto-generated exclusively when Gate 5 (Invoice Payment Confirmation) is passed.
@@ -20,6 +29,7 @@ export const DEFAULT_ONBOARDING_CHECKLIST = [
 /**
  * GATE 1: Interaction manual confirmation
  * Ensures outbound message cannot be marked 'sent' by AI or automated background jobs.
+ * State Precondition: Interaction must exist and confirmed_sent must be false.
  */
 export async function executeGate1ConfirmSent(interactionId: string, updatedContent?: string) {
   const interaction = await db.interaction.findUnique({
@@ -30,7 +40,13 @@ export async function executeGate1ConfirmSent(interactionId: string, updatedCont
     throw new Error("Interaction not found.");
   }
 
-  const updateData: any = { confirmed_sent: true };
+  if (interaction.confirmed_sent) {
+    throw new InvalidStateTransitionError(
+      "Invalid state transition for Gate 1: Interaction has already been confirmed sent."
+    );
+  }
+
+  const updateData: any = { confirmed_sent: true, sent_confirmed_at: new Date() };
   if (updatedContent && updatedContent.trim()) {
     updateData.content = updatedContent.trim();
   }
@@ -43,11 +59,20 @@ export async function executeGate1ConfirmSent(interactionId: string, updatedCont
   // If tied to a lead, update status from Target Today or Qualified to Contacted if needed
   if (interaction.lead_id) {
     const lead = await db.lead.findUnique({ where: { id: interaction.lead_id } });
-    if (lead && ["Imported", "Qualified", "Target Today"].includes(lead.status)) {
-      await db.lead.update({
-        where: { id: lead.id },
-        data: { status: "Contacted" },
-      });
+    if (lead) {
+      const updateLeadData: any = {};
+      if (["Imported", "Qualified", "Target Today"].includes(lead.status)) {
+        updateLeadData.status = "Contacted";
+      } else if (interaction.direction === "Outgoing") {
+        // Increment follow_up_count ONLY when Gate 1 is cleared for an outgoing follow-up interaction (FIX 4)
+        updateLeadData.follow_up_count = Math.min((lead.follow_up_count || 0) + 1, 4);
+      }
+      if (Object.keys(updateLeadData).length > 0) {
+        await db.lead.update({
+          where: { id: lead.id },
+          data: updateLeadData,
+        });
+      }
     }
   }
 
@@ -57,7 +82,7 @@ export async function executeGate1ConfirmSent(interactionId: string, updatedCont
 /**
  * GATE 2: Approve Proposal
  * Changes Proposal status to Approved and stamps approved_at timestamp.
- * Required before Gate 3 can ever be unlocked.
+ * State Precondition: Proposal must exist and status must be "Draft".
  */
 export async function executeGate2ApproveProposal(proposalId: string) {
   const proposal = await db.proposal.findUnique({
@@ -66,6 +91,12 @@ export async function executeGate2ApproveProposal(proposalId: string) {
 
   if (!proposal) {
     throw new Error("Proposal not found.");
+  }
+
+  if (proposal.status !== "Draft") {
+    throw new InvalidStateTransitionError(
+      `Invalid state transition for Gate 2: Proposal must be in Draft status (currently "${proposal.status}").`
+    );
   }
 
   const updated = await db.proposal.update({
@@ -82,6 +113,7 @@ export async function executeGate2ApproveProposal(proposalId: string) {
 /**
  * GATE 3: Mark Proposal as Sent
  * Blocked unless Proposal has been formally approved (Gate 2 timestamp exists).
+ * State Precondition: Proposal must exist and status must be "Approved".
  */
 export async function executeGate3MarkProposalSent(proposalId: string) {
   const proposal = await db.proposal.findUnique({
@@ -92,9 +124,9 @@ export async function executeGate3MarkProposalSent(proposalId: string) {
     throw new Error("Proposal not found.");
   }
 
-  if (!proposal.approved_at) {
-    throw new Error(
-      "GATE 3 VIOLATION: Proposal must be approved (Gate 2) before it can be marked as Sent."
+  if (proposal.status !== "Approved" || !proposal.approved_at) {
+    throw new InvalidStateTransitionError(
+      `Invalid state transition for Gate 3: Proposal must be in Approved status (currently "${proposal.status}").`
     );
   }
 
@@ -120,6 +152,7 @@ export async function executeGate3MarkProposalSent(proposalId: string) {
 /**
  * GATE 4: Mark Invoice as Sent
  * User manually confirms the invoice has been dispatched to the client.
+ * State Precondition: Invoice must exist and status must be "Draft".
  */
 export async function executeGate4MarkInvoiceSent(invoiceId: string) {
   const invoice = await db.invoice.findUnique({
@@ -128,6 +161,12 @@ export async function executeGate4MarkInvoiceSent(invoiceId: string) {
 
   if (!invoice) {
     throw new Error("Invoice not found.");
+  }
+
+  if (invoice.status !== "Draft") {
+    throw new InvalidStateTransitionError(
+      `Invalid state transition for Gate 4: Invoice must be in Draft status (currently "${invoice.status}").`
+    );
   }
 
   const updated = await db.invoice.update({
@@ -145,6 +184,7 @@ export async function executeGate4MarkInvoiceSent(invoiceId: string) {
  * GATE 5: Confirm Payment Received
  * Strictly manual user confirmation. NEVER auto-set.
  * The ONLY allowed automated side effect: triggers Onboarding record creation.
+ * State Precondition: Invoice must exist and status must be "Sent".
  */
 export async function executeGate5ConfirmPaymentReceived(invoiceId: string) {
   const invoice = await db.invoice.findUnique({
@@ -154,6 +194,12 @@ export async function executeGate5ConfirmPaymentReceived(invoiceId: string) {
 
   if (!invoice) {
     throw new Error("Invoice not found.");
+  }
+
+  if (invoice.status !== "Sent") {
+    throw new InvalidStateTransitionError(
+      `Invalid state transition for Gate 5: Invoice must be in Sent status (currently "${invoice.status}").`
+    );
   }
 
   const now = new Date();

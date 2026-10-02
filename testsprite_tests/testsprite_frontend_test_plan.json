@@ -1,9 +1,9 @@
 [
   {
     "id": "TC001",
-    "title": "Mark an invoice as sent and confirm payment",
-    "description": "Verifies that a user can send an invoice, confirm payment, and unlock onboarding from the client workspace.",
-    "category": "Client Workspace and Document Flow",
+    "title": "Access the dashboard after signing in",
+    "description": "This verifies a user can sign in and reach the main dashboard successfully.",
+    "category": "User Login",
     "steps": [
       {
         "type": "action",
@@ -11,48 +11,32 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
         "description": "Submit the login form"
       },
       {
-        "type": "action",
-        "description": "Navigate to /clients"
-      },
-      {
-        "type": "action",
-        "description": "Open a client record from the client directory"
-      },
-      {
-        "type": "action",
-        "description": "Mark the invoice as sent"
-      },
-      {
-        "type": "action",
-        "description": "Confirm payment received"
+        "type": "assertion",
+        "description": "Verify the dashboard is displayed"
       },
       {
         "type": "assertion",
-        "description": "Verify onboarding is unlocked for the client"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the onboarding workspace is accessible"
+        "description": "Verify pipeline overview content is visible"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC002",
-    "title": "Find and open a record from global search",
-    "description": "Verifies that a user can search across core records from the dashboard and open a matching result.",
-    "category": "Global Quick Search",
+    "title": "Work through a lead from research to proposal stage",
+    "description": "This verifies a user can open a lead, review research, contact the lead, log a reply, book a call, and move the lead to the proposal stage.",
+    "category": "Lead Lifecycle Journey",
     "steps": [
       {
         "type": "action",
@@ -60,11 +44,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -72,32 +56,48 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /dashboard"
+        "description": "Open the leads list"
       },
       {
         "type": "action",
-        "description": "Open the global search"
+        "description": "Open a lead from the list"
       },
       {
         "type": "action",
-        "description": "Type a client name, proposal identifier, proposal title, or invoice number into the search field"
+        "description": "Run deep research for the lead"
       },
       {
         "type": "action",
-        "description": "Open a matching result"
+        "description": "Open the lead contact action"
+      },
+      {
+        "type": "action",
+        "description": "Log a reply for the lead"
+      },
+      {
+        "type": "action",
+        "description": "Book a call for the lead"
+      },
+      {
+        "type": "action",
+        "description": "Move the lead to the proposal stage"
       },
       {
         "type": "assertion",
-        "description": "Verify the matching record page is displayed"
+        "description": "Verify the lead is shown in the proposal stage"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead activity reflects the completed outreach steps"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC003",
-    "title": "Confirm invoice payment and open onboarding",
-    "description": "Verifies that a user can confirm payment on an invoice, see the paid status, and open the new onboarding record.",
-    "category": "Invoice Builder",
+    "title": "Send a proposal through Gate 3",
+    "description": "Verifies that a user can mark a proposal as sent and see the send confirmation recorded.",
+    "category": "Proposal Builder",
     "steps": [
       {
         "type": "action",
@@ -105,11 +105,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -117,36 +117,32 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /invoices/builder"
+        "description": "Navigate to /proposals/builder"
       },
       {
         "type": "action",
-        "description": "Review the invoice details"
+        "description": "Review the proposal"
       },
       {
         "type": "action",
-        "description": "Confirm payment received"
-      },
-      {
-        "type": "action",
-        "description": "Open the newly created onboarding record"
+        "description": "Mark the proposal as sent"
       },
       {
         "type": "assertion",
-        "description": "Verify the invoice status changes to paid"
+        "description": "Verify a send confirmation is visible"
       },
       {
         "type": "assertion",
-        "description": "Verify the onboarding workspace is displayed"
+        "description": "Verify the proposal is recorded as sent"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC004",
-    "title": "Create a proposal from a client workspace",
-    "description": "Verifies that a user can create a proposal from a client workspace and continue into the proposal builder.",
-    "category": "Client Workspace and Document Flow",
+    "title": "Create and send a proposal from the builder",
+    "description": "This verifies a user can build a proposal and send it through the proposal confirmation flow.",
+    "category": "Sales-to-Cash Journey",
     "steps": [
       {
         "type": "action",
@@ -154,11 +150,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -166,32 +162,36 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /clients"
+        "description": "Open the proposal builder"
       },
       {
         "type": "action",
-        "description": "Open a client record from the client directory"
+        "description": "Add proposal content"
       },
       {
         "type": "action",
-        "description": "Create a proposal from the client workspace"
+        "description": "Save the proposal"
+      },
+      {
+        "type": "action",
+        "description": "Send the proposal"
       },
       {
         "type": "assertion",
-        "description": "Verify the proposal builder is displayed"
+        "description": "Verify the proposal send confirmation is visible"
       },
       {
         "type": "assertion",
-        "description": "Verify the proposal is associated with the selected client"
+        "description": "Verify the proposal is shown as sent"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC005",
-    "title": "Create an invoice from a client workspace",
-    "description": "Verifies that a user can create an invoice from a client workspace and continue into the invoice builder.",
-    "category": "Client Workspace and Document Flow",
+    "title": "Create an invoice, export it, and mark it paid",
+    "description": "This verifies a user can build an invoice, export it, and complete the paid confirmation flow.",
+    "category": "Sales-to-Cash Journey",
     "steps": [
       {
         "type": "action",
@@ -199,11 +199,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -211,32 +211,40 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /clients"
+        "description": "Open the invoice builder"
       },
       {
         "type": "action",
-        "description": "Open a client record from the client directory"
+        "description": "Add an invoice line item"
       },
       {
         "type": "action",
-        "description": "Create an invoice from the client workspace"
+        "description": "Save the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Export the invoice as a PDF"
+      },
+      {
+        "type": "action",
+        "description": "Mark the invoice as paid"
       },
       {
         "type": "assertion",
-        "description": "Verify the invoice builder is displayed"
+        "description": "Verify the invoice is shown as paid"
       },
       {
         "type": "assertion",
-        "description": "Verify the invoice is associated with the selected client"
+        "description": "Verify the invoice summary remains visible"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC006",
-    "title": "Run deep research on a lead and review findings",
-    "description": "Verifies that a user can run deep research on a lead and see the resulting research findings.",
-    "category": "Lead Management and Deep Research",
+    "title": "Run research and contact a lead",
+    "description": "Verifies that a user can review a lead, run deep research, and open the contact flow to send an outreach message.",
+    "category": "Lead Detail and Outreach",
     "steps": [
       {
         "type": "action",
@@ -244,11 +252,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -260,28 +268,40 @@
       },
       {
         "type": "action",
-        "description": "Open a lead record from the lead engine"
+        "description": "Select a lead row"
       },
       {
         "type": "action",
         "description": "Run deep research on the lead"
       },
       {
-        "type": "assertion",
-        "description": "Verify lead research findings are displayed"
+        "type": "action",
+        "description": "Open the contact flow"
+      },
+      {
+        "type": "action",
+        "description": "Draft an outreach message"
+      },
+      {
+        "type": "action",
+        "description": "Confirm contact"
       },
       {
         "type": "assertion",
-        "description": "Verify site health and competitor pricing findings are displayed"
+        "description": "Verify updated research or snapshot details are visible on the lead page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a contact activity is recorded in the lead history"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC007",
-    "title": "Start from the dashboard and open a record from global search",
-    "description": "Verifies that a logged-in user can reach the dashboard, use global search, and open the correct record from categorized results.",
-    "category": "Dashboard Navigation",
+    "title": "Adjust and save core settings",
+    "description": "Verifies that a user can change quota, follow-up cadence, and tone preferences and persist the updated settings.",
+    "category": "Settings Management",
     "steps": [
       {
         "type": "action",
@@ -289,11 +309,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -301,27 +321,39 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /dashboard"
+        "description": "Click the settings page link"
       },
       {
         "type": "action",
-        "description": "Use global search to look up a record"
+        "description": "Change the daily target quota"
       },
       {
         "type": "action",
-        "description": "Open the matching record from the categorized results"
+        "description": "Change the follow-up cadence days"
+      },
+      {
+        "type": "action",
+        "description": "Change the tone preference"
+      },
+      {
+        "type": "action",
+        "description": "Save the settings"
       },
       {
         "type": "assertion",
-        "description": "Verify the matching record page is displayed"
+        "description": "Verify the updated settings are shown on the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a saved confirmation is visible"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC008",
-    "title": "Use keyboard navigation to open a search result",
-    "description": "Verifies that a user can move through global search results with the keyboard and open the intended record.",
+    "title": "Open a record from global quick search",
+    "description": "This verifies a signed-in user can search across records from the dashboard and open a matching result.",
     "category": "Global Quick Search",
     "steps": [
       {
@@ -330,11 +362,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -342,36 +374,32 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /dashboard"
+        "description": "Open the global quick search"
       },
       {
         "type": "action",
-        "description": "Open the global search"
+        "description": "Type a business name or record identifier into the search field"
       },
       {
         "type": "action",
-        "description": "Type a query into the search field"
-      },
-      {
-        "type": "action",
-        "description": "Press Arrow Down"
-      },
-      {
-        "type": "action",
-        "description": "Press Enter"
+        "description": "Select a matching search result"
       },
       {
         "type": "assertion",
-        "description": "Verify the selected matching record page is displayed"
+        "description": "Verify the matching record page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected record content is visible"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC009",
-    "title": "Mark an invoice as sent",
-    "description": "Verifies that a user can mark an invoice as sent and see the invoice status change accordingly.",
-    "category": "Invoice Builder",
+    "title": "Move a lead to proposal stage",
+    "description": "Verifies that a user can advance a lead to the proposal stage from lead detail.",
+    "category": "Lead Detail and Outreach",
     "steps": [
       {
         "type": "action",
@@ -379,101 +407,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /invoices/builder"
-      },
-      {
-        "type": "action",
-        "description": "Customize the invoice details"
-      },
-      {
-        "type": "action",
-        "description": "Mark the invoice as sent"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the invoice status changes to sent"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC010",
-    "title": "Open onboarding from a paid client workspace",
-    "description": "Verifies that a user can open the onboarding record after payment has been confirmed.",
-    "category": "Client Workspace and Document Flow",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /clients"
-      },
-      {
-        "type": "action",
-        "description": "Open a client record from the client directory"
-      },
-      {
-        "type": "action",
-        "description": "Confirm payment received"
-      },
-      {
-        "type": "action",
-        "description": "Open the onboarding workspace for the client"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the onboarding record is displayed"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the onboarding checklist is visible"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC011",
-    "title": "Open a lead from the lead engine and review its details",
-    "description": "Verifies that a user can open a lead from the lead table and view the lead detail workspace.",
-    "category": "Lead Management and Deep Research",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -485,24 +423,28 @@
       },
       {
         "type": "action",
-        "description": "Open a lead record from the lead engine"
+        "description": "Select a lead row"
+      },
+      {
+        "type": "action",
+        "description": "Move the lead to proposal stage"
       },
       {
         "type": "assertion",
-        "description": "Verify the lead detail page is displayed"
+        "description": "Verify the lead status changes to proposal stage"
       },
       {
         "type": "assertion",
-        "description": "Verify the lead information and qualification tier are displayed"
+        "description": "Verify the updated stage is visible on the lead detail page"
       }
     ],
     "priority": "High"
   },
   {
-    "id": "TC012",
-    "title": "Open a client workspace from the client directory",
-    "description": "Verifies that a user can open a client record from the client directory and reach the client workspace.",
-    "category": "Client Workspace and Document Flow",
+    "id": "TC010",
+    "title": "Mark an invoice as paid",
+    "description": "This verifies that a user can confirm payment and see the invoice status update to paid.",
+    "category": "Invoice Builder",
     "steps": [
       {
         "type": "action",
@@ -510,11 +452,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -522,27 +464,390 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /clients"
+        "description": "Navigate to /invoices/builder"
       },
       {
         "type": "action",
-        "description": "Open a client record from the client directory"
+        "description": "Mark payment as received"
       },
       {
         "type": "assertion",
-        "description": "Verify the client workspace is displayed"
+        "description": "Verify the invoice status is marked as paid"
       },
       {
         "type": "assertion",
-        "description": "Verify client relationship details are displayed"
+        "description": "Verify a payment confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Accept a proposal from the client record",
+    "description": "This verifies a user can open a client record and complete the proposal acceptance flow.",
+    "category": "Sales-to-Cash Journey",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the clients list"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record"
+      },
+      {
+        "type": "action",
+        "description": "Open the linked proposal"
+      },
+      {
+        "type": "action",
+        "description": "Accept the proposal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal is marked as accepted"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client record reflects the accepted proposal"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Log a reply on a lead",
+    "description": "Verifies that a user can record a client reply and see it added to the lead's conversation history.",
+    "category": "Lead Detail and Outreach",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Select a lead row"
+      },
+      {
+        "type": "action",
+        "description": "Open the reply log flow"
+      },
+      {
+        "type": "action",
+        "description": "Record a client reply"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the conversation history is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new reply entry appears in the lead activity history"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC013",
-    "title": "Load the sample CSV and import leads",
-    "description": "Verifies that a user can load the sample CSV, confirm the mapped fields, and import leads into the lead engine.",
+    "title": "Book a call for a lead",
+    "description": "Verifies that a user can schedule a call from a lead detail page and see it recorded in activity history.",
+    "category": "Lead Detail and Outreach",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Select a lead row"
+      },
+      {
+        "type": "action",
+        "description": "Open the call booking flow"
+      },
+      {
+        "type": "action",
+        "description": "Enter the call agenda"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the call booking is shown on the lead page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the call appears in the activity history"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Save a new invoice with updated line items",
+    "description": "This verifies that a user can add, edit, remove, and save invoice line items successfully.",
+    "category": "Invoice Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /invoices/builder"
+      },
+      {
+        "type": "action",
+        "description": "Add a new line item"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the line item description with a unique service name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the line item amount with a valid positive value"
+      },
+      {
+        "type": "action",
+        "description": "Update an existing line item"
+      },
+      {
+        "type": "action",
+        "description": "Remove a line item"
+      },
+      {
+        "type": "action",
+        "description": "Save the invoice"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice save confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice shows the updated line items"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Create and save a proposal draft",
+    "description": "Verifies that a user can edit a proposal in the builder and save the proposal state.",
+    "category": "Proposal Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /proposals/builder"
+      },
+      {
+        "type": "action",
+        "description": "Edit the proposal content"
+      },
+      {
+        "type": "action",
+        "description": "Save the proposal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the proposal editor remains accessible after saving"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a saved proposal state is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Import leads from CSV and confirm them in the app",
+    "description": "This verifies a user can upload a CSV, map fields or use a saved template, preview the import, confirm it, and see the imported leads reflected in the app.",
+    "category": "Bulk Growth Journey",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the import page"
+      },
+      {
+        "type": "action",
+        "description": "Upload a CSV file"
+      },
+      {
+        "type": "action",
+        "description": "Map the imported columns or load a saved mapping template"
+      },
+      {
+        "type": "action",
+        "description": "Preview the import"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "action",
+        "description": "Open the leads list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify newly imported leads are visible in the lead list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard lead counts reflect the import"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Browse leads and mark a target",
+    "description": "Verifies that a user can browse the lead list, filter and search leads, and mark a lead as Today's Target with the quota count updating.",
+    "category": "Lead Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Filter the lead list by status"
+      },
+      {
+        "type": "action",
+        "description": "Search for a business name in the lead search field"
+      },
+      {
+        "type": "action",
+        "description": "Mark a lead as Today's Target"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead list remains visible with the selected lead prioritized as a target"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the Today's Target quota count updates"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Import leads from a CSV file",
+    "description": "Verifies that a user can upload a CSV, map fields, preview the rows, and complete a bulk import successfully.",
     "category": "CSV Lead Import",
     "steps": [
       {
@@ -551,11 +856,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -563,11 +868,387 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /import"
+        "description": "Click the import page link"
       },
       {
         "type": "action",
-        "description": "Load the sample leads CSV"
+        "description": "Upload a valid CSV file"
+      },
+      {
+        "type": "action",
+        "description": "Map the CSV columns to lead fields"
+      },
+      {
+        "type": "action",
+        "description": "Preview the imported data"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the import"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported leads are shown in the import result view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful import confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Open a lead from the list",
+    "description": "Verifies that a user can open a lead detail page from the lead list.",
+    "category": "Lead Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Select a lead row"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead detail page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected lead's information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Browse the lead list and mark today's target",
+    "description": "This verifies a user can review leads and mark one as today's target from the lead list.",
+    "category": "Lead Lifecycle Journey",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the leads list"
+      },
+      {
+        "type": "action",
+        "description": "Mark a lead as today's target"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the selected lead is marked as today's target"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead list remains visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Edit lead details",
+    "description": "Verifies that a user can update lead information and save the changes on the lead detail page.",
+    "category": "Lead Detail and Outreach",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /leads"
+      },
+      {
+        "type": "action",
+        "description": "Select a lead row"
+      },
+      {
+        "type": "action",
+        "description": "Edit lead information"
+      },
+      {
+        "type": "action",
+        "description": "Save the lead changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated lead details are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lead remains accessible from the detail page"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Export an invoice as a PDF",
+    "description": "This verifies that a user can export an invoice and receive an exported file from the invoice builder.",
+    "category": "Invoice Builder",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /invoices/builder"
+      },
+      {
+        "type": "action",
+        "description": "Export the invoice as PDF"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exported invoice file is available"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice remains visible after export"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Manage client documents and onboarding tasks",
+    "description": "This verifies a user can open a client record, view linked billing records, upload supporting documents, and complete onboarding tasks.",
+    "category": "Client Delivery Journey",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the clients list"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record"
+      },
+      {
+        "type": "action",
+        "description": "View the linked proposals and invoices"
+      },
+      {
+        "type": "action",
+        "description": "Upload a supporting document"
+      },
+      {
+        "type": "action",
+        "description": "Open the onboarding checklist"
+      },
+      {
+        "type": "action",
+        "description": "Complete an onboarding task"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the completed onboarding task is shown as done"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client document area is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Browse and search clients to open a client record",
+    "description": "This verifies that a user can browse the client list, filter or search it, and open a client record.",
+    "category": "Client Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /clients"
+      },
+      {
+        "type": "action",
+        "description": "Filter clients by stage"
+      },
+      {
+        "type": "action",
+        "description": "Search for a client by name"
+      },
+      {
+        "type": "action",
+        "description": "Open a client record from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the client detail view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify linked client information is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Save lead settings that affect follow-up behavior",
+    "description": "This verifies a user can change settings that affect quotas or follow-up cadence and save them successfully.",
+    "category": "Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the settings page"
+      },
+      {
+        "type": "action",
+        "description": "Change the follow-up cadence or quota settings"
+      },
+      {
+        "type": "action",
+        "description": "Save the settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the settings changes are saved"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated cadence or quota values are visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "Load a saved CSV mapping template and import leads",
+    "description": "Verifies that a user can load an existing mapping template, review the mapped fields, and finish importing leads.",
+    "category": "CSV Lead Import",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the import page link"
+      },
+      {
+        "type": "action",
+        "description": "Load a saved mapping template"
       },
       {
         "type": "action",
@@ -579,7 +1260,7 @@
       },
       {
         "type": "assertion",
-        "description": "Verify the imported leads are available in the lead engine"
+        "description": "Verify the imported leads are shown in the import result view"
       },
       {
         "type": "assertion",
@@ -589,10 +1270,10 @@
     "priority": "High"
   },
   {
-    "id": "TC014",
-    "title": "Advance a lead through its stage flow",
-    "description": "Verifies that a user can move a lead forward through qualification stages and see the updated stage.",
-    "category": "Lead Management and Deep Research",
+    "id": "TC027",
+    "title": "View linked proposals and invoices on a client record",
+    "description": "This verifies that a user can open a client record and see its linked proposals and invoices.",
+    "category": "Client Management",
     "steps": [
       {
         "type": "action",
@@ -600,56 +1281,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /leads"
-      },
-      {
-        "type": "action",
-        "description": "Open a lead record from the lead engine"
-      },
-      {
-        "type": "action",
-        "description": "Advance the lead stage"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the lead stage is updated"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the next qualification stage is displayed"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC015",
-    "title": "Customize an invoice and export it",
-    "description": "Verifies that a user can update invoice details and export the invoice as a PDF.",
-    "category": "Invoice Builder",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -657,80 +1293,27 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /invoices/builder"
+        "description": "Navigate to /clients"
       },
       {
         "type": "action",
-        "description": "Customize the invoice line items, payment method, and notes"
-      },
-      {
-        "type": "action",
-        "description": "Export the invoice as a PDF"
+        "description": "Open a client record from the list"
       },
       {
         "type": "assertion",
-        "description": "Verify the customized invoice details are available"
+        "description": "Verify linked proposals are displayed"
       },
       {
         "type": "assertion",
-        "description": "Verify a PDF export confirmation is visible"
+        "description": "Verify linked invoices are displayed"
       }
     ],
     "priority": "High"
   },
   {
-    "id": "TC016",
-    "title": "Import leads from CSV and confirm the mapped columns",
-    "description": "Verifies that a user can load sample lead data, review auto-mapped columns, and confirm the import.",
-    "category": "CSV Lead Import",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /import"
-      },
-      {
-        "type": "action",
-        "description": "Load the sample CSV fixture"
-      },
-      {
-        "type": "action",
-        "description": "Review the auto-mapped columns"
-      },
-      {
-        "type": "action",
-        "description": "Confirm the import"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the import completion summary is displayed"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the imported leads are reflected in the system"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC017",
-    "title": "Edit and export a proposal",
-    "description": "Verifies that a user can update proposal content and export the finished proposal as a PDF.",
+    "id": "TC028",
+    "title": "Generate an AI proposal draft and save it",
+    "description": "Verifies that a user can generate a proposal draft with AI assistance, review it, and save the result.",
     "category": "Proposal Builder",
     "steps": [
       {
@@ -739,11 +1322,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -755,32 +1338,32 @@
       },
       {
         "type": "action",
-        "description": "Edit the proposal scope"
+        "description": "Generate an AI draft for the proposal"
       },
       {
         "type": "action",
-        "description": "Review the proposal content"
+        "description": "Review the drafted content"
       },
       {
         "type": "action",
-        "description": "Export the proposal as a PDF"
+        "description": "Save the proposal"
       },
       {
         "type": "assertion",
-        "description": "Verify the proposal content is available for export"
+        "description": "Verify drafted proposal content is visible"
       },
       {
         "type": "assertion",
-        "description": "Verify a PDF export confirmation is visible"
+        "description": "Verify the proposal is saved"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
-    "id": "TC018",
-    "title": "See categorized results for a search query",
-    "description": "Verifies that global search groups results by record type so the user can distinguish leads, clients, proposals, and invoices.",
-    "category": "Global Quick Search",
+    "id": "TC029",
+    "title": "Manage a client document from the client detail page",
+    "description": "This verifies that a user can upload, preview, and delete a client document from a client record.",
+    "category": "Client Management",
     "steps": [
       {
         "type": "action",
@@ -788,11 +1371,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -800,32 +1383,40 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /dashboard"
+        "description": "Navigate to /clients"
       },
       {
         "type": "action",
-        "description": "Open the global search"
+        "description": "Open a client record from the list"
       },
       {
         "type": "action",
-        "description": "Type a query that matches multiple record types into the search field"
+        "description": "Upload a document for the client"
+      },
+      {
+        "type": "action",
+        "description": "Preview the uploaded document"
+      },
+      {
+        "type": "action",
+        "description": "Delete the uploaded document"
       },
       {
         "type": "assertion",
-        "description": "Verify categorized search results are displayed"
+        "description": "Verify the client document list is updated"
       },
       {
         "type": "assertion",
-        "description": "Verify multiple record types are shown in the results"
+        "description": "Verify the document no longer appears in the client record"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
-    "id": "TC019",
-    "title": "Approve a proposal and export it",
-    "description": "Verifies that a user can approve a proposal, see the status update, and export the approved proposal as a PDF.",
-    "category": "Proposal Builder",
+    "id": "TC030",
+    "title": "Create an invoice for a client from the client record",
+    "description": "This verifies that a user can start invoice creation from a client record and continue into the invoice builder.",
+    "category": "Client Management",
     "steps": [
       {
         "type": "action",
@@ -833,11 +1424,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -845,36 +1436,32 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /proposals/builder"
+        "description": "Navigate to /clients"
       },
       {
         "type": "action",
-        "description": "Edit the proposal scope"
+        "description": "Open a client record from the list"
       },
       {
         "type": "action",
-        "description": "Approve the proposal through the approval gate"
-      },
-      {
-        "type": "action",
-        "description": "Export the proposal as a PDF"
+        "description": "Create an invoice for the client"
       },
       {
         "type": "assertion",
-        "description": "Verify the proposal status is updated to approved"
+        "description": "Verify the invoice builder is displayed"
       },
       {
         "type": "assertion",
-        "description": "Verify a PDF export confirmation is visible"
+        "description": "Verify the selected client is associated with the invoice"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
-    "id": "TC020",
-    "title": "See imported leads in the lead engine for follow-up",
-    "description": "Verifies that leads imported from CSV appear in the lead engine and are available for follow-up work.",
-    "category": "CSV Lead Import",
+    "id": "TC031",
+    "title": "Complete an onboarding task for a client",
+    "description": "This verifies that a user can open onboarding for a client and mark a checklist item as complete.",
+    "category": "Client Onboarding Checklist",
     "steps": [
       {
         "type": "action",
@@ -882,11 +1469,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -894,36 +1481,28 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /import"
+        "description": "Navigate to /onboarding/[id]"
       },
       {
         "type": "action",
-        "description": "Load the sample CSV fixture"
-      },
-      {
-        "type": "action",
-        "description": "Confirm the import"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /leads"
+        "description": "Mark an onboarding task as completed"
       },
       {
         "type": "assertion",
-        "description": "Verify the imported leads appear in the lead engine"
+        "description": "Verify the onboarding progress updates"
       },
       {
         "type": "assertion",
-        "description": "Verify the imported leads are available for follow-up"
+        "description": "Verify the completed task is shown as done"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
-    "id": "TC021",
-    "title": "Upload a CSV and verify automatic column mapping",
-    "description": "Verifies that a user can upload a CSV file, see the detected mappings, and proceed to import leads.",
-    "category": "CSV Lead Import",
+    "id": "TC032",
+    "title": "Change the theme and save it",
+    "description": "Verifies that a user can switch the app theme and keep the selected theme after saving.",
+    "category": "Settings Management",
     "steps": [
       {
         "type": "action",
@@ -931,11 +1510,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -943,32 +1522,32 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /import"
+        "description": "Click the settings page link"
       },
       {
         "type": "action",
-        "description": "Choose a CSV file to upload"
+        "description": "Change the theme"
       },
       {
         "type": "action",
-        "description": "Verify the detected column mappings"
-      },
-      {
-        "type": "action",
-        "description": "Confirm the import"
+        "description": "Save the settings"
       },
       {
         "type": "assertion",
-        "description": "Verify the imported leads are available in the lead engine"
+        "description": "Verify the selected theme is applied on the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a saved confirmation is visible"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
-    "id": "TC022",
-    "title": "Use the quota-limited research fallback profile",
-    "description": "Verifies that when deep research is quota-limited, the lead still shows a usable pre-built research profile.",
-    "category": "Lead Management and Deep Research",
+    "id": "TC033",
+    "title": "Open the copilot and get an answer",
+    "description": "Verifies that a user can open the AI copilot drawer, submit a question, and see a response in the drawer.",
+    "category": "AI Copilot",
     "steps": [
       {
         "type": "action",
@@ -976,11 +1555,11 @@
       },
       {
         "type": "action",
-        "description": "Fill in the username field with {{LOGIN_USER}}"
+        "description": "Fill in the email field with admin@clientpulse.io"
       },
       {
         "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+        "description": "Fill in the password field with SoloAdmin2026!"
       },
       {
         "type": "action",
@@ -988,23 +1567,105 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /leads"
+        "description": "Click the dashboard link"
       },
       {
         "type": "action",
-        "description": "Open a lead record from the lead engine"
+        "description": "Open the copilot drawer"
       },
       {
         "type": "action",
-        "description": "Run deep research on the lead"
+        "description": "Type a question into the copilot input"
+      },
+      {
+        "type": "action",
+        "description": "Submit the copilot request"
       },
       {
         "type": "assertion",
-        "description": "Verify a pre-built research profile is displayed"
+        "description": "Verify an AI response is visible in the drawer"
       },
       {
         "type": "assertion",
-        "description": "Verify the lead remains usable for further work"
+        "description": "Verify the copilot drawer remains open"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Reset settings to defaults",
+    "description": "Verifies that a user can restore the default settings values from the settings page.",
+    "category": "Settings Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with admin@clientpulse.io"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SoloAdmin2026!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the settings page link"
+      },
+      {
+        "type": "action",
+        "description": "Change one or more settings values"
+      },
+      {
+        "type": "action",
+        "description": "Reset the settings to default"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the default settings values are restored"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a reset confirmation is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Reject invalid login credentials",
+    "description": "This verifies invalid credentials are rejected and the user stays on the sign-in screen.",
+    "category": "User Login",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with invalid-user@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with invalid-password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a login error message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sign-in screen remains visible"
       }
     ],
     "priority": "Low"

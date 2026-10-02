@@ -59,7 +59,7 @@ Classify this message into EXACTLY one of these 5 sales behavior categories:
    - Example: "Who are you and where did you get my number?" -> replied_hesitant, confidence: "High", objection: "Skeptical of source"
 
 3. "seen_no_reply": Casual receipt acknowledgment, single emoji, brief neutral reaction without answering or engaging.
-   - Example: "ok", "noted", "👍", "k" -> seen_no_reply, confidence: "High"
+   - Example: "ok", "noted", "👍", "k" -> seen_no_reply, confidence: "Low" (ambiguous acknowledgment; requires manual review)
 
 4. "no_reply_not_seen": Deferral to a distant date or automated out-of-office.
    - Example: "I'm out of office until next month" or "Ping me next quarter" -> no_reply_not_seen, confidence: "High"
@@ -67,20 +67,29 @@ Classify this message into EXACTLY one of these 5 sales behavior categories:
 5. "final_follow_up": Definite rejection or opt-out request.
    - Example: "Not interested, please remove me." or "Stop texting this number." -> final_follow_up, confidence: "High"
 
-CRITICAL AMBIGUITY & QUALITY RULES:
-1. AMBIGUOUS / GARBLED / INTERNAL NOTE DETECTION:
+CRITICAL AMBIGUITY & QUALITY RULES (FIX 8):
+1. ONE-WORD & AMBIGUOUS RESPONSES:
+   If the incoming message is a one-word reply, brief acknowledgment, or single emoji (e.g., "ok", "noted", "sure", "k", "👍", "fine", "cool", "yep", "yes", "thanks"):
+   - You MUST set "confidence": "Low".
+   - Set "manual_review_recommended": true.
+   - In "reasoning", explicitly state: "Ambiguous or one-word response. Manual review recommended before next action."
+   - In "recommended_next_step", say: "Review response manually to verify prospect intent before continuing outreach."
+
+2. AMBIGUOUS / GARBLED / INTERNAL NOTE DETECTION:
    If the incoming text is NOT a clear customer reply to a service pitch (for example, if it looks like an operator note, a search query, a fragmented test, or a user intention like "i just want to get this leads", "test 123", "leads list"):
    - NEVER classify it as "warm_interested"!
    - You MUST set "confidence": "Low".
+   - Set "manual_review_recommended": true.
    - Set "behavior": "replied_hesitant" or "seen_no_reply".
    - In "reasoning", explain explicitly: "The message appears to be an internal user note or ambiguous fragment rather than an authentic prospect reply to your outreach."
    - In "recommended_next_step", say: "Review message authenticity or manually select the appropriate behavior stage."
-2. DO NOT assume interest from words like "leads", "want", "get" unless the prospect is explicitly saying they want to hire/buy the service from the sender.
+3. DO NOT assume interest from words like "leads", "want", "get" unless the prospect is explicitly saying they want to hire/buy the service from the sender.
 
 Return ONLY a valid JSON object matching this schema (no markdown fences, no extra text):
 {
   "behavior": "warm_interested | replied_hesitant | seen_no_reply | no_reply_not_seen | final_follow_up",
   "confidence": "High | Medium | Low",
+  "manual_review_recommended": true | false,
   "detected_objection": "Extracted objection/hesitation in 1 concise phrase, or null if none",
   "reasoning": "1-2 sentence explanation of why this category and confidence were selected",
   "recommended_next_step": "1 sentence recommendation on what to do next"
@@ -167,19 +176,18 @@ Return ONLY a valid JSON object matching this schema (no markdown fences, no ext
         },
       });
 
-      // Update lead record with customer behavior & stage
+      // Update lead record with customer behavior & stage classification ONLY (FIX 4: never overwrite follow_up_count)
       const updatedLead = await db.lead.update({
         where: { id: lead.id },
         data: {
           customer_behavior: selectedBehavior,
-          follow_up_count: targetStage,
           status: newStatus,
         },
       });
 
       return NextResponse.json({
         success: true,
-        message: `Customer reply logged. Follow-up engine advanced to Stage ${targetStage}/4 (${selectedBehavior}).`,
+        message: `Customer reply logged. Customer behavior updated to ${selectedBehavior.replace(/_/g, " ")}.`,
         lead: updatedLead,
         interaction: savedInteraction,
       });

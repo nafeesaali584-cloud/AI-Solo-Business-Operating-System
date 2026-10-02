@@ -33,19 +33,37 @@ export async function POST(
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    // Guardrail: Max 4 follow-ups unless customer is warm/interested
-    if (behavior !== "warm_interested" && lead.follow_up_count >= 4) {
+    // FIX 3: 4-touchpoint follow-up cap enforced server-side
+    if ((lead.follow_up_count || 0) >= 4) {
       return NextResponse.json(
         {
-          error: "Maximum 4 follow-ups already completed for this lead. Graceful exit policy active to respect customer boundaries.",
+          error: "Follow-up cap of 4 touchpoints reached for this lead.",
           max_reached: true,
         },
-        { status: 400 }
+        { status: 429 }
       );
     }
 
     const lastInteraction = lead.interactions[0];
     const contactName = lead.contacts[0]?.name || null;
+
+    // Extract full non-empty CSV context for deep grounding
+    let source_csv_context: string | null = null;
+    if (lead.source_csv_row && typeof lead.source_csv_row === "object") {
+      const entries: string[] = [];
+      const ignoredKeys = new Set(["id", "created_at", "updated_at", "manual"]);
+      for (const [k, v] of Object.entries(lead.source_csv_row)) {
+        if (ignoredKeys.has(k)) continue;
+        if (v === null || v === undefined || v === "" || v === "null" || v === "undefined" || v === "N/A") continue;
+        const strVal = typeof v === "object" ? JSON.stringify(v) : String(v).trim();
+        if (strVal && strVal !== "{}" && strVal !== "[]") {
+          entries.push(`- ${k}: ${strVal}`);
+        }
+      }
+      if (entries.length > 0) {
+        source_csv_context = entries.join("\n");
+      }
+    }
 
     const followUpResult = await generateBehaviorFollowUp({
       business_name: lead.business_name,
@@ -56,6 +74,9 @@ export async function POST(
       primary_offer: lead.primary_offer,
       last_message_summary: lastInteraction ? lastInteraction.content.slice(0, 150) : null,
       custom_hesitation_notes,
+      niche_industry: lead.niche_industry,
+      city_country: lead.city_country,
+      source_csv_context,
     });
 
     // Create draft interaction record with confirmed_sent = false (GATE 1)
@@ -70,17 +91,12 @@ export async function POST(
       },
     });
 
-    // Update lead record with incremented follow-up count & active behavior
-    const updatedCount =
-      behavior === "warm_interested"
-        ? lead.follow_up_count
-        : Math.min(lead.follow_up_count + 1, 4);
-
+    // FIX 4: Update customer_behavior and booking status ONLY.
+    // follow_up_count increments ONLY when Gate 1 is cleared for an outgoing follow-up.
     await db.lead.update({
       where: { id: lead.id },
       data: {
         customer_behavior: behavior,
-        follow_up_count: updatedCount,
         status: behavior === "warm_interested" ? "Booking" : lead.status,
       },
     });
@@ -89,7 +105,7 @@ export async function POST(
       success: true,
       follow_up: followUpResult,
       interaction_id: interaction.id,
-      follow_up_count: updatedCount,
+      follow_up_count: lead.follow_up_count,
     });
   } catch (error: any) {
     console.error("Follow-up error:", error);

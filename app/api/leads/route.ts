@@ -74,10 +74,24 @@ export async function GET(req: NextRequest) {
       orderBy: { created_at: "desc" },
     });
 
+    const settings = (await db.settings.findUnique({ where: { id: "default" } })) || {
+      daily_target_quota: 3,
+    };
+    const activeTargetsCount = await db.lead.count({
+      where: { is_today_target: true },
+    });
+    const quotaMax = Math.max(1, settings.daily_target_quota || 3);
+
     return NextResponse.json({
       success: true,
       count: leads.length,
       leads,
+      target_quota: {
+        current: activeTargetsCount,
+        max: quotaMax,
+        is_over_quota: activeTargetsCount > quotaMax,
+        over_count: Math.max(0, activeTargetsCount - quotaMax),
+      },
     });
   } catch (error: any) {
     console.error("Leads fetch error:", error);

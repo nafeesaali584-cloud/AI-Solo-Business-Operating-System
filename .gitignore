@@ -40,3 +40,6 @@ Thumbs.db
 scratch/
 testsprite_tests/tmp/
 testsprite_tests/tmp/config.json
+
+public/uploads/*
+!public/uploads/.gitkeep

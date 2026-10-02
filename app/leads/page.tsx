@@ -66,6 +66,7 @@ export default function LeadListPage() {
   const [noReplyFilter, setNoReplyFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [quotaCount, setQuotaCount] = useState(0);
+  const [quotaMax, setQuotaMax] = useState(3);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   // Modals state
@@ -111,13 +112,18 @@ export default function LeadListPage() {
       if (targetsOnly) params.append("targets_only", "true");
       if (noReplyFilter) params.append("no_reply_days", noReplyFilter);
 
-      const res = await fetch(`/api/leads?${params.toString()}`);
+      const res = await fetch(`/api/leads?${params.toString()}`, { cache: "no-store" });
       if (res.ok) {
         const json = await res.json();
         const loadedLeads: LeadItem[] = json.leads || [];
         setLeads(loadedLeads);
-        const currentTargets = loadedLeads.filter((l) => l.is_today_target).length;
-        setQuotaCount(currentTargets);
+        if (json.target_quota) {
+          setQuotaCount(json.target_quota.current);
+          setQuotaMax(json.target_quota.max);
+        } else {
+          const currentTargets = loadedLeads.filter((l) => l.is_today_target).length;
+          setQuotaCount(currentTargets);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch leads", err);
@@ -141,6 +147,21 @@ export default function LeadListPage() {
 
     const newState = !currentTargetState;
 
+    // Enforce quota limit: block flagging if already at or over quota
+    if (newState && quotaCount >= quotaMax) {
+      if (quotaCount > quotaMax) {
+        setActionMessage(
+          `⚠️ OVER QUOTA: You currently have ${quotaCount}/${quotaMax} targets flagged. Please unflag ${quotaCount - quotaMax + 1} lead(s) before adding new targets.`
+        );
+      } else {
+        setActionMessage(
+          `⚠️ QUOTA REACHED: You have reached your daily quota of ${quotaMax} active target${quotaMax === 1 ? "" : "s"}. Please unflag an active target first.`
+        );
+      }
+      setTimeout(() => setActionMessage(null), 5000);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/leads/${leadId}`, {
         method: "PATCH",
@@ -151,14 +172,14 @@ export default function LeadListPage() {
       const data = await res.json();
       if (!res.ok) {
         setActionMessage(`⚠️ ${data.error}`);
-        setTimeout(() => setActionMessage(null), 4000);
+        setTimeout(() => setActionMessage(null), 5000);
         return;
       }
 
       setLeads((prev) =>
         prev.map((l) => (l.id === leadId ? { ...l, is_today_target: newState } : l))
       );
-      setQuotaCount((prev) => (newState ? prev + 1 : prev - 1));
+      setQuotaCount((prev) => (newState ? prev + 1 : Math.max(0, prev - 1)));
     } catch (err) {
       console.error("Failed to toggle target status", err);
     }
@@ -380,17 +401,28 @@ export default function LeadListPage() {
             <span>S3 — Lead List (Workspace A)</span>
           </h1>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
-            Browse, filter, and assign leads to your daily 3-target focus quota.
+            Browse, filter, and assign leads to your daily {quotaMax}-target focus quota.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Target Quota Meter */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--accent-border)] text-xs">
-            <Target className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-            <span className="text-[var(--text-muted)]">Daily Quota:</span>
-            <span className="font-bold text-[var(--accent)]">{quotaCount} / 3 Active</span>
-          </div>
+          {quotaCount > quotaMax ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="text-amber-200/80">Daily Quota:</span>
+              <span className="font-bold text-amber-400">{quotaCount} / {quotaMax}</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Over Quota (+{quotaCount - quotaMax})
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--surface)] border border-[var(--accent-border)] text-xs">
+              <Target className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+              <span className="text-[var(--text-muted)]">Daily Quota:</span>
+              <span className="font-bold text-[var(--accent)]">{quotaCount} / {quotaMax} Active</span>
+            </div>
+          )}
 
           <button
             onClick={handleOpenAdd}
@@ -657,10 +689,20 @@ export default function LeadListPage() {
                       <td className="p-3.5 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={(e) => toggleTarget(lead.id, lead.is_today_target, e)}
-                          title={lead.is_today_target ? "Unmark target" : "Mark as Today's Target (Max 3)"}
+                          title={
+                            lead.is_today_target
+                              ? "Unmark target"
+                              : quotaCount >= quotaMax
+                              ? quotaCount > quotaMax
+                                ? `Over quota (${quotaCount}/${quotaMax}). Unmark ${quotaCount - quotaMax + 1} target(s) first.`
+                                : `Quota reached (${quotaMax}/${quotaMax} active). Unmark an active target first.`
+                              : `Mark as Today's Target (Max ${quotaMax})`
+                          }
                           className={`p-1.5 rounded-lg border transition-colors ${
                             lead.is_today_target
-                              ? "bg-[var(--accent)] text-white border-[var(--accent-border)] font-bold"
+                              ? "bg-[var(--accent)] text-white border-[var(--accent-border)] font-bold shadow-sm"
+                              : quotaCount >= quotaMax
+                              ? "bg-[var(--surface-hover)] text-[var(--text-dim)] border-[var(--border)] opacity-40 cursor-not-allowed"
                               : "bg-[var(--surface-hover)] text-[var(--text-dim)] hover:text-[var(--text-secondary)] border-[var(--border)]"
                           }`}
                         >

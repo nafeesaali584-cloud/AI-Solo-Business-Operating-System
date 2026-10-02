@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Gate 3 error:", error);
-    return NextResponse.json({ error: error.message || "Gate 3 execution failed" }, { status: 400 });
+    const status = error.statusCode || (error.message?.includes("Invalid state transition") ? 409 : 400);
+    return NextResponse.json({ error: error.message || "Gate 3 execution failed" }, { status });
   }
 }

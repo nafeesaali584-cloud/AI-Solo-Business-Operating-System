@@ -1,7 +1,7 @@
 import { generateGeminiContent, generateCopilotWithSearch, GenerateResult } from "./gemini";
 
 const CORE_SYSTEM_INSTRUCTION = `
-You are the AI Engine inside "ClientPulse", an operating system for solo service businesses.
+You are the AI Engine inside "SoloDeskOS", an operating system for solo service businesses.
 You operate strictly under these non-negotiable rules:
 
 1. DATA TIERS (FACT vs INFERENCE vs LIVE WEB DATA vs UNKNOWN):
@@ -172,33 +172,97 @@ Return ONLY a JSON object:
 export async function draftProposalContent(params: {
   business_name: string;
   niche_industry?: string | null;
+  city_country?: string | null;
+  website?: string | null;
+  primary_observation?: string | null;
+  primary_offer?: string | null;
+  source_csv_row?: any;
+  research_data?: any;
   services: Array<{ name: string; description?: string; price: number }>;
-}): Promise<{ scope: string; deliverables: string; timeline: string; terms: string }> {
+}): Promise<{
+  scope: string;
+  deliverables: string;
+  timeline: string;
+  terms: string;
+  currency: string;
+  what_we_found: string;
+}> {
+  const country = (params.city_country || "").toLowerCase();
+  let derivedCurrency = "USD";
+  if (
+    country.includes("pakistan") ||
+    country.includes("karachi") ||
+    country.includes("lahore") ||
+    country.includes("islamabad")
+  ) {
+    derivedCurrency = "PKR";
+  } else if (
+    country.includes("uae") ||
+    country.includes("dubai") ||
+    country.includes("abu dhabi") ||
+    country.includes("sharjah") ||
+    country.includes("ajman")
+  ) {
+    derivedCurrency = "AED";
+  } else if (country.includes("saudi") || country.includes("riyadh") || country.includes("jeddah")) {
+    derivedCurrency = "SAR";
+  } else if (country.includes("qatar") || country.includes("doha")) {
+    derivedCurrency = "QAR";
+  } else if (country.includes("uk") || country.includes("london") || country.includes("united kingdom")) {
+    derivedCurrency = "GBP";
+  }
+
   const prompt = `
-Draft the core sections of a formal client proposal:
-- Client: ${params.business_name}
+Draft the core sections of a formal client proposal grounded strictly in verified lead facts:
+- Client Business: ${params.business_name}
 - Industry: ${params.niche_industry || "Service Business"}
+- Location: ${params.city_country || "Not specified"}
+- Currency to use: ${derivedCurrency}
+- Verified Website / Footprint: ${params.website || "None"}
+- Primary Observation from Audit: ${params.primary_observation || "Not specified"}
+- Primary Recommended Offer: ${params.primary_offer || "Digital Services"}
+- Source CSV Context: ${JSON.stringify(params.source_csv_row || {})}
+- Deep Research Notes: ${JSON.stringify(params.research_data || {})}
 - Selected Services: ${JSON.stringify(params.services)}
 
-Return ONLY a JSON object:
+CRITICAL ANTI-HALLUCINATION RULES (FIX 6):
+1. Write the "what_we_found" section based STRICTLY on the actual Primary Observation and verified findings for ${params.business_name}.
+2. NEVER invent metrics (e.g. do NOT state mobile load times like "6.2s", fabricated traffic counts, or unsourced review stats unless explicitly present in the data above).
+3. NEVER mention channels (such as Instagram DMs, salon hours, or specific platforms) that are not evidenced in the data above for this specific business.
+4. "scope": A tailored paragraph describing the specific scope of work addressing their actual situation.
+5. "currency": Must be "${derivedCurrency}".
+
+Return ONLY a valid JSON object matching this schema (no markdown formatting, no code blocks):
 {
-  "scope": "Clear, professional paragraph describing the scope of work based on selected services.",
+  "what_we_found": "A concise paragraph stating the real findings based on the primary observation.",
+  "scope": "Clear, professional paragraph describing the scope of work based on selected services and actual business need.",
   "deliverables": "Bullet-point formatted list of exact tangible deliverables.",
-  "timeline": "Estimated realistic timeline and milestone breakdown (e.g., 2-4 weeks).",
-  "terms": "Standard solo-business terms (e.g. 50% upfront deposit upon invoice, balance upon completion, 2 revision rounds included)."
+  "timeline": "Estimated realistic timeline and milestone breakdown (e.g., 2-3 weeks).",
+  "terms": "Standard solo-business terms in ${derivedCurrency} (e.g. 50% upfront deposit upon invoice, 50% balance upon completion, 2 revision rounds included).",
+  "currency": "${derivedCurrency}"
 }
 `;
 
   const raw = await generateGeminiContent(prompt, CORE_SYSTEM_INSTRUCTION);
   try {
     const cleaned = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    return {
+      scope: parsed.scope || `Comprehensive delivery of services for ${params.business_name}.`,
+      deliverables: parsed.deliverables || params.services.map((s) => `• ${s.name}`).join("\n"),
+      timeline: parsed.timeline || "Standard 2 to 3 weeks turnaround.",
+      terms: parsed.terms || `50% deposit upon invoice, 50% upon completion (${derivedCurrency}).`,
+      currency: parsed.currency || derivedCurrency,
+      what_we_found: parsed.what_we_found || params.primary_observation || `Assessment for ${params.business_name}.`,
+    };
   } catch (err) {
     return {
       scope: `Comprehensive delivery of services for ${params.business_name}.`,
       deliverables: params.services.map((s) => `• ${s.name}`).join("\n"),
       timeline: "Standard 2 to 3 weeks turnaround.",
-      terms: "Payment upon invoice receipt. Revisions within 14 days.",
+      terms: `50% deposit upon invoice, 50% upon completion (${derivedCurrency}).`,
+      currency: derivedCurrency,
+      what_we_found: params.primary_observation || `Assessment for ${params.business_name}.`,
     };
   }
 }

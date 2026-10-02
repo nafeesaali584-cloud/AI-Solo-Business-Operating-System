@@ -11,10 +11,14 @@ export async function GET(req: NextRequest) {
     const leadId = searchParams.get("lead_id");
 
     if (id) {
-      const proposal = await db.proposal.findUnique({
+      const proposal: any = await db.proposal.findUnique({
         where: { id },
         include: { client: true, lead: true },
       });
+      if (proposal && !proposal.lead && proposal.client?.lead_id) {
+        const lead = await db.lead.findUnique({ where: { id: proposal.client.lead_id } });
+        if (lead) proposal.lead = lead;
+      }
       return NextResponse.json({ success: true, proposal });
     }
 
@@ -59,20 +63,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const proposal = await db.proposal.create({
-      data: {
-        client_id: client_id || null,
-        lead_id: lead_id || null,
-        services: services || [],
-        scope: scope || null,
-        deliverables: deliverables || null,
-        timeline: timeline || null,
-        terms: terms || null,
-        total_investment: total_investment || 0,
-        status: "Draft",
+    // FIX 5: Upsert instead of insert blindly
+    const existingProposal = await db.proposal.findFirst({
+      where: {
+        ...(client_id ? { client_id } : { lead_id }),
       },
-      include: { client: true, lead: true },
+      orderBy: { created_at: "desc" },
     });
+
+    let proposal;
+    if (existingProposal) {
+      proposal = await db.proposal.update({
+        where: { id: existingProposal.id },
+        data: {
+          services: services !== undefined ? services : existingProposal.services,
+          scope: scope !== undefined ? scope : existingProposal.scope,
+          deliverables: deliverables !== undefined ? deliverables : existingProposal.deliverables,
+          timeline: timeline !== undefined ? timeline : existingProposal.timeline,
+          terms: terms !== undefined ? terms : existingProposal.terms,
+          total_investment: total_investment !== undefined ? total_investment : existingProposal.total_investment,
+          currency: body.currency || existingProposal.currency || "USD",
+        },
+        include: { client: true, lead: true },
+      });
+    } else {
+      proposal = await db.proposal.create({
+        data: {
+          client_id: client_id || null,
+          lead_id: lead_id || null,
+          services: services || [],
+          scope: scope || null,
+          deliverables: deliverables || null,
+          timeline: timeline || null,
+          terms: terms || null,
+          total_investment: total_investment || 0,
+          currency: body.currency || "USD",
+          status: "Draft",
+        },
+        include: { client: true, lead: true },
+      });
+    }
 
     return NextResponse.json({ success: true, proposal });
   } catch (error: any) {
