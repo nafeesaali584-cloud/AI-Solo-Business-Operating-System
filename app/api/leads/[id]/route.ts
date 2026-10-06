@@ -82,10 +82,24 @@ export async function PATCH(
       customer_behavior,
     } = body;
 
+    const rawPlannedFor = body.planned_for !== undefined ? body.planned_for : body.plannedFor;
+    const rawNextFollowUpAt = body.next_follow_up_at !== undefined ? body.next_follow_up_at : body.nextFollowUpAt;
+
     // Check quota if is_today_target is being enabled
     if (is_today_target === true) {
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
       const activeTargetsCount = await db.lead.count({
-        where: { is_today_target: true, id: { not: params.id } },
+        where: {
+          id: { not: params.id },
+          OR: [
+            { is_today_target: true },
+            {
+              planned_for: { lte: todayEnd },
+              status: { in: ["Imported", "Qualified", "Target Today"] },
+            },
+          ],
+        },
       });
       const settings = (await db.settings.findUnique({ where: { id: "default" } })) || {
         daily_target_quota: 3,
@@ -157,10 +171,10 @@ export async function PATCH(
         );
       }
 
-      // Reset lead status to Qualified, follow_up_count to 0, customer_behavior to null
+      // Reset lead status to Qualified, follow_up_count to 0, reply_status to null
       updateData.status = "Qualified";
       updateData.follow_up_count = 0;
-      updateData.customer_behavior = null;
+      updateData.reply_status = null;
 
       // Add a timeline marker interaction (preserving all past interactions and research)
       await db.interaction.create({
@@ -170,7 +184,6 @@ export async function PATCH(
           direction: "Internal",
           content: `Reactivated on ${new Date().toLocaleDateString()} — Reason: ${reason}`,
           confirmed_sent: true,
-          ai_generated: false,
         },
       });
     } else if (status !== undefined) {
@@ -296,7 +309,20 @@ export async function PATCH(
 
       updateData.status = status;
     }
-    if (is_today_target !== undefined) updateData.is_today_target = is_today_target;
+    if (is_today_target !== undefined) {
+      updateData.is_today_target = is_today_target;
+      if (is_today_target === true && rawPlannedFor === undefined) {
+        updateData.planned_for = new Date();
+      } else if (is_today_target === false && rawPlannedFor === undefined) {
+        updateData.planned_for = null;
+      }
+    }
+    if (rawPlannedFor !== undefined) {
+      updateData.planned_for = rawPlannedFor ? new Date(rawPlannedFor) : null;
+    }
+    if (rawNextFollowUpAt !== undefined) {
+      updateData.next_follow_up_at = rawNextFollowUpAt ? new Date(rawNextFollowUpAt) : null;
+    }
     // Track intentionally cleared fields to distinguish "never set" from "explicitly removed by user"
     const existingLead = await db.lead.findUnique({
       where: { id: params.id },
@@ -340,7 +366,14 @@ export async function PATCH(
     if (review_count !== undefined) updateData.review_count = review_count;
     if (key_services !== undefined) updateData.key_services = key_services;
     if (follow_up_count !== undefined) updateData.follow_up_count = Number(follow_up_count);
-    if (customer_behavior !== undefined) updateData.customer_behavior = customer_behavior;
+    if (customer_behavior !== undefined || body.reply_status !== undefined) {
+      updateData.reply_status = body.reply_status !== undefined ? body.reply_status : customer_behavior;
+    }
+    if (body.priority !== undefined || body.qualification_tier !== undefined) {
+      updateData.priority = body.priority !== undefined ? body.priority : body.qualification_tier;
+    }
+    if (body.primary_offer !== undefined) updateData.primary_offer = body.primary_offer;
+    if (body.primary_observation !== undefined) updateData.primary_observation = body.primary_observation;
 
     let createdInteraction = null;
     if (call_notes !== undefined || (status === "Booking" && !body.skip_interaction)) {
@@ -353,7 +386,6 @@ export async function PATCH(
           direction: "Outgoing",
           content,
           confirmed_sent: true,
-          ai_generated: false,
         },
       });
     }

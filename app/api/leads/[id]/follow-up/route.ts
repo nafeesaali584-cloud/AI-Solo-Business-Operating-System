@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateBehaviorFollowUp, CustomerBehaviorType } from "@/lib/ai/follow-up";
 
 export async function POST(
   req: NextRequest,
@@ -9,14 +8,12 @@ export async function POST(
   try {
     const body = await req.json();
     const {
+      content,
+      draft_message,
       behavior,
+      reply_status,
       channel = "WhatsApp",
-      custom_hesitation_notes,
     } = body;
-
-    if (!behavior) {
-      return NextResponse.json({ error: "Customer behavior is required" }, { status: 400 });
-    }
 
     const lead = await db.lead.findUnique({
       where: { id: params.id },
@@ -33,7 +30,7 @@ export async function POST(
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
 
-    // FIX 3: 4-touchpoint follow-up cap enforced server-side
+    // Enforce 4-touchpoint follow-up cap server-side
     if ((lead.follow_up_count || 0) >= 4) {
       return NextResponse.json(
         {
@@ -44,73 +41,66 @@ export async function POST(
       );
     }
 
-    const lastInteraction = lead.interactions[0];
-    const contactName = lead.contacts[0]?.name || null;
+    const messageText = (content || draft_message || "").trim();
 
-    // Extract full non-empty CSV context for deep grounding
-    let source_csv_context: string | null = null;
-    if (lead.source_csv_row && typeof lead.source_csv_row === "object") {
-      const entries: string[] = [];
-      const ignoredKeys = new Set(["id", "created_at", "updated_at", "manual"]);
-      for (const [k, v] of Object.entries(lead.source_csv_row)) {
-        if (ignoredKeys.has(k)) continue;
-        if (v === null || v === undefined || v === "" || v === "null" || v === "undefined" || v === "N/A") continue;
-        const strVal = typeof v === "object" ? JSON.stringify(v) : String(v).trim();
-        if (strVal && strVal !== "{}" && strVal !== "[]") {
-          entries.push(`- ${k}: ${strVal}`);
-        }
-      }
-      if (entries.length > 0) {
-        source_csv_context = entries.join("\n");
+    // Map behavior to reply_status if legacy values passed
+    let effectiveReplyStatus = reply_status || behavior || null;
+    if (effectiveReplyStatus === "warm_interested") effectiveReplyStatus = "interested";
+    else if (effectiveReplyStatus === "seen_no_reply" || effectiveReplyStatus === "no_reply_not_seen") effectiveReplyStatus = "no_reply";
+    else if (effectiveReplyStatus === "replied_hesitant") effectiveReplyStatus = "not_now";
+    else if (effectiveReplyStatus === "final_follow_up") effectiveReplyStatus = "not_interested";
+
+    // Create draft interaction record with confirmed_sent = false (GATE 1)
+    let interactionId = null;
+    if (messageText) {
+      const interaction = await db.interaction.create({
+        data: {
+          lead_id: lead.id,
+          channel,
+          direction: "Outgoing",
+          content: messageText,
+          confirmed_sent: false,
+        },
+      });
+      interactionId = interaction.id;
+    }
+
+    // Update reply_status and status
+    const updateData: any = {};
+    if (effectiveReplyStatus) {
+      updateData.reply_status = effectiveReplyStatus;
+      if (effectiveReplyStatus === "interested") {
+        updateData.status = "Booking";
       }
     }
 
-    const followUpResult = await generateBehaviorFollowUp({
-      business_name: lead.business_name,
-      contact_name: contactName,
-      channel,
-      behavior: behavior as CustomerBehaviorType,
-      current_follow_up_count: lead.follow_up_count,
-      primary_offer: lead.primary_offer,
-      last_message_summary: lastInteraction ? lastInteraction.content.slice(0, 150) : null,
-      custom_hesitation_notes,
-      niche_industry: lead.niche_industry,
-      city_country: lead.city_country,
-      source_csv_context,
-    });
-
-    // Create draft interaction record with confirmed_sent = false (GATE 1)
-    const interaction = await db.interaction.create({
-      data: {
-        lead_id: lead.id,
-        channel,
-        direction: "Outgoing",
-        content: followUpResult.draft.body,
-        ai_generated: true,
-        confirmed_sent: false,
-      },
-    });
-
-    // FIX 4: Update customer_behavior and booking status ONLY.
-    // follow_up_count increments ONLY when Gate 1 is cleared for an outgoing follow-up.
-    await db.lead.update({
-      where: { id: lead.id },
-      data: {
-        customer_behavior: behavior,
-        status: behavior === "warm_interested" ? "Booking" : lead.status,
-      },
-    });
+    if (Object.keys(updateData).length > 0) {
+      await db.lead.update({
+        where: { id: lead.id },
+        data: updateData,
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      follow_up: followUpResult,
-      interaction_id: interaction.id,
+      interaction_id: interactionId,
       follow_up_count: lead.follow_up_count,
+      follow_up: {
+        draft: {
+          subject: `Follow-up: ${lead.business_name}`,
+          body: messageText,
+        },
+        tactic: {
+          name: "Manual Outreach",
+          framework: "Direct human follow-up",
+          goal: "Reconnect with prospect",
+        },
+      },
     });
   } catch (error: any) {
     console.error("Follow-up error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to generate follow-up" },
+      { error: error.message || "Failed to process follow-up" },
       { status: 500 }
     );
   }

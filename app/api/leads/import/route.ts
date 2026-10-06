@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateLeadSnapshot } from "@/lib/ai/prompts";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { rows, generate_ai_snapshots = true } = body;
+    const { rows } = body;
 
     if (!rows || !Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json({ error: "No rows provided for import" }, { status: 400 });
@@ -117,27 +116,6 @@ export async function POST(req: NextRequest) {
       });
 
       createdLeads.push(lead);
-    }
-
-    // Trigger background AI snapshot generation asynchronously (non-blocking for fast import)
-    if (generate_ai_snapshots && createdLeads.length > 0) {
-      (async () => {
-        for (const lead of createdLeads) {
-          try {
-            const snapshot = await generateLeadSnapshot(lead);
-            await db.lead.update({
-              where: { id: lead.id },
-              data: {
-                ai_summary: snapshot.ai_summary,
-                ai_opportunity: snapshot.ai_opportunity,
-                ai_recommended_angle: snapshot.ai_recommended_angle,
-              },
-            });
-          } catch (aiErr) {
-            console.warn(`Background snapshot skipped for lead ${lead.id}:`, aiErr);
-          }
-        }
-      })().catch(() => {});
     }
 
     return NextResponse.json({

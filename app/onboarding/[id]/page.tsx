@@ -15,7 +15,6 @@ import {
   AlertCircle,
   ExternalLink,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
 interface ChecklistItem {
   id: string;
@@ -42,7 +41,6 @@ export default function OnboardingChecklistPage() {
   const params = useParams();
   const router = useRouter();
   const onboardingId = params.id as string;
-  const { setActiveEntity } = useBusinessBrain();
 
   const [record, setRecord] = useState<OnboardingRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,12 +57,6 @@ export default function OnboardingChecklistPage() {
       if (res.ok) {
         const json = await res.json();
         setRecord(json.onboarding);
-        setActiveEntity({
-          type: "client",
-          id: json.onboarding.client_id,
-          name: `Onboarding: ${json.onboarding.client.business_name}`,
-          data: json.onboarding,
-        });
       }
     } catch (err) {
       console.error("Failed to load onboarding", err);

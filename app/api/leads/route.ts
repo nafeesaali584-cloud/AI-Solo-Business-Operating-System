@@ -23,8 +23,17 @@ export async function GET(req: NextRequest) {
     if (city && city !== "ALL") {
       whereClause.city_country = { contains: city, mode: "insensitive" };
     }
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
     if (targetsOnly) {
-      whereClause.is_today_target = true;
+      whereClause.OR = [
+        { is_today_target: true },
+        {
+          planned_for: { lte: todayEnd },
+          status: { in: ["Imported", "Qualified", "Target Today"] },
+        },
+      ];
     }
     if (noReplyDays) {
       const days = parseInt(noReplyDays, 10);
@@ -51,7 +60,11 @@ export async function GET(req: NextRequest) {
         address: true,
         status: true,
         is_today_target: true,
-        qualification_tier: true,
+        planned_for: true,
+        next_follow_up_at: true,
+        priority: true,
+        reply_status: true,
+        follow_up_count: true,
         primary_offer: true,
         primary_observation: true,
         created_at: true,
@@ -78,7 +91,15 @@ export async function GET(req: NextRequest) {
       daily_target_quota: 3,
     };
     const activeTargetsCount = await db.lead.count({
-      where: { is_today_target: true },
+      where: {
+        OR: [
+          { is_today_target: true },
+          {
+            planned_for: { lte: todayEnd },
+            status: { in: ["Imported", "Qualified", "Target Today"] },
+          },
+        ],
+      },
     });
     const quotaMax = Math.max(1, settings.daily_target_quota || 3);
 

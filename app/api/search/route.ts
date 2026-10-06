@@ -131,6 +131,22 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // 6. Workspace Items (Notes, Links, Videos, Files — plain SQL search)
+    const workspaceItems = await db.workspaceItem.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { content: { contains: q, mode: "insensitive" } },
+          { url: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      include: {
+        lead: { select: { id: true, business_name: true } },
+      },
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      take: 8,
+    });
+
     return NextResponse.json({
       clients: clients.map((c) => ({
         id: c.id,
@@ -176,6 +192,17 @@ export async function GET(req: NextRequest) {
         target_type: i.client_id ? "Client" : "Lead",
         created_at: i.created_at,
         url: i.client_id ? `/clients/${i.client_id}` : i.lead_id ? `/leads/${i.lead_id}` : "#",
+      })),
+      workspace_items: workspaceItems.map((w) => ({
+        id: w.id,
+        type: w.type,
+        title: w.title || `${w.type} item`,
+        content: w.content,
+        lead_name: w.lead.business_name,
+        lead_id: w.leadId,
+        url: `/leads/${w.leadId}`,
+        isPinned: w.isPinned,
+        provider: w.provider,
       })),
     });
   } catch (error: any) {

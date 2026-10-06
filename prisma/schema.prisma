@@ -21,19 +21,15 @@ model Lead {
   key_services          String?       // comma-separated or text services
   address               String?       // full street address
   source_csv_row        Json          // Raw imported row, immutable source of truth
-  ai_summary            String?       // AI generated, tagged inference
-  ai_opportunity        String?       // AI generated, tagged inference
-  ai_recommended_angle  String?       // AI generated outreach angle
-  research_data         Json?         // Structured deep research findings, citations, and cached web data
-  competitor_pricing    Json?         // Competitor pricing snapshot: [{ competitor_name, price_range, source_url, notes }]
-  qualification_tier    String?       // Hot, Warm, Cold
-  qualification_signals Json?         // [{ type, signal, source, confidence }]
-  primary_observation   String?       // The single primary observation trigger
-  primary_offer         String?       // The single matching service offer
+  priority              String?       // Manual: Hot, Warm, Cold — set by user
+  primary_observation   String?       // Manual: the single primary observation trigger
+  primary_offer         String?       // Manual: the single matching service offer
   follow_up_count       Int           @default(0) // Number of follow-ups executed (max 4)
-  customer_behavior     String?       // no_reply_not_seen, seen_no_reply, replied_hesitant, final_follow_up, warm_interested
+  reply_status          String?       // Manual: no_reply, interested, not_now, not_interested
   status                String        @default("Imported") // Imported, Qualified, Target Today, Contacted, Replied, Booking, Proposal, Won, Lost
   is_today_target       Boolean       @default(false)
+  planned_for           DateTime?     // Date this lead is queued for outreach (rolls over automatically if unfinished)
+  next_follow_up_at     DateTime?     // Date next follow-up touchpoint is scheduled
   cleared_fields        Json?         // e.g. ["phone", "email"] — tracks fields explicitly cleared by user to prevent fallback to raw CSV
   converted_client_id   String?
   created_at            DateTime      @default(now())
@@ -43,9 +39,12 @@ model Lead {
   interactions          Interaction[]
   deals                 Deal[]
   proposals             Proposal[]
+  workspaceItems        WorkspaceItem[]
 
   @@index([status])
   @@index([is_today_target])
+  @@index([planned_for])
+  @@index([next_follow_up_at])
   @@index([created_at])
   @@index([updated_at])
   @@index([niche_industry])
@@ -78,7 +77,6 @@ model Interaction {
   channel         String    // WhatsApp, Email, Call, Note
   direction       String    // Outgoing, Incoming
   content         String
-  ai_generated    Boolean   @default(false)
   confirmed_sent  Boolean   @default(false) // GATE 1: only true after manual confirmation
   sent_confirmed_at DateTime? // GATE 1: manual confirmation timestamp
   created_at      DateTime  @default(now())
@@ -97,7 +95,6 @@ model Task {
   related_id            String
   type                  String    // Follow-up, Booking Confirm, Proposal Prep, Onboarding Step
   title                 String
-  ai_suggested_tactic   String?
   due_date              DateTime?
   status                String    @default("Open") // Open, Done, Overdue
   bucket                String    @default("Follow-up") // Action Required, Follow-up, Waiting, Completed
@@ -255,4 +252,49 @@ model CsvMappingTemplate {
 
   @@index([header_signature])
 }
+
+enum WorkspaceItemType {
+  NOTE
+  FILE
+  LINK
+  VIDEO
+}
+
+model WorkspaceItem {
+  id            String            @id @default(cuid())
+  leadId        String
+  lead          Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  type          WorkspaceItemType
+  title         String?
+  content       String?           @db.Text // long note text, or a caption/takeaway for file/video/link
+
+  url           String?           // YouTube link, R2 file URL, or plain external link
+  provider      String?           // "YOUTUBE", "R2", "INSTAGRAM", "WEBSITE", etc. — simple string, auto-detected from URL pattern, no API calls
+
+  fileKey       String?           // R2 storage key, for file items only
+  mimeType      String?
+  fileSizeBytes Int?
+
+  isPinned      Boolean           @default(false)
+  sortOrder     Int               @default(0)
+
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([leadId, type])
+}
+
+model Snippet {
+  id        String   @id @default(cuid())
+  title     String
+  category  String   @default("General") // e.g. "Cold Pitch", "Follow-up", "Audit Teardown", "WhatsApp"
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+
 

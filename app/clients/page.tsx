@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
 interface ClientItem {
   id: string;
@@ -34,7 +33,6 @@ interface ClientItem {
 
 export default function ClientListPage() {
   const router = useRouter();
-  const { setActiveEntity } = useBusinessBrain();
 
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,11 +73,6 @@ export default function ClientListPage() {
 
   useEffect(() => {
     fetchClients();
-    setActiveEntity({
-      type: "client",
-      name: "Client Conversion & Delivery",
-      data: { view: "client_list" },
-    });
   }, []);
 
   const handleOpenAdd = () => {

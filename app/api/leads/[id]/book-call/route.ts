@@ -31,7 +31,6 @@ export async function POST(
         direction: "Outgoing",
         content: interactionContent,
         confirmed_sent: true,
-        ai_generated: false,
       },
     });
 

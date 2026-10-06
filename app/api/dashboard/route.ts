@@ -10,9 +10,20 @@ export async function GET() {
       daily_target_quota: 3,
     };
 
-    // 2. New Targets (is_today_target = true)
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 2. New Targets (is_today_target = true OR planned_for <= todayEnd and unfinished)
     const targets = await db.lead.findMany({
-      where: { is_today_target: true },
+      where: {
+        OR: [
+          { is_today_target: true },
+          {
+            planned_for: { lte: todayEnd },
+            status: { in: ["Imported", "Qualified", "Target Today"] },
+          },
+        ],
+      },
       select: {
         id: true,
         business_name: true,
@@ -20,11 +31,29 @@ export async function GET() {
         city_country: true,
         status: true,
         updated_at: true,
+        planned_for: true,
       },
     });
 
-    // 3. Follow-ups Due (Tasks where bucket = Follow-up and status = Open)
-    const followUps = await db.task.findMany({
+    // 3. Follow-ups Due (Plain date query: next_follow_up_at <= todayEnd)
+    const dueFollowUpLeads = await db.lead.findMany({
+      where: {
+        next_follow_up_at: { lte: todayEnd },
+        status: { notIn: ["Won", "Lost"] },
+      },
+      select: {
+        id: true,
+        business_name: true,
+        next_follow_up_at: true,
+        follow_up_count: true,
+        reply_status: true,
+        status: true,
+      },
+      orderBy: { next_follow_up_at: "asc" },
+      take: 10,
+    });
+
+    const followUpTasks = await db.task.findMany({
       where: {
         bucket: "Follow-up",
         status: "Open",
@@ -32,6 +61,20 @@ export async function GET() {
       orderBy: { due_date: "asc" },
       take: 10,
     });
+
+    const followUps = [
+      ...dueFollowUpLeads.map((l) => ({
+        id: `lead-followup-${l.id}`,
+        title: `Follow up with ${l.business_name} (Touchpoint ${(l.follow_up_count || 0) + 1}/4)`,
+        due_date: l.next_follow_up_at,
+        related_id: l.id,
+        related_type: "Lead",
+        status: "Open",
+        bucket: "Follow-up",
+        reply_status: l.reply_status,
+      })),
+      ...followUpTasks,
+    ];
 
     // 4. Waiting for You (Proposals awaiting approval, Invoices awaiting send/payment confirmation)
     const pendingProposals = await db.proposal.findMany({

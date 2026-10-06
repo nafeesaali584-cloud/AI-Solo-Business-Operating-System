@@ -12,6 +12,7 @@ import {
   MessageSquare,
   ArrowRight,
   Loader2,
+  FolderKanban,
 } from "lucide-react";
 
 interface SearchResults {
@@ -44,11 +45,22 @@ interface SearchResults {
     created_at: string;
     url?: string;
   }>;
+  workspace_items?: Array<{
+    id: string;
+    type: string;
+    title: string;
+    content?: string | null;
+    lead_name: string;
+    lead_id: string;
+    url?: string;
+    isPinned: boolean;
+    provider?: string | null;
+  }>;
 }
 
 interface FlatResultItem {
   id: string;
-  category: "client" | "lead" | "proposal" | "invoice" | "interaction";
+  category: "client" | "lead" | "proposal" | "invoice" | "interaction" | "workspace";
   entityTag: string;
   title: string;
   subtitle?: string;
@@ -71,6 +83,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
     proposals: [],
     invoices: [],
     interactions: [],
+    workspace_items: [],
   });
 
   // Build ordered flat list for keyboard navigation and aria-activedescendant
@@ -143,6 +156,19 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
       })
     );
 
+    // 6. Workspace Items (Notes, Files, Links, Videos)
+    (results.workspace_items || []).forEach((w) =>
+      list.push({
+        id: w.id,
+        category: "workspace",
+        entityTag: "WORKSPACE",
+        title: w.title,
+        subtitle: `${w.lead_name} • ${w.type}${w.content ? ` • ${w.content.slice(0, 60)}` : ""}`,
+        badge: w.type,
+        url: w.url || `/leads/${w.lead_id}`,
+      })
+    );
+
     return list;
   }, [results]);
 
@@ -178,7 +204,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
   // Fetch search query
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
-      setResults({ clients: [], leads: [], proposals: [], invoices: [], interactions: [] });
+      setResults({ clients: [], leads: [], proposals: [], invoices: [], interactions: [], workspace_items: [] });
       return;
     }
 
@@ -194,6 +220,7 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
             proposals: data.proposals || [],
             invoices: data.invoices || [],
             interactions: data.interactions || [],
+            workspace_items: data.workspace_items || [],
           });
         }
       } catch (err) {
@@ -563,6 +590,78 @@ export const GlobalSearchModal: React.FC<{ isOpen: boolean; onClose: () => void 
                       <div className="flex items-center justify-between text-[11px] text-indigo-400 font-medium pt-1 border-t border-[var(--border)]">
                         <span>Opens {targetType} Record</span>
                         <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 6. Group: Workspace Items (Research notes, files, links, videos) */}
+          {results.workspace_items && results.workspace_items.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+                <FolderKanban className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Workspace Research Items ({results.workspace_items.length})</span>
+              </div>
+              <div className="space-y-1.5">
+                {results.workspace_items.map((item) => {
+                  const itemIndex = flatItems.findIndex((i) => i.id === item.id && i.category === "workspace");
+                  const isSelected = selectedIndex === itemIndex;
+                  const itemUrl = item.url || `/leads/${item.lead_id}`;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="option"
+                      aria-label={`Workspace item: ${item.title}`}
+                      aria-selected={isSelected}
+                      tabIndex={0}
+                      onClick={() => navigateTo(itemUrl)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigateTo(itemUrl);
+                        }
+                      }}
+                      className={`w-full text-left flex items-center justify-between p-2.5 rounded-lg border transition-all group cursor-pointer ${
+                        isSelected
+                          ? "bg-[var(--surface-raised)] border-cyan-500 shadow-sm"
+                          : "bg-[var(--surface-hover)] border-transparent hover:bg-[var(--surface-raised)] hover:border-cyan-500/40"
+                      }`}
+                    >
+                      <div className="space-y-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 uppercase tracking-wider shrink-0">
+                            {item.type}
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--text-primary)] group-hover:text-cyan-400 transition-colors truncate">
+                            {item.title}
+                          </span>
+                          {item.isPinned && (
+                            <span className="text-[10px] text-amber-400 font-medium shrink-0">
+                              📌 Pinned
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-[var(--text-dim)] pl-0.5 flex items-center gap-1.5">
+                          <span className="font-medium text-[var(--text-secondary)] shrink-0">{item.lead_name}</span>
+                          {item.content && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate italic max-w-[320px]">
+                                &ldquo;{item.content}&rdquo;
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--surface-hover)] text-cyan-400 border border-[var(--border)]">
+                          Open Lead
+                        </span>
+                        <ArrowRight className="w-4 h-4 text-[var(--text-dim)] group-hover:text-cyan-400 transition-colors" />
                       </div>
                     </button>
                   );

@@ -29,7 +29,6 @@ import {
   FileUp,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import UnresponsiveAdvanceWarningModal from "@/components/common/UnresponsiveAdvanceWarningModal";
 
 interface TimelineEvent {
@@ -87,7 +86,6 @@ export default function ClientDetailPage() {
   const params = useParams();
   const router = useRouter();
   const clientId = params.id as string;
-  const { setActiveEntity } = useBusinessBrain();
 
   const [data, setData] = useState<ClientDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -182,12 +180,6 @@ export default function ClientDetailPage() {
           phone: json.client.phone || "",
           stage: json.client.stage || "Proposal",
           payment_status: json.client.payment_status || "Pending",
-        });
-        setActiveEntity({
-          type: "client",
-          id: json.client.id,
-          name: json.client.business_name,
-          data: json.client,
         });
       }
     } catch (err) {

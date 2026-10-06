@@ -166,14 +166,14 @@ export async function GET(
       orderBy: { created_at: "desc" },
     });
 
-    // Associated lead customer behavior
+    // Associated lead customer behavior / reply status
     let leadCustomerBehavior: string | null = null;
     if (client.lead_id) {
       const leadRec = await db.lead.findUnique({
         where: { id: client.lead_id },
-        select: { customer_behavior: true },
+        select: { reply_status: true },
       });
-      leadCustomerBehavior = leadRec?.customer_behavior || null;
+      leadCustomerBehavior = leadRec?.reply_status || null;
     }
 
     return NextResponse.json({

@@ -13,7 +13,6 @@ import {
   Receipt,
   Settings,
   Search,
-  Sparkles,
   Shield,
   Sun,
   Moon,
@@ -21,8 +20,6 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
-import { CopilotDrawer } from "@/components/copilot/CopilotDrawer";
 import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
@@ -184,7 +181,7 @@ function SidebarNavContent({
             <span>5 Hard Gates Active</span>
           </div>
           <p className="text-[10px] text-[var(--text-dim)] leading-tight">
-            AI action executions require explicit human approval.
+            Pipeline and outreach actions require explicit human approval.
           </p>
         </div>
       </div>
@@ -196,7 +193,6 @@ function SidebarNavContent({
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const pathname = usePathname();
-  const { toggleCopilot, isCopilotOpen } = useBusinessBrain();
   const { setTheme, resolvedTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -281,7 +277,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </div>
 
-        {/* Right Actions: Search + Theme + Copilot */}
+        {/* Right Actions: Search + Theme */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Global Search */}
           <button
@@ -308,21 +304,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             ) : (
               <Moon className="w-4 h-4" />
             )}
-          </button>
-
-          {/* AI Copilot Toggle */}
-          <button
-            onClick={toggleCopilot}
-            aria-label="Toggle AI Copilot drawer"
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-sm shrink-0 ${
-              isCopilotOpen
-                ? "bg-[var(--accent)] text-white border-[var(--accent)]"
-                : "bg-[var(--accent-soft)] hover:bg-[var(--accent-border)] text-[var(--accent)] border-[var(--accent-border)]"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">AI Copilot</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] pulse-indicator ml-0.5" />
           </button>
         </div>
       </header>
@@ -362,9 +343,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           {children}
         </main>
       </div>
-
-      {/* Global AI Copilot Sliding Drawer */}
-      <CopilotDrawer />
 
       {/* Global Search Modal */}
       <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />

@@ -24,7 +24,6 @@ import {
   Flame,
   TrendingUp,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
 interface LeadItem {
   id: string;
@@ -41,11 +40,10 @@ interface LeadItem {
   source_csv_row?: any;
   status: string;
   is_today_target: boolean;
-  qualification_tier?: string | null;
+  priority?: string | null;
+  reply_status?: string | null;
   primary_offer?: string | null;
   primary_observation?: string | null;
-  research_data?: any | null;
-  competitor_pricing?: any | null;
   created_at: string;
   updated_at: string;
   interactions?: Array<{
@@ -57,7 +55,6 @@ interface LeadItem {
 
 export default function LeadListPage() {
   const router = useRouter();
-  const { setActiveEntity } = useBusinessBrain();
 
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,11 +131,6 @@ export default function LeadListPage() {
 
   useEffect(() => {
     fetchLeads();
-    setActiveEntity({
-      type: "lead",
-      name: "Lead Intelligence List",
-      data: { count: leads.length },
-    });
   }, [statusFilter, targetsOnly, noReplyFilter]);
 
   const toggleTarget = async (leadId: string, currentTargetState: boolean, e: React.MouseEvent) => {
@@ -617,19 +609,19 @@ export default function LeadListPage() {
                       <td className="p-3.5 font-medium text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span>{lead.business_name}</span>
-                          {lead.qualification_tier && (
+                          {lead.priority && (
                             <span
                               className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold border ${
-                                lead.qualification_tier === "Hot"
+                                lead.priority === "Hot"
                                   ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-                                  : lead.qualification_tier === "Warm"
+                                  : lead.priority === "Warm"
                                   ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
                                   : "bg-slate-500/15 text-slate-400 border-slate-500/30"
                               }`}
                             >
-                              {lead.qualification_tier === "Hot" && <Flame className="w-2.5 h-2.5" />}
-                              {lead.qualification_tier === "Warm" && <TrendingUp className="w-2.5 h-2.5" />}
-                              <span>{lead.qualification_tier}</span>
+                              {lead.priority === "Hot" && <Flame className="w-2.5 h-2.5" />}
+                              {lead.priority === "Warm" && <TrendingUp className="w-2.5 h-2.5" />}
+                              <span>{lead.priority}</span>
                             </span>
                           )}
                           {lead.primary_offer && (

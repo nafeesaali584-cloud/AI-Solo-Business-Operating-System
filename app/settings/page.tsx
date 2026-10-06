@@ -21,12 +21,9 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { GateBadge } from "@/components/ui/GateBadge";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { BRAND } from "@/lib/brand/config";
 
 export default function SettingsPage() {
-  const { setActiveEntity } = useBusinessBrain();
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
@@ -65,12 +62,6 @@ export default function SettingsPage() {
             setDefaultTerms(s.proposal_templates.default_terms);
           }
           setAuditGates(json.hard_gates_audit || []);
-
-          setActiveEntity({
-            type: "general",
-            name: "System Settings",
-            data: s,
-          });
         }
       } catch (err) {
         console.error("Failed to load settings", err);

@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { GateBadge } from "@/components/ui/GateBadge";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { BRAND } from "@/lib/brand/config";
 import {
   generateInvoicePdf,
@@ -73,7 +72,6 @@ function InvoiceBuilderContent() {
   const invoiceId = searchParams.get("id");
   const clientIdParam = searchParams.get("client_id");
   const proposalIdParam = searchParams.get("proposal_id");
-  const { setActiveEntity } = useBusinessBrain();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -127,13 +125,6 @@ function InvoiceBuilderContent() {
             setStatus(inv.status);
             setSentConfirmedAt(inv.sent_confirmed_at);
             setPaidConfirmedAt(inv.paid_confirmed_at);
-
-            setActiveEntity({
-              type: "invoice",
-              id: inv.id,
-              name: `Invoice ${inv.invoice_number} for ${inv.client?.business_name}`,
-              data: inv,
-            });
           }
         } else if (clientIdParam || proposalIdParam) {
           // FIX 5: Resolve existing invoice on param URLs first
@@ -163,13 +154,6 @@ function InvoiceBuilderContent() {
             setStatus(existingInv.status);
             setSentConfirmedAt(existingInv.sent_confirmed_at);
             setPaidConfirmedAt(existingInv.paid_confirmed_at);
-
-            setActiveEntity({
-              type: "invoice",
-              id: existingInv.id,
-              name: `Invoice ${existingInv.invoice_number} for ${existingInv.client?.business_name || "Client"}`,
-              data: existingInv,
-            });
           } else {
             // New invoice pre-fill from Proposal or Client
             let leadOrClientDataStr = "";
@@ -235,13 +219,6 @@ function InvoiceBuilderContent() {
               setStatus(inv.status);
               setSentConfirmedAt(inv.sent_confirmed_at);
               setPaidConfirmedAt(inv.paid_confirmed_at);
-
-              setActiveEntity({
-                type: "invoice",
-                id: inv.id,
-                name: `Invoice ${inv.invoice_number} for ${inv.client?.business_name || "Client"}`,
-                data: inv,
-              });
             }
           }
         }

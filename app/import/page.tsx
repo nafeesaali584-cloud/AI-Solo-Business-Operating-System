@@ -10,13 +10,11 @@ import {
   AlertCircle,
   ArrowRight,
   Loader2,
-  Sparkles,
   Database,
   BookMarked,
   ChevronRight,
   Info,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +207,6 @@ function ConfidenceBadge({ confidence, isIgnore }: { confidence: Confidence; isI
 
 export default function CsvImportPage() {
   const router = useRouter();
-  const { setActiveEntity } = useBusinessBrain();
 
   const [step, setStep] = useState<"upload" | "map" | "preview" | "importing" | "done">("upload");
   const [csvData, setCsvData] = useState<any[]>([]);
@@ -224,8 +221,6 @@ export default function CsvImportPage() {
   const [savedTemplateDetected, setSavedTemplateDetected] = useState(false);
   const [headerSignature, setHeaderSignature] = useState("");
 
-  // Import settings (default false for fast instant import; can be toggled on)
-  const [generateAiSnapshots, setGenerateAiSnapshots] = useState(false);
   const [importResult, setImportResult] = useState<{
     imported_count: number;
     duplicate_count: number;
@@ -412,7 +407,6 @@ Velvet Hair Lounge,Beauty Salon,4.7,64,Sharjah,Al Majaz 2,+971503334455,https://
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           rows: mappedRows,
-          generate_ai_snapshots: generateAiSnapshots,
         }),
       });
 
@@ -731,27 +725,6 @@ Velvet Hair Lounge,Beauty Salon,4.7,64,Sharjah,Al Majaz 2,+971503334455,https://
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* AI snapshot toggle */}
-          <div className="p-4 rounded-lg bg-[var(--surface-hover)] border border-[var(--accent-border)] flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-[var(--accent)]" />
-              <div>
-                <div className="text-xs font-semibold text-[var(--text-primary)]">
-                  Generate AI Business Snapshot for imported leads
-                </div>
-                <div className="text-[11px] text-[var(--text-muted)]">
-                  Extracts facts and strategic angles in the background without slowing down import.
-                </div>
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={generateAiSnapshots}
-              onChange={(e) => setGenerateAiSnapshots(e.target.checked)}
-              className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
-            />
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-[var(--border)]">

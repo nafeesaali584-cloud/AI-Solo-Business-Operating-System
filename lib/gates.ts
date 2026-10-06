@@ -246,7 +246,6 @@ export async function executeGate5ConfirmPaymentReceived(invoiceId: string) {
       related_id: onboarding.id,
       type: "Onboarding Step",
       title: `Onboarding Kickoff for ${invoice.client.business_name}`,
-      ai_suggested_tactic: "Review checklist items and request missing assets from client.",
       bucket: "Action Required",
       status: "Open",
       due_date: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow

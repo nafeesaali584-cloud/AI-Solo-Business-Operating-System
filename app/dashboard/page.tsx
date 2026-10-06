@@ -9,7 +9,6 @@ import {
   Hourglass,
   AlertTriangle,
   CheckCircle2,
-  Sparkles,
   ExternalLink,
   ArrowRight,
   RefreshCw,
@@ -20,7 +19,6 @@ import {
   ArrowUpRight,
   Check,
 } from "lucide-react";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 
 interface DashboardData {
   quota: {
@@ -40,7 +38,6 @@ interface DashboardData {
     related_type: string;
     title: string;
     type: string;
-    ai_suggested_tactic?: string;
     due_date?: string;
   }>;
   waiting_for_you: {
@@ -205,7 +202,6 @@ function CardFooter({ children }: { children: React.ReactNode }) {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { setActiveEntity, openCopilotWithPrompt } = useBusinessBrain();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -226,11 +222,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboard();
-    setActiveEntity({
-      type: "dashboard",
-      name: "Daily Work Command",
-      data: { view: "dashboard" },
-    });
   }, []);
 
   if (loading && !data) {
@@ -274,13 +265,13 @@ export default function DashboardPage() {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-          <button
-            onClick={() => openCopilotWithPrompt("What should I do next?")}
+          <Link
+            href="/leads"
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs sm:text-sm font-semibold shadow-lg shadow-[var(--accent)]/20 transition-colors"
           >
-            <Sparkles className="w-4 h-4 shrink-0" />
-            <span>Ask Copilot: &quot;What should I do next?&quot;</span>
-          </button>
+            <Users className="w-4 h-4 shrink-0" />
+            <span>Go to Leads</span>
+          </Link>
         </div>
       </div>
 
@@ -409,11 +400,6 @@ export default function DashboardPage() {
                         {task.type}
                       </span>
                     </div>
-                    {task.ai_suggested_tactic && (
-                      <p className="text-[11px] text-[var(--accent)] italic line-clamp-1">
-                        AI Tactic: {task.ai_suggested_tactic}
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -496,7 +482,7 @@ export default function DashboardPage() {
           </div>
 
           <CardFooter>
-            Rule: AI never approves or marks sent automatically
+            Rule: System never approves or marks sent automatically
           </CardFooter>
         </DashCard>
 

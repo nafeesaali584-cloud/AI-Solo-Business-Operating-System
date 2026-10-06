@@ -6,7 +6,6 @@ import {
   FileText,
   Plus,
   Trash2,
-  Sparkles,
   CheckCircle2,
   Send,
   Download,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { GateBadge } from "@/components/ui/GateBadge";
-import { useBusinessBrain } from "@/context/BusinessBrainContext";
 import { BRAND } from "@/lib/brand/config";
 import {
   generateProposalPdf,
@@ -42,11 +40,9 @@ function ProposalBuilderContent() {
   const proposalId = searchParams.get("id");
   const clientIdParam = searchParams.get("client_id");
   const leadIdParam = searchParams.get("lead_id");
-  const { setActiveEntity } = useBusinessBrain();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [generatingAi, setGeneratingAi] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Proposal state
@@ -94,14 +90,7 @@ function ProposalBuilderContent() {
             setStatus(p.status);
             setApprovedAt(p.approved_at);
             setSentConfirmedAt(p.sent_confirmed_at);
-            setLeadCustomerBehavior(p.lead?.customer_behavior || null);
-
-            setActiveEntity({
-              type: "proposal",
-              id: p.id,
-              name: `Proposal for ${p.client?.business_name || "Client"}`,
-              data: p,
-            });
+            setLeadCustomerBehavior(p.lead?.reply_status || p.lead?.customer_behavior || null);
           }
         } else if (clientIdParam || leadIdParam) {
           // FIX 5: Resolve existing proposal first on param URLs
@@ -125,14 +114,8 @@ function ProposalBuilderContent() {
               setStatus(p.status);
               setApprovedAt(p.approved_at);
               setSentConfirmedAt(p.sent_confirmed_at);
-              setLeadCustomerBehavior(p.lead?.customer_behavior || null);
+              setLeadCustomerBehavior(p.lead?.reply_status || p.lead?.customer_behavior || null);
               existingFound = true;
-              setActiveEntity({
-                type: "proposal",
-                id: p.id,
-                name: `Proposal for ${p.client?.business_name || p.lead?.business_name || "Client"}`,
-                data: p,
-              });
             }
           }
 
@@ -149,7 +132,7 @@ function ProposalBuilderContent() {
               if (res.ok) {
                 const json = await res.json();
                 setClientName(json.lead.business_name);
-                setLeadCustomerBehavior(json.lead?.customer_behavior || null);
+                setLeadCustomerBehavior(json.lead?.reply_status || json.lead?.customer_behavior || null);
               }
             }
           }
@@ -172,7 +155,7 @@ function ProposalBuilderContent() {
               setStatus(p.status);
               setApprovedAt(p.approved_at);
               setSentConfirmedAt(p.sent_confirmed_at);
-              setLeadCustomerBehavior(p.lead?.customer_behavior || null);
+              setLeadCustomerBehavior(p.lead?.reply_status || p.lead?.customer_behavior || null);
             }
           }
         }
@@ -199,37 +182,6 @@ function ProposalBuilderContent() {
     const updated = [...services];
     updated[index] = { ...updated[index], [field]: value };
     setServices(updated);
-  };
-
-  // AI Draft Generator: Scope & Deliverables
-  const handleGenerateAiDraft = async () => {
-    setGeneratingAi(true);
-    setActionMessage(null);
-    try {
-      const res = await fetch("/api/ai/draft-proposal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_id: clientId,
-          lead_id: leadId,
-          services,
-        }),
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json.draft) {
-          setScope(json.draft.scope || scope);
-          setDeliverables(json.draft.deliverables || deliverables);
-          if (json.draft.timeline) setTimeline(json.draft.timeline);
-          if (json.draft.terms) setTerms(json.draft.terms);
-        }
-      }
-    } catch (err) {
-      console.error("Failed to generate AI proposal draft", err);
-    } finally {
-      setGeneratingAi(false);
-    }
   };
 
   // Save Proposal
@@ -550,22 +502,11 @@ function ProposalBuilderContent() {
         <div className="space-y-6">
           {/* Target Client Bar */}
           <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between">
-        <div>
-          <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Client Prospect</span>
-          <div className="text-lg font-bold text-[var(--text-primary)]">{clientName || "Direct Proposal Draft"}</div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleGenerateAiDraft}
-            disabled={generatingAi}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] hover:bg-[var(--accent-border)] text-[var(--accent)] text-xs font-semibold border border-[var(--accent-border)] transition-colors disabled:opacity-50"
-          >
-            {generatingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            <span>Generate Draft (AI)</span>
-          </button>
-        </div>
-      </div>
+            <div>
+              <span className="text-xs text-[var(--text-dim)] uppercase tracking-wider font-semibold">Client Prospect</span>
+              <div className="text-lg font-bold text-[var(--text-primary)]">{clientName || "Direct Proposal Draft"}</div>
+            </div>
+          </div>
 
       {/* Brand Kit & PDF Template Selector */}
       <div className="p-5 rounded-xl bg-[var(--surface)] border border-[var(--border)] space-y-4">

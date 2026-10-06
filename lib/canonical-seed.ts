@@ -76,37 +76,7 @@ export async function ensureCanonicalSeed() {
       });
     }
 
-    let invoice = await db.invoice.findUnique({
-      where: { invoice_number: "INV-2026-0001" },
-    });
-
-    if (!invoice) {
-      invoice = await db.invoice.create({
-        data: {
-          client_id: client.id,
-          proposal_id: proposal.id,
-          invoice_number: "INV-2026-0001",
-          line_items: [
-            {
-              description: "Project Deposit (50% Milestone)",
-              quantity: 1,
-              unit_price: 1150,
-              total: 1150,
-            },
-          ],
-          amount: 1150,
-          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-          payment_instructions:
-            "Direct SadaPay Transfer:\nAccount Number: 03184274017\nAccount Title: Nafeesa Ali\nIBAN: PK64SADA0000003184274017\nPlease send confirmation screenshot once dispatched.",
-          payment_method: "sadapay",
-          notes: "Thank you for partnering with us. We look forward to executing this milestone.",
-          status: "Sent",
-          sent_confirmed_at: new Date(),
-        },
-      });
-    }
-
-    return { client, proposal, invoice };
+    return { client, proposal };
   } catch (error) {
     console.warn("ensureCanonicalSeed non-fatal error:", error);
     return null;
