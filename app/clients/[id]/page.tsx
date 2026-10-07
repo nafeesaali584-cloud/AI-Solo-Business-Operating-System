@@ -154,6 +154,7 @@ export default function ClientDetailPage() {
   };
 
   const handleDeleteClientDocument = async (docId: string) => {
+    if (!confirm("Are you sure you want to delete this document?")) return;
     try {
       const res = await fetch(`/api/clients/${clientId}/documents?document_id=${docId}`, {
         method: "DELETE",

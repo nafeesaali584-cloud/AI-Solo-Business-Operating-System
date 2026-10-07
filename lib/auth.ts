@@ -142,3 +142,17 @@ export function getAdminCredentials(): { email: string; passwordHashOrPlain: str
   const password = process.env.ADMIN_PASSWORD || "SoloAdmin2026!";
   return { email, passwordHashOrPlain: password };
 }
+
+/**
+ * Helper to get agent credentials from environment for automated browsing agents
+ * Returns null if AGENT_EMAIL or AGENT_PASSWORD is not configured.
+ */
+export function getAgentCredentials(): { email: string; passwordHashOrPlain: string } | null {
+  const email = process.env.AGENT_EMAIL?.trim();
+  const password = process.env.AGENT_PASSWORD;
+  if (!email || !password) {
+    return null;
+  }
+  return { email, passwordHashOrPlain: password };
+}
+

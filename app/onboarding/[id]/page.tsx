@@ -117,6 +117,7 @@ export default function OnboardingChecklistPage() {
   // Delete item
   const handleDeleteItem = async (index: number) => {
     if (!record) return;
+    if (!confirm("Are you sure you want to delete this checklist item?")) return;
     const updatedList = record.checklist.filter((_, i) => i !== index);
     setRecord({ ...record, checklist: updatedList });
 

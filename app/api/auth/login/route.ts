@@ -3,6 +3,7 @@ import {
   SESSION_COOKIE_NAME,
   createSessionToken,
   getAdminCredentials,
+  getAgentCredentials,
 } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -17,22 +18,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const inputEmail = email.trim().toLowerCase();
     const admin = getAdminCredentials();
+    const agent = getAgentCredentials();
 
-    const isEmailValid =
-      email.trim().toLowerCase() === admin.email.trim().toLowerCase();
-    const isPasswordValid = password === admin.passwordHashOrPlain;
+    const isAdmin =
+      inputEmail === admin.email.trim().toLowerCase() &&
+      password === admin.passwordHashOrPlain;
 
-    if (!isEmailValid || !isPasswordValid) {
+    const isAgent =
+      Boolean(agent) &&
+      inputEmail === agent!.email.trim().toLowerCase() &&
+      password === agent!.passwordHashOrPlain;
+
+    if (!isAdmin && !isAgent) {
       return NextResponse.json(
         { error: "Invalid email or password. Please verify your credentials." },
         { status: 401 }
       );
     }
 
+    const authenticatedEmail = isAdmin ? admin.email : agent!.email;
+
     // 30 days if rememberMe, otherwise 1 day
     const durationSeconds = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24;
-    const token = await createSessionToken(admin.email, durationSeconds);
+    const token = await createSessionToken(authenticatedEmail, durationSeconds);
 
     const isSecure = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto") === "https";
 
@@ -40,7 +50,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "Authentication successful.",
       user: {
-        email: admin.email,
+        email: authenticatedEmail,
       },
     });
 
