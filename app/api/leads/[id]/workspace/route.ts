@@ -8,11 +8,12 @@ import { WorkspaceItemType } from "@prisma/client";
 // Returns all workspace items for a lead with counts and search/filter support
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const lead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -25,7 +26,7 @@ export async function GET(
     const search = searchParams.get("search")?.trim().toLowerCase();
 
     // Query all items for lead
-    const whereClause: any = { leadId: params.id };
+    const whereClause: any = { leadId: id };
     if (typeFilter && Object.values(WorkspaceItemType).includes(typeFilter as WorkspaceItemType)) {
       whereClause.type = typeFilter as WorkspaceItemType;
     }
@@ -49,7 +50,7 @@ export async function GET(
     // Calculate aggregated item counts by type
     const allCounts = await db.workspaceItem.groupBy({
       by: ["type"],
-      where: { leadId: params.id },
+      where: { leadId: id },
       _count: { _all: true },
     });
 
@@ -88,11 +89,12 @@ export async function GET(
 // Creates a new workspace item (JSON for Note/Link/Video, multipart/form-data for File)
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const lead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { id: true },
     });
 
@@ -119,7 +121,7 @@ export async function POST(
 
       const item = await db.workspaceItem.create({
         data: {
-          leadId: params.id,
+          leadId: id,
           type: "FILE",
           title,
           content,
@@ -168,7 +170,7 @@ export async function POST(
 
     const item = await db.workspaceItem.create({
       data: {
-        leadId: params.id,
+        leadId: id,
         type: type as WorkspaceItemType,
         title: title || (type === "NOTE" ? "Untitled Note" : url),
         content: content || null,

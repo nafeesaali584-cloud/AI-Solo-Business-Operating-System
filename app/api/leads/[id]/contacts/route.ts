@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const contacts = await db.contact.findMany({
-      where: { lead_id: params.id },
+      where: { lead_id: id },
       orderBy: { created_at: "desc" },
     });
     return NextResponse.json({ success: true, contacts });
@@ -21,14 +22,15 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const { name = "Direct Contact", role = "Outreach Contact", phone, email, whatsapp } = body;
 
     const lead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { contacts: true },
     });
 

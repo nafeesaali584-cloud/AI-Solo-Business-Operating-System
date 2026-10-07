@@ -17,10 +17,10 @@ function ensureUploadsDir() {
 // GET: Fetch all documents associated with this lead (or its converted client)
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const leadId = params.id;
+    const { id: leadId } = await params;
     const lead = await db.lead.findUnique({
       where: { id: leadId },
       select: { id: true, converted_client_id: true },
@@ -53,10 +53,10 @@ export async function GET(
 // POST: Upload a file (PDF, image, mockup, audit) and associate with lead
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const leadId = params.id;
+    const { id: leadId } = await params;
     const lead = await db.lead.findUnique({
       where: { id: leadId },
     });
@@ -139,9 +139,10 @@ export async function POST(
 // DELETE: Delete a document
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await params;
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get("document_id");
 

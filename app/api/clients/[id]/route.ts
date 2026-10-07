@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const client = await db.client.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         contacts: true,
         interactions: { orderBy: { created_at: "asc" } },
@@ -194,9 +195,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const { business_name, primary_contact, email, phone, stage, payment_status } = body;
 
@@ -210,7 +212,7 @@ export async function PATCH(
     updateData.last_activity = new Date();
 
     const client = await db.client.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -226,11 +228,12 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const client = await db.client.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { onboarding: true },
     });
 
@@ -250,7 +253,7 @@ export async function DELETE(
 
     // Delete client (Prisma cascades to proposals, invoices, onboarding, contacts, interactions)
     await db.client.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true, message: "Client and associated records deleted." });

@@ -3,12 +3,13 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const onboarding = await db.onboarding.findFirst({
       where: {
-        OR: [{ id: params.id }, { client_id: params.id }],
+        OR: [{ id }, { client_id: id }],
       },
       include: { client: true },
     });
@@ -29,15 +30,16 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const { checklist, status, complete_onboarding } = body;
 
     const onboarding = await db.onboarding.findFirst({
       where: {
-        OR: [{ id: params.id }, { client_id: params.id }],
+        OR: [{ id }, { client_id: id }],
       },
     });
 

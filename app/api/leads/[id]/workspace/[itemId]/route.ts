@@ -7,14 +7,15 @@ import { deleteWorkspaceFile } from "@/lib/storage/r2";
 // Update title, content, isPinned, sortOrder, or url
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const { id, itemId } = await params;
     const existing = await db.workspaceItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
     });
 
-    if (!existing || existing.leadId !== params.id) {
+    if (!existing || existing.leadId !== id) {
       return NextResponse.json({ error: "Workspace item not found" }, { status: 404 });
     }
 
@@ -44,7 +45,7 @@ export async function PATCH(
     }
 
     const updated = await db.workspaceItem.update({
-      where: { id: params.itemId },
+      where: { id: itemId },
       data: updateData,
     });
 
@@ -62,14 +63,15 @@ export async function PATCH(
 // Deletes item and removes file from R2 / local storage if type is FILE
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string; itemId: string } }
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const { id, itemId } = await params;
     const existing = await db.workspaceItem.findUnique({
-      where: { id: params.itemId },
+      where: { id: itemId },
     });
 
-    if (!existing || existing.leadId !== params.id) {
+    if (!existing || existing.leadId !== id) {
       return NextResponse.json({ error: "Workspace item not found" }, { status: 404 });
     }
 
@@ -79,7 +81,7 @@ export async function DELETE(
     }
 
     await db.workspaceItem.delete({
-      where: { id: params.itemId },
+      where: { id: itemId },
     });
 
     return NextResponse.json({

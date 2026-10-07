@@ -16,10 +16,10 @@ function ensureUploadsDir() {
 // GET: Fetch all documents for this client (and associated lead if any)
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id;
+    const { id: clientId } = await params;
     const client = await db.client.findUnique({
       where: { id: clientId },
       select: { id: true, lead_id: true },
@@ -52,10 +52,10 @@ export async function GET(
 // POST: Upload document associated with client
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const clientId = params.id;
+    const { id: clientId } = await params;
     const client = await db.client.findUnique({
       where: { id: clientId },
     });
@@ -133,9 +133,10 @@ export async function POST(
 // DELETE: Delete a document
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await params;
     const { searchParams } = new URL(req.url);
     const documentId = searchParams.get("document_id");
 

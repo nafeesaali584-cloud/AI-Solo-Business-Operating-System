@@ -4,11 +4,12 @@ import { db } from "@/lib/db";
 // PATCH /api/snippets/[id]
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const existing = await db.snippet.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
@@ -24,7 +25,7 @@ export async function PATCH(
     if (snippetBody !== undefined) updateData.body = snippetBody.trim();
 
     const updated = await db.snippet.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -41,11 +42,12 @@ export async function PATCH(
 // DELETE /api/snippets/[id]
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const existing = await db.snippet.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existing) {
@@ -53,7 +55,7 @@ export async function DELETE(
     }
 
     await db.snippet.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({

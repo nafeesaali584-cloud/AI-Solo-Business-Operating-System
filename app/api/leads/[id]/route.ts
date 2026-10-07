@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const lead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         contacts: true,
         interactions: { orderBy: { created_at: "desc" } },
@@ -57,9 +58,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json();
     const {
       status,
@@ -91,7 +93,7 @@ export async function PATCH(
       todayEnd.setHours(23, 59, 59, 999);
       const activeTargetsCount = await db.lead.count({
         where: {
-          id: { not: params.id },
+          id: { not: id },
           OR: [
             { is_today_target: true },
             {
@@ -121,7 +123,7 @@ export async function PATCH(
     // If convert to client action requested
     if (convert_to_client) {
       const lead = await db.lead.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: { contacts: true },
       });
 
@@ -179,7 +181,7 @@ export async function PATCH(
       // Add a timeline marker interaction (preserving all past interactions and research)
       await db.interaction.create({
         data: {
-          lead_id: params.id,
+          lead_id: id,
           channel: "Reactivation",
           direction: "Internal",
           content: `Reactivated on ${new Date().toLocaleDateString()} — Reason: ${reason}`,
@@ -189,7 +191,7 @@ export async function PATCH(
     } else if (status !== undefined) {
       // FIX 7: Validate status transitions server-side
       const currentLead = await db.lead.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
           interactions: true,
           deals: true,
@@ -325,7 +327,7 @@ export async function PATCH(
     }
     // Track intentionally cleared fields to distinguish "never set" from "explicitly removed by user"
     const existingLead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { cleared_fields: true },
     });
 
@@ -381,7 +383,7 @@ export async function PATCH(
       const content = trimmed ? `Scheduled Call: ${trimmed}` : "Discovery / Intro Call Scheduled";
       createdInteraction = await db.interaction.create({
         data: {
-          lead_id: params.id,
+          lead_id: id,
           channel: "Call",
           direction: "Outgoing",
           content,
@@ -391,7 +393,7 @@ export async function PATCH(
     }
 
     const updatedLead = await db.lead.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -411,16 +413,17 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Delete associated tasks
     await db.task.deleteMany({
-      where: { related_id: params.id },
+      where: { related_id: id },
     });
 
     await db.lead.delete({
-      where: { id: params.id },
+      where: { id },
     });
     return NextResponse.json({ success: true, message: "Lead deleted successfully." });
   } catch (error: any) {

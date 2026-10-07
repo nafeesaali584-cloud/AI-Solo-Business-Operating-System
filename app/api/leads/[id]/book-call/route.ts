@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const lead = await db.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!lead) {
