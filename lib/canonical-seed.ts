@@ -9,7 +9,7 @@ import { db } from "@/lib/db";
 export async function ensureCanonicalSeed() {
   try {
     let client = await db.client.findFirst({
-      where: { business_name: { contains: "Miss Al Reem", mode: "insensitive" } },
+      where: { business_name: { contains: "Miss Al Reem" } },
     });
 
     if (!client) {
@@ -39,7 +39,7 @@ export async function ensureCanonicalSeed() {
       proposal = await db.proposal.create({
         data: {
           client_id: client.id,
-          services: [
+          services: JSON.stringify([
             {
               name: "Website Architecture & UX Redesign",
               description: "Complete responsive overhaul with conversion optimization",
@@ -50,7 +50,7 @@ export async function ensureCanonicalSeed() {
               description: "Instant notification and follow-up sequence setup",
               price: 800,
             },
-          ],
+          ]),
           scope: canonicalScope,
           deliverables: canonicalDeliverables,
           timeline: "Estimated delivery: 3 weeks from initial kickoff.",

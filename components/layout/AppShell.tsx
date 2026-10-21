@@ -19,8 +19,10 @@ import {
   LogOut,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
+import { AgencyGuideModal } from "@/components/common/AgencyGuideModal";
 import { useTheme } from "@/lib/theme/ThemeProvider";
 
 // ─── Sidebar link component ──────────────────────────────────────────────────
@@ -83,10 +85,12 @@ function SidebarNavContent({
   pathname,
   handleLogout,
   onItemClick,
+  onOpenGuide,
 }: {
   pathname: string;
   handleLogout: () => void;
   onItemClick?: () => void;
+  onOpenGuide?: () => void;
 }) {
   return (
     <div className="flex flex-col justify-between h-full">
@@ -100,6 +104,13 @@ function SidebarNavContent({
               icon={LayoutDashboard}
               label="My Work"
               active={pathname === "/dashboard" || pathname === "/"}
+              onClick={onItemClick}
+            />
+            <SidebarLink
+              href="/agency-hub"
+              icon={Sparkles}
+              label="Agency 360° Hub"
+              active={pathname === "/agency-hub"}
               onClick={onItemClick}
             />
           </nav>
@@ -156,7 +167,28 @@ function SidebarNavContent({
       </div>
 
       {/* Footer Controls */}
-      <div className="pt-4 border-t border-[var(--border)] space-y-1">
+      <div className="pt-3 border-t border-[var(--border)] space-y-2">
+        {onOpenGuide && (
+          <button
+            onClick={() => {
+              if (onItemClick) onItemClick();
+              onOpenGuide();
+            }}
+            className="w-full flex items-center justify-between p-2.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 text-amber-500 hover:from-amber-500/20 hover:to-orange-500/20 transition-all text-left group"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500 shrink-0 group-hover:rotate-12 transition-transform" />
+              <div>
+                <p className="text-xs font-semibold text-[var(--text-primary)]">Agency Copilot</p>
+                <p className="text-[10px] text-[var(--text-muted)]">Ghosting, scripts & daily plan</p>
+              </div>
+            </div>
+            <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+              Open
+            </span>
+          </button>
+        )}
+
         <SidebarLink
           href="/settings"
           icon={Settings}
@@ -196,6 +228,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { setTheme, resolvedTheme } = useTheme();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Close mobile drawer automatically when route changes
   useEffect(() => {
@@ -277,8 +310,20 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </div>
 
-        {/* Right Actions: Search + Theme */}
+        {/* Right Actions: Search + Theme + Agency Copilot */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Agency Copilot Emergency Guide */}
+          <button
+            onClick={() => setIsGuideOpen(true)}
+            aria-label="Open Agency Guide & Copilot"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/30 text-amber-500 hover:text-amber-400 text-xs font-semibold transition-all shadow-sm"
+            title="Always-On Guide: Daily Plan, Ghosting Recovery & Scripts"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+            <span className="hidden sm:inline">Agency Guide</span>
+            <span className="inline sm:hidden">Guide</span>
+          </button>
+
           {/* Global Search */}
           <button
             onClick={() => setIsSearchOpen(true)}
@@ -312,7 +357,11 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <div className="flex-1 flex overflow-hidden relative">
         {/* Desktop Sidebar (hidden on mobile, visible md+) */}
         <aside className="hidden md:flex w-60 bg-[var(--surface)] border-r border-[var(--border)] flex-col justify-between py-4 px-3 flex-shrink-0">
-          <SidebarNavContent pathname={pathname} handleLogout={handleLogout} />
+          <SidebarNavContent
+            pathname={pathname}
+            handleLogout={handleLogout}
+            onOpenGuide={() => setIsGuideOpen(true)}
+          />
         </aside>
 
         {/* Mobile Drawer Backdrop Overlay */}
@@ -335,6 +384,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             pathname={pathname}
             handleLogout={handleLogout}
             onItemClick={() => setIsMobileMenuOpen(false)}
+            onOpenGuide={() => setIsGuideOpen(true)}
           />
         </aside>
 
@@ -344,8 +394,21 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </main>
       </div>
 
+      {/* Floating Emergency Guide Trigger */}
+      <button
+        onClick={() => setIsGuideOpen(true)}
+        aria-label="Need Help? Open Agency Guide"
+        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs sm:text-sm font-semibold shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40 hover:scale-105 active:scale-95 transition-all duration-200 group border border-amber-400/30"
+      >
+        <Sparkles className="w-4 h-4 animate-pulse group-hover:rotate-12 transition-transform" />
+        <span>Stuck? Agency Guide</span>
+      </button>
+
       {/* Global Search Modal */}
       <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
+      {/* Agency Guide & Copilot Modal */}
+      <AgencyGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
   );
 };

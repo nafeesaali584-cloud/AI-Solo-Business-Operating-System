@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-body antialiased">
+      <body suppressHydrationWarning className="font-body antialiased">
         <ThemeProvider>
           <AppShell>{children}</AppShell>
         </ThemeProvider>

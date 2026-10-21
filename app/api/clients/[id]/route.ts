@@ -29,14 +29,14 @@ export async function GET(
         const createdOnboarding = await db.onboarding.create({
           data: {
             client_id: client.id,
-            checklist: [
+            checklist: JSON.stringify([
               { item: "Kickoff Call & Strategy Alignment", status: "pending" },
               { item: "Collect Brand Assets & Logo Files", status: "pending" },
               { item: "DNS & Domain Access Verification", status: "pending" },
               { item: "WhatsApp Business Account Integration", status: "pending" },
               { item: "Initial Delivery Milestone Review", status: "pending" },
               { item: "Final Handover & Client Approval", status: "pending" },
-            ],
+            ]),
             status: "In Progress",
           },
         });

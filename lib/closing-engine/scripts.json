@@ -1,0 +1,325 @@
+{
+  "redesignStages": [
+    {
+      "stage": 1,
+      "title": "Stage 1: Permission-Taker (Redesign)",
+      "delayDays": 0,
+      "psychology": "Curiosity + Respect (Zero Hard Pitch)",
+      "goal": "Get low-friction permission to send the 30-second preview link.",
+      "whatsapp": "Hello {{owner_name}}! Hope your week is going great at {{business_name}}.\n\nI was looking at your garage in {{location}}—impressive work on luxury vehicle repairs! 🚗\n\nI noticed your website has a couple of mobile loading issues that might be losing you customer inquiries on Google. I put together a quick 30-second working redesign demo showing how to capture direct WhatsApp bookings for high-end repairs (similar to what we recently built for JASRAUTO in the UAE).\n\nWould it be okay if I share the preview link with you here?\n\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "Quick question regarding {{business_name}}'s mobile website",
+      "email": "Hi {{owner_name}},\n\nI came across {{business_name}} while researching top-rated European and Japanese auto workshops in {{location}}.\n\nYour repair portfolio is stellar, but I noticed your current website takes over 5 seconds to load on mobile and doesn't have an instant WhatsApp booking channel, which costs workshops several high-ticket service bookings every month.\n\nWe built a functional, modern redesign demo specifically for {{business_name}} to show how direct mobile booking looks.\n\nWould you be open to seeing a 30-second preview link?\n\nBest regards,\n[Your Name] | [Your Agency Website] | [Your Phone]"
+    },
+    {
+      "stage": 2,
+      "title": "Stage 2: Demo Delivery & First Question",
+      "delayDays": 2,
+      "psychology": "Proof + Micro-Commitment Stacking",
+      "goal": "Deliver the working demo link and ask 1 simple feedback question.",
+      "whatsapp": "Thanks {{owner_name}}! Here is your custom preview link:\n\n👉 {{demo_link}}\n\nNotice how it opens in under 1 second on mobile and has a direct 'Book Major Service via WhatsApp' button right on top.\n\nDoes it open smoothly on your phone? What do you think of the new layout?",
+      "emailSubject": "Here is the custom redesign preview for {{business_name}}",
+      "email": "Hi {{owner_name}},\n\nAs promised, here is the working redesign demo we created for {{business_name}}:\n\n👉 {{demo_link}}\n\nKey enhancements we built into this prototype:\n1. 1-second ultra-fast mobile loading time (Google Core Web Vitals optimized).\n2. Direct 1-tap WhatsApp booking button routed to your service team.\n3. Prominent showcase of your workshop certifications and customer 5-star Google reviews.\n\nDoes it open well on your phone? Would love to get your initial feedback.\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 3,
+      "title": "Stage 3: The Revenue Leak Angle",
+      "delayDays": 4,
+      "psychology": "Loss Aversion + P+E+U Rule (Raj Shamani)",
+      "goal": "Explain the exact financial cost of their current broken site.",
+      "whatsapp": "Hey {{owner_name}}, quick follow-up on {{business_name}}'s demo link above.\n\nDid you know that over 78% of luxury car owners in the UAE search for auto repair on their phone when they hear a squeak or need an AC check?\n\nIf your website isn't instant and easy to message on WhatsApp, they immediately click the next garage on Google Maps. Losing just 2 major repair jobs a month costs an average workshop AED 5,000+ in pure profit.\n\nHave you had a chance to test the preview link yet? 👉 {{demo_link}}",
+      "emailSubject": "Why {{business_name}} might be losing 2-3 luxury car repairs a week",
+      "email": "Hi {{owner_name}},\n\nFollowing up on the demo link I sent over: {{demo_link}}\n\nIn our audits of auto garages across {{location}}, we found that over 78% of car owners browse for emergency repairs and scheduled maintenance on their smartphones.\n\nWhen a site isn't optimized for mobile speed or lacks instant WhatsApp booking, potential clients bounce to competitors in under 4 seconds. In high-margin repairs (like German brakes, transmission overhauls, or AC repairs), that's an estimated leak of AED 5,000–AED 10,000 every single month.\n\nOur redesign fixes this leak permanently with zero technical hassle on your side.\n\nWould you like a 5-minute walkthrough of the changes this week?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 4,
+      "title": "Stage 4: Local Competition & Social Proof",
+      "delayDays": 7,
+      "psychology": "Social Proof + FOMO (SeeKen Emotional Marketing)",
+      "goal": "Highlight how competitors in the UAE are capturing mobile repair inquiries.",
+      "whatsapp": "Hey {{owner_name}}, hope you're having a productive week! 🚗\n\nWe recently built and launched the modern website for JASRAUTO here in the UAE (rated 5-stars on Google Reviews: \"delivered a professional, user-friendly website that represents our brand well\").\n\nWith our custom layout for {{business_name}} (preview: {{demo_link}}), your garage looks like an authorized-grade dealership alternative, giving clients confidence to book their high-end vehicles with you.\n\nWe can have this exact demo live on your domain in 48 hours. Worth a quick 5-min WhatsApp chat today?\n\nBest,\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "How leading garages in {{location}} are capturing high-end car owners",
+      "email": "Hi {{owner_name}},\n\nI wanted to share a quick UAE auto market insight with you:\n\nWe recently designed and launched the web platform for JASRAUTO in the UAE, who left us a 5-star Google review for our automotive UI, mobile booking flow, and communication.\n\nOur custom redesign for {{business_name}} (preview: {{demo_link}}) applies these same high-converting patterns, positioning your garage as an elite alternative to official dealerships at a fraction of the cost.\n\nYou can verify our work and reviews on our Google Business Profile (Nafeesa Ali | Digital Growth Studio - https://nafeesaali.com/).\n\nAre you available for a brief 5-minute review on Wednesday or Thursday?\n\nBest regards,\nNafeesa Ali\nFounder, Digital Growth Studio\nhttps://nafeesaali.com/"
+    },
+    {
+      "stage": 5,
+      "title": "Stage 5: High-Authority Diagnostic Audit",
+      "delayDays": 11,
+      "psychology": "Halo Effect + Frame Control (Coach Animesh Doctor Frame)",
+      "goal": "Provide an expert diagnosis. Suggest sending a 45s WhatsApp Voice Note.",
+      "whatsapp": "Hey {{owner_name}}, I just recorded a quick 45-second screen audit pointing out 3 specific buttons on your current site that aren't working on mobile.\n\nEven if we don't end up working together, I want to make sure your garage stops leaking customers to nearby competitors.\n\nShould I send the quick screen recording over to you here?",
+      "emailSubject": "3 critical mobile booking bugs found on {{business_name}}'s site",
+      "email": "Hi {{owner_name}},\n\nWhile running technical diagnostics on {{business_name}}'s website, our team identified 3 specific friction points:\n1. Mobile header navigation overlaps the phone number button on iOS devices.\n2. Service inquiry form does not send confirmation alerts to your team.\n3. Google PageSpeed rating is below 35/100, which penalizes your local Google ranking.\n\nOur demo ({{demo_link}}) scores 96/100 on Google PageSpeed and includes 1-tap WhatsApp booking.\n\nEven if you choose to have your existing developer fix these, I'm happy to send you the full audit notes free of charge. Let me know if that would be helpful.\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 6,
+      "title": "Stage 6: Reverse Scarcity & Capacity Lock",
+      "delayDays": 15,
+      "psychology": "Reverse Qualification + Scarcity (Hormozi CLOSER / Animesh)",
+      "goal": "Trigger urgency by limiting intake to 2 workshops per district.",
+      "whatsapp": "Hey {{owner_name}}! Touching base as we are finalizing our client schedule for this month.\n\nBecause we build customized booking setups and test them extensively, we only onboard 2 auto workshop redesigns in {{location}} per month to ensure dedicated attention.\n\nWe have 1 launch spot remaining this week. Since we already invested the time to create {{business_name}}'s working demo, I wanted to give you first priority before we offer the layout to another European garage nearby.\n\nShall we get your site upgraded this week?",
+      "emailSubject": "Final priority spot for {{business_name}} website redesign",
+      "email": "Hi {{owner_name}},\n\nWe are currently closing our client onboarding schedule for {{location}} for the upcoming month.\n\nTo ensure peak performance and hands-on support, we restrict our website deployment to only 2 automotive workshops per area at any one time.\n\nSince your custom demo ({{demo_link}}) is already fully prepared, we can launch it within 48 hours.\n\nWould you like to secure the remaining slot, or should we open it up to another specialist garage in your area?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 7,
+      "title": "Stage 7: The Gentle Breakup & Takeaway",
+      "delayDays": 20,
+      "psychology": "Negative Reverse / Complete Relief (Dark Psychology Trick #1)",
+      "goal": "Remove all sales pressure. 40%+ of dormant prospects reply to protect their demo.",
+      "whatsapp": "Hey {{owner_name}}, reaching out one last time! 🙏\n\nSince I haven't heard back, I'm guessing updating your website isn't a priority right now, or your workshop is already completely flooded with cars (which is great!).\n\nI'll go ahead and take down the temporary demo server for {{business_name}} by Friday so our team can archive the files.\n\nIf you ever want to modernize your web booking in the future, feel free to reach out. Wish you and {{business_name}} continuous success!",
+      "emailSubject": "Permission to archive {{business_name}}'s custom demo?",
+      "email": "Hi {{owner_name}},\n\nI haven't heard back from you, so I assume modernizing {{business_name}}'s website isn't a priority right now—completely understood!\n\nI'm writing to let you know that we will be archiving your staging demo ({{demo_link}}) on Friday to free up server resources.\n\nIf timing is just bad right now, no problem at all. If you'd like us to keep the demo active for a little longer so you can review it with your partners, just hit reply with 'Keep' and I'll leave it up.\n\nEither way, wishing you all the best with {{business_name}}.\n\nBest regards,\n[Your Name]"
+    }
+  ],
+  "freshStages": [
+    {
+      "stage": 1,
+      "title": "Stage 1: Permission-Taker (Fresh Website / No Site Currently)",
+      "delayDays": 0,
+      "psychology": "Google Maps Opportunity + Curiosity (No Web Guy to Compete With!)",
+      "goal": "Highlight that their Google Maps profile has no website link, and offer a ready-made demo.",
+      "whatsapp": "Hello {{owner_name}}! Hope you're having a great week at {{business_name}}.\n\nI was looking at your workshop profile on Google Maps in {{location}}—impressive customer reviews on your auto repairs! 🚗\n\nI noticed that you don't have an official website connected to your Google listing yet. That means local car owners searching Google Maps in {{location}} can't view your services or book via WhatsApp directly.\n\nWe actually built a ready-made mobile website prototype specifically for {{business_name}} (similar to the platform we recently launched for JASRAUTO in the UAE).\n\nWould it be okay if I share the 30-second preview link with you here?\n\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "Missing official website for {{business_name}} on Google Maps",
+      "email": "Hi {{owner_name}},\n\nI came across {{business_name}} while looking at top-rated auto repair centers on Google Maps in {{location}}.\n\nYour garage has great reviews, but your Google Business Profile currently has no official website attached. This causes many new car owners in the area to choose competing garages that have an instant mobile booking link.\n\nWe built a turnkey, mobile-first website prototype specifically for {{business_name}} featuring direct 1-tap WhatsApp booking and service showcase.\n\nWould you be open to taking a look at a 30-second preview link?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 2,
+      "title": "Stage 2: Demo Delivery & First Question (Fresh Site)",
+      "delayDays": 2,
+      "psychology": "Instant Gratification + Micro-Commitment",
+      "goal": "Show them what their first official website looks like on mobile.",
+      "whatsapp": "Thanks {{owner_name}}! Here is the custom prototype we built for your garage:\n\n👉 {{demo_link}}\n\nWe designed it from scratch with:\n1. 1-tap direct WhatsApp booking for quick inquiries\n2. Google Maps directions button for easy customer navigation\n3. Clean luxury showcase of your repair services\n\nDoes it open smoothly on your phone? How do you like the design?",
+      "emailSubject": "Here is the website prototype for {{business_name}}",
+      "email": "Hi {{owner_name}},\n\nAs promised, here is the working prototype we built for {{business_name}}:\n\n👉 {{demo_link}}\n\nKey features included:\n- Instant 1-tap WhatsApp booking routed to your service desk\n- Built-in Google Maps navigation for driving directions to your garage\n- Optimized to boost your Google Maps local search ranking into the top 3\n\nDoes it open well on your smartphone? Would love to get your thoughts on the design.\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 3,
+      "title": "Stage 3: The Revenue Leak Angle (Google Maps Invisibility)",
+      "delayDays": 4,
+      "psychology": "Loss Aversion + Google Ranking Factors",
+      "goal": "Explain how Google ranks businesses with websites higher, bringing 5-10 extra customers/month.",
+      "whatsapp": "Hey {{owner_name}}, quick follow-up on {{business_name}}'s prototype above!\n\nDid you know Google Maps ranks auto workshops with official websites significantly higher than those without one?\n\nWithout a website, your garage is practically invisible to 65% of car owners searching for emergency repairs, AC fixes, or brake jobs in {{location}}. Capturing just 2 extra car repairs a month from Google easily adds AED 3,500 - AED 6,000 in monthly profit.\n\nHave you had a chance to test the preview link yet? 👉 {{demo_link}}",
+      "emailSubject": "How an official website increases {{business_name}}'s Google Maps calls",
+      "email": "Hi {{owner_name}},\n\nFollowing up on the prototype link: {{demo_link}}\n\nGoogle's local search algorithm heavily favors auto workshops that have an official, responsive website linked to their Google Business Profile. Listings without websites receive up to 50% fewer customer calls and direction requests.\n\nFor an active workshop in {{location}}, this can mean missing out on dozens of high-margin car services every month.\n\nOur prototype is completely ready and can be live on your own official domain in 48 hours.\n\nWould you like a 5-minute walkthrough of how it works this week?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 4,
+      "title": "Stage 4: Local Competition & Trust Validator",
+      "delayDays": 7,
+      "psychology": "Status & Trust (Luxury Car Owners Expect a Website)",
+      "goal": "Explain that owners of BMW/Mercedes/Audi always check for a website before trusting a garage.",
+      "whatsapp": "Hey {{owner_name}}, hope you're having a productive week! 🚗\n\nWe recently launched the official web platform for JASRAUTO here in the UAE (rated 5-stars on Google Reviews: \"delivered a professional, user-friendly website that represents our brand well\").\n\nAttaching an official, high-speed website to your Google Maps profile positions {{business_name}} as a top-tier alternative to expensive dealerships, so car owners book directly with you on WhatsApp instead of calling competitors.\n\nSince your prototype ({{demo_link}}) is ready, we can launch it in 48 hours. Worth a quick 5-minute call today?\n\nBest,\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "Positioning {{business_name}} as a top-tier garage in {{location}}",
+      "email": "Hi {{owner_name}},\n\nIn the UAE auto service market, high-net-worth vehicle owners rarely visit an auto workshop without checking their official online presence first.\n\nHaving an official, high-speed website (like the prototype we created at {{demo_link}}) gives high-end clients the immediate confidence to book their major services with you instead of going to expensive dealerships.\n\nAre you available for a brief 5-minute conversation on Wednesday or Thursday?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 5,
+      "title": "Stage 5: Google Business Profile SEO Audit",
+      "delayDays": 11,
+      "psychology": "Consultant Frame / Free Value",
+      "goal": "Offer a free 45-second video/audio audit showing how connecting this site boosts their Google rank.",
+      "whatsapp": "Hey {{owner_name}}, I put together a quick 45-second screen audit showing where your garage currently ranks on Google Maps in {{location}} and how adding this website will push you into the top 3 'Local 3-Pack'.\n\nShould I send the quick screen recording over to you here?",
+      "emailSubject": "Free Google Maps ranking audit for {{business_name}}",
+      "email": "Hi {{owner_name}},\n\nOur technical team completed a local SEO audit for {{business_name}} in {{location}}.\n\nWe mapped out the top keywords car owners search in your area ('car repair near me', 'auto garage Al Quoz', 'major service') and how attaching our mobile-optimized prototype will directly boost your Google ranking.\n\nI'm happy to send you this audit free of charge so you can see the search volume you're currently missing.\n\nLet me know if that would be helpful!\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 6,
+      "title": "Stage 6: Scarcity & Fast-Track Launch",
+      "delayDays": 15,
+      "psychology": "Reverse Qualification + Scarcity",
+      "goal": "Offer the 1 remaining launch spot for this month.",
+      "whatsapp": "Hey {{owner_name}}! Touching base as we finalize our workshop launch calendar for this month.\n\nWe only take on 2 new auto garage website deployments per district each month so we can manage all the domain setup, Google Maps verification, and WhatsApp routing by hand.\n\nSince {{business_name}}'s prototype ({{demo_link}}) is already fully built, I wanted to offer you first priority before we release the slot to another garage in {{location}}.\n\nShall we get your official website live this week?",
+      "emailSubject": "Priority launch spot for {{business_name}}'s official website",
+      "email": "Hi {{owner_name}},\n\nWe are currently closing out our website deployment schedule for {{location}} for the upcoming month.\n\nTo ensure dedicated onboarding and complete domain and SEO setup, we limit our intake to 2 workshops per zone.\n\nSince your website prototype is already fully functional, we can have it live on your custom domain in 48 hours.\n\nWould you like to reserve the remaining spot, or should we open it to another garage in your area?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 7,
+      "title": "Stage 7: The Gentle Breakup & Server Archive",
+      "delayDays": 20,
+      "psychology": "Negative Reverse / Takeaway (Fear of Loss)",
+      "goal": "Announce that the demo will be archived on Friday.",
+      "whatsapp": "Hey {{owner_name}}, reaching out one last time! 🙏\n\nSince I haven't heard back, I'm assuming getting an official website isn't a priority for {{business_name}} right now (which is completely fine!).\n\nI'll go ahead and take down the staging prototype for {{business_name}} by Friday so our team can archive the files.\n\nIf you ever decide to launch your website in the future, feel free to drop me a message. Wishing you and the garage continuous success!",
+      "emailSubject": "Permission to archive {{business_name}}'s website prototype?",
+      "email": "Hi {{owner_name}},\n\nI haven't heard back, so I assume launching an official website for {{business_name}} isn't on your radar right now—completely understood!\n\nI'm writing to let you know that we will be taking down the staging demo ({{demo_link}}) on Friday to free up server resources.\n\nIf the timing is just busy right now, just reply with 'Keep' and I'll keep the link active for you to review later with your team.\n\nEither way, wishing {{business_name}} all the best!\n\nBest regards,\n[Your Name]"
+    }
+  ],
+  "objections": [
+    {
+      "id": "final_breakup_takeaway",
+      "title": "🚪 The Final Breakup / Takeaway Play (Day 15-20)",
+      "category": "Breakup",
+      "whatsapp": "Hey {{owner_name}}, reaching out one last time! 🙏\n\nSince I haven't heard back, I assume modernizing {{business_name}}'s web booking isn't a priority right now—completely understood.\n\nI will be archiving your staging demo server on Friday to free up server space.\n\nIf you ever want to upgrade your website in the future, feel free to drop me a message. Wishing {{business_name}} continued success!\n\nNafeesa Ali | nafeesaali.com (Recent work: JASRAUTO UAE)",
+      "email": "Hi {{owner_name}},\n\nI haven't heard back, so I assume this is not a priority right now—completely understood!\n\nWe will be taking down the staging prototype for {{business_name}} on Friday. If you would like us to keep it active, just reply with 'Keep'.\n\nWishing you and your team continued success!\n\nBest regards,\nNafeesa Ali\nhttps://nafeesaali.com/"
+    },
+    {
+      "id": "ghosted_after_demo",
+      "title": "👻 Viewed Demo Then Went Silent (Day 3-5)",
+      "category": "Revival",
+      "whatsapp": "Hey {{owner_name}}, following up quickly on {{business_name}}'s custom demo above!\n\nI'm guessing updating the booking flow isn't a priority right now, or the workshop is fully packed with car deliveries (which is great!)?\n\nIf so, no worries at all! Just let me know if I should take down the temporary demo server so we can allocate that space to another garage in {{location}}.\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nFollowing up on the demo link: {{demo_link}}.\n\nIf the timing isn't right, please let me know and I will archive the staging link. Otherwise, happy to answer any questions you or your team might have.\n\nBest regards,\nNafeesa Ali"
+    },
+    {
+      "id": "enough_business",
+      "title": "🚗 \"We already have enough customers / Word of mouth is enough\"",
+      "category": "Pushback",
+      "whatsapp": "That is the best problem a workshop can have, {{owner_name}}! Congrats on the volume. 👏\n\nMost top workshops we work with aren't looking for *more* random cars—they want **higher-margin jobs** (Porsche, Mercedes, BMW major services and transmission overhauls) rather than budget economy cars.\n\nA modern website acts as a luxury trust filter that attracts high-net-worth vehicle owners and gives them confidence to book high-ticket services.\n\nWorth taking a 30-second look at the prototype for future reference?\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nHaving full bays is a testament to your excellent service quality.\n\nOur automotive website setups are designed specifically to filter for high-margin, high-ticket repairs (European diagnostics, transmission rebuilds, luxury periodic maintenance) rather than high-volume low-margin work.\n\nI'm happy to share the prototype link if you ever wish to target higher-margin vehicle owners.\n\nBest regards,\nNafeesa Ali"
+    },
+    {
+      "id": "site_is_good_argument",
+      "title": "🛡️ Argument: \"Meri website already achi hai / My site is good\"",
+      "category": "Pushback",
+      "whatsapp": "100% {{owner_name}}, visually your website has a great brand look! 🙌\n\nThe only reason I reached out isn't about design—it's purely about **mobile loading speed and Google bounce rate**.\n\nWhen we tested the mobile performance, the page takes over 5 seconds to load on iPhones, and the WhatsApp booking button is buried. In the UAE, 78% of luxury car owners bounce to another garage if booking isn't 1-tap instant.\n\nYou don't need to hire us at all! You can take our demo layout for free and give it to your web person to implement the mobile speed fix so you stop losing those calls.\n\nMind if I share the 30-second prototype just so you can compare the mobile speed?\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nI completely agree that your website represents your brand well visually.\n\nOur diagnostic was focused strictly on mobile conversion speed and Google Core Web Vitals. Testing indicated a 5+ second load time on mobile devices, which causes a high bounce rate among smartphone searchers.\n\nYou are welcome to use our prototype ({{demo_link}}) as a free blueprint for your existing web developer to implement 1-tap WhatsApp booking.\n\nLet me know if you'd like to review the link.\n\nBest regards,\nNafeesa Ali"
+    },
+    {
+      "id": "replied_hi_hello",
+      "title": "💬 Replied \"Hi / Hello / How can we help?\" (Engaged)",
+      "category": "Engaged",
+      "whatsapp": "Hello! Thanks for getting back to me. 🚗\n\nI was actually reviewing top-rated workshops in {{location}} and noticed your current website takes over 5 seconds to load on mobile and lacks direct 1-tap WhatsApp booking.\n\nWe recently built the web platform for JASRAUTO in the UAE (5-star Google review), and I put together a quick 30-second redesign demo for {{business_name}} showing instant WhatsApp booking.\n\nWould it be okay if I share the preview link with you here?\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nThank you for connecting!\n\nWe prepared a custom mobile redesign prototype for {{business_name}} to help you capture high-ticket car service bookings directly via WhatsApp.\n\nWould it be okay if I send over the 30-second preview link?\n\nBest regards,\nNafeesa Ali"
+    },
+    {
+      "id": "unseen_grey_ticks",
+      "title": "⏳ Grey Ticks / Unseen (Sent 48h ago)",
+      "category": "Silence",
+      "whatsapp": "Hey {{owner_name}}, touching base during quiet hours! \n\nReaching out regarding {{business_name}}'s mobile customer booking flow. \n\nWhen you have 30 seconds between customer cars, let me know if I should drop the quick demo link we prepared. \n\nWishing you a great evening at the garage!\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nReaching out once more regarding {{business_name}}'s mobile website optimization.\n\nLet me know if you would like me to share the 30-second prototype link.\n\nBest,\nNafeesa Ali"
+    },
+    {
+      "id": "seen_no_reply",
+      "title": "👁️ Blue Ticks / Seen but No Reply (Wait 24h)",
+      "category": "Silence",
+      "whatsapp": "Hey {{owner_name}}, quick 10-second follow-up! 🚗\n\nI know the workshop is probably busy with car deliveries today. \n\nJust wanted to check—did my previous message make sense, or should I leave you to focus on the cars today?\n\n(No pressure at all!)\n\nNafeesa Ali | nafeesaali.com",
+      "email": "Hi {{owner_name}},\n\nFollowing up briefly on my previous note. I understand you are likely busy managing operations at {{business_name}}.\n\nLet me know if modernizing your mobile booking is on your radar this quarter, or if I should follow up later.\n\nBest regards,\nNafeesa Ali"
+    },
+    {
+      "id": "uae_case_study",
+      "title": "Show me your past UAE work / Who are you? (JASRAUTO Proof)",
+      "category": "Credibility",
+      "whatsapp": "Great question {{owner_name}}! My name is Nafeesa Ali, founder of Digital Growth Studio (https://nafeesaali.com).\n\nWe specialize in automotive digital growth across the UAE. We recently designed and launched the website for JASRAUTO in the UAE, who gave us a 5-star Google review:\n⭐️⭐️⭐️⭐️⭐️ \"delivered a professional, user-friendly website that represents our brand well. Highly recommended.\"\n\nYou can check my verified Google Business profile and reviews here:\n👉 https://nafeesaali.com/\n\nWould you like to see how we applied those same booking optimizations to {{business_name}}'s demo?",
+      "email": "Hi {{owner_name}},\n\nThank you for asking. My name is Nafeesa Ali, founder of Digital Growth Studio (https://nafeesaali.com).\n\nWe recently built the web platform for JASRAUTO here in the UAE, achieving a verified 5-star rating on Google Reviews from their leadership team for mobile UX, booking flow, and speed.\n\nYou can review our Google Business Profile and case studies directly at https://nafeesaali.com/.\n\nLet me know if you would like a brief 5-minute walkthrough of {{business_name}}'s custom prototype.\n\nBest regards,\nNafeesa Ali\nhttps://nafeesaali.com/"
+    },
+    {
+      "id": "price_high",
+      "title": "How much does it cost? / Price is high",
+      "category": "Price",
+      "whatsapp": "Fair question {{owner_name}}! A typical Dubai digital agency charges AED 12,000 to AED 18,000 for a custom workshop build.\n\nBecause we already built your functional demo upfront, we can deploy the complete modern system—including 1-tap WhatsApp booking, Google Maps speed boost, and SSL—for just AED 3,800 one-time.\n\nThat's usually paid off by just 1 or 2 European brake or transmission service jobs.\n\nHave you had a chance to test the preview on your phone yet?",
+      "email": "Hi {{owner_name}},\n\nRegarding investment: standard agencies in the UAE quote AED 12,000 - AED 18,000 for full custom responsive builds.\n\nBecause we have already invested upfront in engineering {{business_name}}'s working architecture, our complete deployment package is just AED 3,800 (one-time, no hidden monthly lock-ins).\n\nConsidering the average invoice value of a major mechanical service, the entire investment pays for itself after capturing just 1 or 2 additional clients who would have otherwise bounced to a competitor."
+    },
+    {
+      "id": "have_web_guy",
+      "title": "I already have a website / web guy",
+      "category": "Competition",
+      "whatsapp": "Completely respect that {{owner_name}}, and having an existing web guy is great! 🙌\n\nThe only reason I reached out is that when customers search your garage on an iPhone, the mobile layout takes 6+ seconds to load, which makes modern car owners bounce back to Google.\n\nYou don't even have to hire us—you can literally take our demo link ({{demo_link}}) and share the design and WhatsApp booking structure with your existing web person for free so your garage stops losing those calls.\n\nMind taking a 30-sec look at the demo?",
+      "email": "Hi {{owner_name}},\n\nUnderstood, having an established web resource is very valuable.\n\nOur intention isn't to replace your existing relationship, but rather to highlight that your current mobile visitor conversion rate is being hindered by slow load times and lack of instant WhatsApp booking.\n\nYou are welcome to pass our functional demo link ({{demo_link}}) directly to your web person to implement those mobile elements. If you prefer to have us handle it turnkey in 48 hours for a fraction of internal cost, we are happy to assist."
+    },
+    {
+      "id": "only_instagram",
+      "title": "We only use Instagram / TikTok, we don't need a website",
+      "category": "Social Media",
+      "whatsapp": "100%, {{owner_name}}! Instagram is amazing for car photos and reels.\n\nHere is the big difference: when an Audi or Mercedes owner breaks down, needs an emergency AC fix, or wants a major service in {{location}}, they don't search Instagram—they search Google Maps.\n\nGoogle Maps ranks workshops with an official website at the very top. Having this website connected to your Google profile turns those searchers directly into WhatsApp bookings without paying for ads.\n\nWorth a quick 30-second look at the prototype?",
+      "email": "Hi {{owner_name}},\n\nSocial media is fantastic for visual showcase and brand awareness.\n\nHowever, when high-ticket repair needs arise (engine diagnostics, transmission issues, AC failure), customer intent happens on Google and Google Maps, not Instagram. Linking a verified official website to your Google profile directly boosts your search ranking and converts high-intent searches into direct WhatsApp inquiries."
+    },
+    {
+      "id": "word_of_mouth",
+      "title": "We get all clients via word of mouth",
+      "category": "Necessity",
+      "whatsapp": "100%, {{owner_name}}! For top garages in {{location}}, word of mouth will always be #1.\n\nHere's what happens today: when a loyal client recommends {{business_name}} to their friend with a Porsche or BMW, that friend immediately Googles your name before driving over.\n\nIf your website looks outdated or broken on their phone (or doesn't exist), they hesitate and question if you handle high-end vehicles.\n\nOur redesign is built specifically to protect your reputation and convert those word-of-mouth referrals instantly. Worth a quick 30-sec look?",
+      "email": "Hi {{owner_name}},\n\nWord-of-mouth reputation is the holy grail for any elite auto repair business.\n\nHowever, today's high-net-worth car owners in the UAE always Google a recommended workshop before entrusting their vehicle. A sleek, modern website with instant WhatsApp consultation acts as the crucial trust validator that confirms your reputation and prevents referred clients from shopping around."
+    },
+    {
+      "id": "send_details",
+      "title": "Send me details on WhatsApp / Email",
+      "category": "Brush-off",
+      "whatsapp": "Done! Here are the 3 quick points:\n\n1. **Live Preview**: {{demo_link}}\n2. **What's Solved**: 1-click WhatsApp booking, 1.2s mobile loading, showcase of luxury car certifications & Google Reviews.\n3. **Turnaround**: 48 hours to launch on your domain with zero downtime.\n\nHave a look on your phone when you have 60 seconds and let me know if you like the layout or if you'd tweak anything!",
+      "email": "Hi {{owner_name}},\n\nHere is the concise summary for {{business_name}}:\n\n- Working Demo: {{demo_link}}\n- Deliverables: Ultra-fast mobile layout, 1-tap WhatsApp booking integration, SEO local optimization for {{location}}, and Google review integration.\n- Timeline: 48 hours to live launch.\n- Total Investment: AED 3,800.\n\nTake a look at the link above and let me know what questions you have!"
+    },
+    {
+      "id": "not_interested",
+      "title": "Not interested / No thanks",
+      "category": "Rejection",
+      "whatsapp": "Totally understand {{owner_name}}, appreciate your direct reply! 🙏\n\nOut of curiosity, is it because you're happy with your current customer flow, or just not looking to make any changes right now?\n\nEither way, wishing you and {{business_name}} great success!",
+      "email": "Hi {{owner_name}},\n\nThank you for letting me know. I respect your time and won't pester you.\n\nIf anything changes in the future or you ever want to revamp your digital booking flow, the demo will remain in our archives. Wishing you and {{business_name}} great business!"
+    },
+    {
+      "id": "ghosted",
+      "title": "Viewed demo then went silent (Ghosted)",
+      "category": "Revival",
+      "whatsapp": "Hey {{owner_name}}, following up quickly! I'm guessing a website upgrade isn't on your radar right now, or you're completely booked at the workshop?\n\nIf so, no worries at all! Just let me know if I should take down your demo preview link so we can allocate that server space to another garage in {{location}}.",
+      "email": "Hi {{owner_name}},\n\nFollowing up on my previous note. Did you have an opportunity to review the prototype at {{demo_link}}?\n\nIf the timing isn't right, just let me know and I'll pause our follow-ups. Otherwise, let me know if you have any questions on implementation."
+    }
+  ],
+  "stages": [
+    {
+      "stage": 1,
+      "title": "Stage 1: Permission-Taker (Redesign)",
+      "delayDays": 0,
+      "psychology": "Curiosity + Respect (Zero Hard Pitch)",
+      "goal": "Get low-friction permission to send the 30-second preview link.",
+      "whatsapp": "Hello {{owner_name}}! Hope your week is going great at {{business_name}}.\n\nI was looking at your garage in {{location}}—impressive work on luxury vehicle repairs! 🚗\n\nI noticed your website has a couple of mobile loading issues that might be losing you customer inquiries on Google. I put together a quick 30-second working redesign demo showing how to capture direct WhatsApp bookings for high-end repairs (similar to what we recently built for JASRAUTO in the UAE).\n\nWould it be okay if I share the preview link with you here?\n\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "Quick question regarding {{business_name}}'s mobile website",
+      "email": "Hi {{owner_name}},\n\nI came across {{business_name}} while researching top-rated European and Japanese auto workshops in {{location}}.\n\nYour repair portfolio is stellar, but I noticed your current website takes over 5 seconds to load on mobile and doesn't have an instant WhatsApp booking channel, which costs workshops several high-ticket service bookings every month.\n\nWe built a functional, modern redesign demo specifically for {{business_name}} to show how direct mobile booking looks.\n\nWould you be open to seeing a 30-second preview link?\n\nBest regards,\n[Your Name] | [Your Agency Website] | [Your Phone]"
+    },
+    {
+      "stage": 2,
+      "title": "Stage 2: Demo Delivery & First Question",
+      "delayDays": 2,
+      "psychology": "Proof + Micro-Commitment Stacking",
+      "goal": "Deliver the working demo link and ask 1 simple feedback question.",
+      "whatsapp": "Thanks {{owner_name}}! Here is your custom preview link:\n\n👉 {{demo_link}}\n\nNotice how it opens in under 1 second on mobile and has a direct 'Book Major Service via WhatsApp' button right on top.\n\nDoes it open smoothly on your phone? What do you think of the new layout?",
+      "emailSubject": "Here is the custom redesign preview for {{business_name}}",
+      "email": "Hi {{owner_name}},\n\nAs promised, here is the working redesign demo we created for {{business_name}}:\n\n👉 {{demo_link}}\n\nKey enhancements we built into this prototype:\n1. 1-second ultra-fast mobile loading time (Google Core Web Vitals optimized).\n2. Direct 1-tap WhatsApp booking button routed to your service team.\n3. Prominent showcase of your workshop certifications and customer 5-star Google reviews.\n\nDoes it open well on your phone? Would love to get your initial feedback.\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 3,
+      "title": "Stage 3: The Revenue Leak Angle",
+      "delayDays": 4,
+      "psychology": "Loss Aversion + P+E+U Rule (Raj Shamani)",
+      "goal": "Explain the exact financial cost of their current broken site.",
+      "whatsapp": "Hey {{owner_name}}, quick follow-up on {{business_name}}'s demo link above.\n\nDid you know that over 78% of luxury car owners in the UAE search for auto repair on their phone when they hear a squeak or need an AC check?\n\nIf your website isn't instant and easy to message on WhatsApp, they immediately click the next garage on Google Maps. Losing just 2 major repair jobs a month costs an average workshop AED 5,000+ in pure profit.\n\nHave you had a chance to test the preview link yet? 👉 {{demo_link}}",
+      "emailSubject": "Why {{business_name}} might be losing 2-3 luxury car repairs a week",
+      "email": "Hi {{owner_name}},\n\nFollowing up on the demo link I sent over: {{demo_link}}\n\nIn our audits of auto garages across {{location}}, we found that over 78% of car owners browse for emergency repairs and scheduled maintenance on their smartphones.\n\nWhen a site isn't optimized for mobile speed or lacks instant WhatsApp booking, potential clients bounce to competitors in under 4 seconds. In high-margin repairs (like German brakes, transmission overhauls, or AC repairs), that's an estimated leak of AED 5,000–AED 10,000 every single month.\n\nOur redesign fixes this leak permanently with zero technical hassle on your side.\n\nWould you like a 5-minute walkthrough of the changes this week?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 4,
+      "title": "Stage 4: Local Competition & Social Proof",
+      "delayDays": 7,
+      "psychology": "Social Proof + FOMO (SeeKen Emotional Marketing)",
+      "goal": "Highlight how competitors in the UAE are capturing mobile repair inquiries.",
+      "whatsapp": "Hey {{owner_name}}, hope you're having a productive week! 🚗\n\nWe recently built and launched the modern website for JASRAUTO here in the UAE (rated 5-stars on Google Reviews: \"delivered a professional, user-friendly website that represents our brand well\").\n\nWith our custom layout for {{business_name}} (preview: {{demo_link}}), your garage looks like an authorized-grade dealership alternative, giving clients confidence to book their high-end vehicles with you.\n\nWe can have this exact demo live on your domain in 48 hours. Worth a quick 5-min WhatsApp chat today?\n\nBest,\nNafeesa Ali | nafeesaali.com",
+      "emailSubject": "How leading garages in {{location}} are capturing high-end car owners",
+      "email": "Hi {{owner_name}},\n\nI wanted to share a quick UAE auto market insight with you:\n\nWe recently designed and launched the web platform for JASRAUTO in the UAE, who left us a 5-star Google review for our automotive UI, mobile booking flow, and communication.\n\nOur custom redesign for {{business_name}} (preview: {{demo_link}}) applies these same high-converting patterns, positioning your garage as an elite alternative to official dealerships at a fraction of the cost.\n\nYou can verify our work and reviews on our Google Business Profile (Nafeesa Ali | Digital Growth Studio - https://nafeesaali.com/).\n\nAre you available for a brief 5-minute review on Wednesday or Thursday?\n\nBest regards,\nNafeesa Ali\nFounder, Digital Growth Studio\nhttps://nafeesaali.com/"
+    },
+    {
+      "stage": 5,
+      "title": "Stage 5: High-Authority Diagnostic Audit",
+      "delayDays": 11,
+      "psychology": "Halo Effect + Frame Control (Coach Animesh Doctor Frame)",
+      "goal": "Provide an expert diagnosis. Suggest sending a 45s WhatsApp Voice Note.",
+      "whatsapp": "Hey {{owner_name}}, I just recorded a quick 45-second screen audit pointing out 3 specific buttons on your current site that aren't working on mobile.\n\nEven if we don't end up working together, I want to make sure your garage stops leaking customers to nearby competitors.\n\nShould I send the quick screen recording over to you here?",
+      "emailSubject": "3 critical mobile booking bugs found on {{business_name}}'s site",
+      "email": "Hi {{owner_name}},\n\nWhile running technical diagnostics on {{business_name}}'s website, our team identified 3 specific friction points:\n1. Mobile header navigation overlaps the phone number button on iOS devices.\n2. Service inquiry form does not send confirmation alerts to your team.\n3. Google PageSpeed rating is below 35/100, which penalizes your local Google ranking.\n\nOur demo ({{demo_link}}) scores 96/100 on Google PageSpeed and includes 1-tap WhatsApp booking.\n\nEven if you choose to have your existing developer fix these, I'm happy to send you the full audit notes free of charge. Let me know if that would be helpful.\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 6,
+      "title": "Stage 6: Reverse Scarcity & Capacity Lock",
+      "delayDays": 15,
+      "psychology": "Reverse Qualification + Scarcity (Hormozi CLOSER / Animesh)",
+      "goal": "Trigger urgency by limiting intake to 2 workshops per district.",
+      "whatsapp": "Hey {{owner_name}}! Touching base as we are finalizing our client schedule for this month.\n\nBecause we build customized booking setups and test them extensively, we only onboard 2 auto workshop redesigns in {{location}} per month to ensure dedicated attention.\n\nWe have 1 launch spot remaining this week. Since we already invested the time to create {{business_name}}'s working demo, I wanted to give you first priority before we offer the layout to another European garage nearby.\n\nShall we get your site upgraded this week?",
+      "emailSubject": "Final priority spot for {{business_name}} website redesign",
+      "email": "Hi {{owner_name}},\n\nWe are currently closing our client onboarding schedule for {{location}} for the upcoming month.\n\nTo ensure peak performance and hands-on support, we restrict our website deployment to only 2 automotive workshops per area at any one time.\n\nSince your custom demo ({{demo_link}}) is already fully prepared, we can launch it within 48 hours.\n\nWould you like to secure the remaining slot, or should we open it up to another specialist garage in your area?\n\nBest regards,\n[Your Name]"
+    },
+    {
+      "stage": 7,
+      "title": "Stage 7: The Gentle Breakup & Takeaway",
+      "delayDays": 20,
+      "psychology": "Negative Reverse / Complete Relief (Dark Psychology Trick #1)",
+      "goal": "Remove all sales pressure. 40%+ of dormant prospects reply to protect their demo.",
+      "whatsapp": "Hey {{owner_name}}, reaching out one last time! 🙏\n\nSince I haven't heard back, I'm guessing updating your website isn't a priority right now, or your workshop is already completely flooded with cars (which is great!).\n\nI'll go ahead and take down the temporary demo server for {{business_name}} by Friday so our team can archive the files.\n\nIf you ever want to modernize your web booking in the future, feel free to reach out. Wish you and {{business_name}} continuous success!",
+      "emailSubject": "Permission to archive {{business_name}}'s custom demo?",
+      "email": "Hi {{owner_name}},\n\nI haven't heard back from you, so I assume modernizing {{business_name}}'s website isn't a priority right now—completely understood!\n\nI'm writing to let you know that we will be archiving your staging demo ({{demo_link}}) on Friday to free up server resources.\n\nIf timing is just bad right now, no problem at all. If you'd like us to keep the demo active for a little longer so you can review it with your partners, just hit reply with 'Keep' and I'll leave it up.\n\nEither way, wishing you all the best with {{business_name}}.\n\nBest regards,\n[Your Name]"
+    }
+  ]
+}

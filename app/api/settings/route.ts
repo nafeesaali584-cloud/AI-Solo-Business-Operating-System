@@ -16,18 +16,18 @@ export async function GET() {
           daily_target_quota: 3,
           follow_up_cadence_days: 4,
           tone_preference: "Professional, concise, and value-oriented",
-          message_templates: {
+          message_templates: JSON.stringify({
             whatsapp: "Hi {{name}}, noticed your work in {{industry}}. We help businesses streamline operations and convert more leads. Would you be open to a quick 5-min intro?",
             email: "Subject: Quick question regarding {{business_name}}\n\nHi {{name}},\n\nI was looking at {{business_name}} and noticed an opportunity to improve lead conversion. Are you available for a brief chat this week?",
-          },
-          proposal_templates: {
+          }),
+          proposal_templates: JSON.stringify({
             default_terms: "50% advance upon invoice issuance. 50% upon final delivery. Standard 2 rounds of review included.",
-          },
-          invoice_branding: {
+          }),
+          invoice_branding: JSON.stringify({
             currency: "USD",
             tax_rate: 0,
             payment_terms: "Due upon receipt",
-          },
+          }),
         },
       });
     }
@@ -80,13 +80,13 @@ export async function PATCH(req: NextRequest) {
       updateData.theme_preference = body.theme_preference;
     }
     if ("message_templates" in body && body.message_templates !== undefined) {
-      updateData.message_templates = body.message_templates;
+      updateData.message_templates = typeof body.message_templates === "object" ? JSON.stringify(body.message_templates) : body.message_templates;
     }
     if ("proposal_templates" in body && body.proposal_templates !== undefined) {
-      updateData.proposal_templates = body.proposal_templates;
+      updateData.proposal_templates = typeof body.proposal_templates === "object" ? JSON.stringify(body.proposal_templates) : body.proposal_templates;
     }
     if ("invoice_branding" in body && body.invoice_branding !== undefined) {
-      updateData.invoice_branding = body.invoice_branding;
+      updateData.invoice_branding = typeof body.invoice_branding === "object" ? JSON.stringify(body.invoice_branding) : body.invoice_branding;
     }
 
     const updated = await db.settings.upsert({
@@ -98,9 +98,9 @@ export async function PATCH(req: NextRequest) {
         follow_up_cadence_days: Number(body.follow_up_cadence_days) || 4,
         tone_preference: body.tone_preference || "Professional, concise, and value-oriented",
         theme_preference: body.theme_preference || "dark",
-        message_templates: body.message_templates || null,
-        proposal_templates: body.proposal_templates || null,
-        invoice_branding: body.invoice_branding || null,
+        message_templates: typeof body.message_templates === "object" ? JSON.stringify(body.message_templates) : (body.message_templates || null),
+        proposal_templates: typeof body.proposal_templates === "object" ? JSON.stringify(body.proposal_templates) : (body.proposal_templates || null),
+        invoice_branding: typeof body.invoice_branding === "object" ? JSON.stringify(body.invoice_branding) : (body.invoice_branding || null),
       },
     });
 

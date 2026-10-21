@@ -107,9 +107,12 @@ export async function GET() {
 
     let pendingChecklistCount = 0;
     activeOnboardings.forEach((onb) => {
-      const list = onb.checklist as Array<{ item: string; status: string }>;
+      let list: any = [];
+      try {
+        list = typeof onb.checklist === "string" ? JSON.parse(onb.checklist) : onb.checklist;
+      } catch (e) {}
       if (Array.isArray(list)) {
-        pendingChecklistCount += list.filter((i) => i.status === "pending").length;
+        pendingChecklistCount += list.filter((i: any) => i.status === "pending").length;
       }
     });
 

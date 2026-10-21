@@ -18,10 +18,10 @@ export async function GET(req: NextRequest) {
       whereClause.status = status;
     }
     if (niche && niche !== "ALL") {
-      whereClause.niche_industry = { contains: niche, mode: "insensitive" };
+      whereClause.niche_industry = { contains: niche };
     }
     if (city && city !== "ALL") {
-      whereClause.city_country = { contains: city, mode: "insensitive" };
+      whereClause.city_country = { contains: city };
     }
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
@@ -58,6 +58,10 @@ export async function GET(req: NextRequest) {
         rating: true,
         review_count: true,
         address: true,
+        demo_link: true,
+        pitch_type: true,
+        pipeline_stage: true,
+        source_csv_row: true,
         status: true,
         is_today_target: true,
         planned_for: true,
@@ -148,7 +152,7 @@ export async function POST(req: NextRequest) {
         email: email || null,
         city_country: city_country || null,
         niche_industry: niche_industry || null,
-        source_csv_row: source_csv_row || { manual: true },
+        source_csv_row: typeof source_csv_row === "string" ? source_csv_row : JSON.stringify(source_csv_row || { manual: true }),
         status: "Imported",
         is_today_target: false,
       },

@@ -13,6 +13,7 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/onboarding",
   "/documents",
+  "/agency-hub",
 ];
 
 export async function middleware(request: NextRequest) {

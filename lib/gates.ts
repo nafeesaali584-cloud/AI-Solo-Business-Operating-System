@@ -232,7 +232,7 @@ export async function executeGate5ConfirmPaymentReceived(invoiceId: string) {
     onboarding = await db.onboarding.create({
       data: {
         client_id: invoice.client_id,
-        checklist: DEFAULT_ONBOARDING_CHECKLIST,
+        checklist: JSON.stringify(DEFAULT_ONBOARDING_CHECKLIST),
         status: "In Progress",
         started_at: now,
       },

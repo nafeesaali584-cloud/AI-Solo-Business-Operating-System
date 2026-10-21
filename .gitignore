@@ -43,3 +43,7 @@ testsprite_tests/tmp/config.json
 
 public/uploads/*
 !public/uploads/.gitkeep
+
+# Backup files
+*.backup
+*.bak

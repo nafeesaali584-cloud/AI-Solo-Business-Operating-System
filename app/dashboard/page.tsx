@@ -18,6 +18,7 @@ import {
   Inbox,
   ArrowUpRight,
   Check,
+  Sparkles,
 } from "lucide-react";
 
 interface DashboardData {
@@ -273,6 +274,36 @@ export default function DashboardPage() {
             <span>Go to Leads</span>
           </Link>
         </div>
+      </div>
+
+      {/* ── 1-Stop Agency 360 Command Center Banner ── */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/10 border border-amber-500/40 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-500 border border-amber-500/30 shrink-0">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-heading font-bold text-sm sm:text-base text-[var(--text-primary)]">
+                Agency 360° Command Hub
+              </h2>
+              <span className="text-[10px] font-bold bg-amber-500 text-black px-1.5 py-0.5 rounded uppercase tracking-wider">
+                1-Stop Plan
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              Live Apify UAE Maps Scraper, 0-Slop Base44 Prompts, WhatsApp Closing Scripts & 40 Lac Goal Tracker.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/agency-hub"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs sm:text-sm shadow-md transition-all shrink-0 w-full sm:w-auto justify-center"
+        >
+          <span>Open 1-Stop Plan</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {/* ── Grid of Focus Cards ── */}

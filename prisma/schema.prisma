@@ -1,7 +1,6 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -16,21 +15,24 @@ model Lead {
   email                 String?
   city_country          String?
   niche_industry        String?
-  rating                Float?        // e.g. 4.8 / 5
-  review_count          Int?          // e.g. 83
-  key_services          String?       // comma-separated or text services
-  address               String?       // full street address
-  source_csv_row        Json          // Raw imported row, immutable source of truth
-  priority              String?       // Manual: Hot, Warm, Cold — set by user
-  primary_observation   String?       // Manual: the single primary observation trigger
-  primary_offer         String?       // Manual: the single matching service offer
-  follow_up_count       Int           @default(0) // Number of follow-ups executed (max 4)
-  reply_status          String?       // Manual: no_reply, interested, not_now, not_interested
-  status                String        @default("Imported") // Imported, Qualified, Target Today, Contacted, Replied, Booking, Proposal, Won, Lost
+  rating                Float?
+  review_count          Int?
+  key_services          String?
+  address               String?
+  source_csv_row        String?       // JSON string
+  priority              String?       // Hot, Hottest, Warm, Cold
+  primary_observation   String?
+  primary_offer         String?
+  follow_up_count       Int           @default(0)
+  reply_status          String?
+  demo_link             String?
+  pitch_type            String?       @default("redesign")
+  pipeline_stage        Int           @default(1)
+  status                String        @default("Imported")
   is_today_target       Boolean       @default(false)
-  planned_for           DateTime?     // Date this lead is queued for outreach (rolls over automatically if unfinished)
-  next_follow_up_at     DateTime?     // Date next follow-up touchpoint is scheduled
-  cleared_fields        Json?         // e.g. ["phone", "email"] — tracks fields explicitly cleared by user to prevent fallback to raw CSV
+  planned_for           DateTime?
+  next_follow_up_at     DateTime?
+  cleared_fields        String?       // JSON string
   converted_client_id   String?
   created_at            DateTime      @default(now())
   updated_at            DateTime      @updatedAt
@@ -47,8 +49,6 @@ model Lead {
   @@index([next_follow_up_at])
   @@index([created_at])
   @@index([updated_at])
-  @@index([niche_industry])
-  @@index([city_country])
 }
 
 model Contact {
@@ -74,11 +74,11 @@ model Interaction {
   id              String    @id @default(uuid())
   lead_id         String?
   client_id       String?
-  channel         String    // WhatsApp, Email, Call, Note
-  direction       String    // Outgoing, Incoming
+  channel         String
+  direction       String
   content         String
-  confirmed_sent  Boolean   @default(false) // GATE 1: only true after manual confirmation
-  sent_confirmed_at DateTime? // GATE 1: manual confirmation timestamp
+  confirmed_sent  Boolean   @default(false)
+  sent_confirmed_at DateTime?
   created_at      DateTime  @default(now())
 
   lead            Lead?     @relation(fields: [lead_id], references: [id], onDelete: Cascade)
@@ -86,18 +86,17 @@ model Interaction {
 
   @@index([lead_id])
   @@index([client_id])
-  @@index([confirmed_sent])
 }
 
 model Task {
   id                    String    @id @default(uuid())
-  related_type          String    // Lead, Client, Proposal, Invoice, Onboarding
+  related_type          String
   related_id            String
-  type                  String    // Follow-up, Booking Confirm, Proposal Prep, Onboarding Step
+  type                  String
   title                 String
   due_date              DateTime?
-  status                String    @default("Open") // Open, Done, Overdue
-  bucket                String    @default("Follow-up") // Action Required, Follow-up, Waiting, Completed
+  status                String    @default("Open")
+  bucket                String    @default("Follow-up")
   created_at            DateTime  @default(now())
   updated_at            DateTime  @updatedAt
 
@@ -109,8 +108,8 @@ model Task {
 model Deal {
   id          String    @id @default(uuid())
   lead_id     String
-  stage       String    @default("Booking") // Booking, Proposal, Won, Lost
-  value       Decimal?
+  stage       String    @default("Booking")
+  value       Float?
   lost_reason String?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
@@ -128,8 +127,8 @@ model Client {
   primary_contact String?
   email           String?
   phone           String?
-  stage           String        @default("Proposal") // Proposal, Invoice, Paid, Onboarding, Active
-  payment_status  String        @default("Pending") // Pending, Paid, Overdue
+  stage           String        @default("Proposal")
+  payment_status  String        @default("Pending")
   last_activity   DateTime      @default(now())
   created_at      DateTime      @default(now())
   updated_at      DateTime      @updatedAt
@@ -148,17 +147,17 @@ model Proposal {
   id                  String    @id @default(uuid())
   lead_id             String?
   client_id           String?
-  services            Json      // [{ name, description, price }]
+  services            String?   // JSON string
   scope               String?
   deliverables        String?
   timeline            String?
   terms               String?
-  currency            String    @default("USD")
-  total_investment    Decimal   @default(0)
+  currency            String    @default("AED")
+  total_investment    Float     @default(0)
   document_url        String?
-  status              String    @default("Draft") // Draft, Approved, Sent, Accepted, Rejected
-  approved_at         DateTime? // GATE 2
-  sent_confirmed_at   DateTime? // GATE 3: manual only
+  status              String    @default("Draft")
+  approved_at         DateTime?
+  sent_confirmed_at   DateTime?
   created_at          DateTime  @default(now())
   updated_at          DateTime  @updatedAt
 
@@ -176,17 +175,20 @@ model Invoice {
   client_id             String
   proposal_id           String?
   invoice_number        String    @unique
-  currency              String    @default("USD")
-  line_items            Json      // [{ description, quantity, unit_price, total }]
-  amount                Decimal   @default(0)
+  currency              String    @default("AED")
+  line_items            String?   // JSON string
+  amount                Float     @default(0)
   due_date              DateTime
   payment_instructions  String?
-  payment_method        String?   @default("sadapay") // sadapay, bank_transfer, payoneer
+  payment_method        String?   @default("sadapay")
   payment_method_note   String?
   notes                 String?
-  status                String    @default("Draft") // Draft, Sent, Paid, Pending, Overdue
-  sent_confirmed_at     DateTime? // GATE 4
-  paid_confirmed_at     DateTime? // GATE 5 - never auto-set
+  status                String    @default("Draft")
+  milestone_label       String?
+  milestone_index       Int?
+  milestone_percent     Int?
+  sent_confirmed_at     DateTime?
+  paid_confirmed_at     DateTime?
   created_at            DateTime  @default(now())
   updated_at            DateTime  @updatedAt
 
@@ -194,15 +196,16 @@ model Invoice {
   proposal              Proposal? @relation(fields: [proposal_id], references: [id], onDelete: SetNull)
 
   @@index([client_id])
+  @@index([proposal_id])
   @@index([status])
 }
 
 model Onboarding {
   id            String    @id @default(uuid())
   client_id     String    @unique
-  checklist     Json      // [{ item, status: "pending" | "done" }]
-  status        String    @default("In Progress") // In Progress, Completed
-  started_at    DateTime  @default(now()) // auto-created when invoice.paid_confirmed_at set
+  checklist     String?   // JSON string
+  status        String    @default("In Progress")
+  started_at    DateTime  @default(now())
   completed_at  DateTime?
 
   client        Client    @relation(fields: [client_id], references: [id], onDelete: Cascade)
@@ -213,9 +216,9 @@ model Onboarding {
 
 model Document {
   id            String    @id @default(uuid())
-  related_type  String    // Lead, Client, Proposal, Invoice
+  related_type  String
   related_id    String
-  type          String    // Proposal PDF, Invoice PDF, Onboarding Form, Other
+  type          String
   title         String
   file_url      String
   created_at    DateTime  @default(now())
@@ -226,38 +229,25 @@ model Document {
 
 model Settings {
   id                      String   @id @default("default")
-  daily_target_quota      Int      @default(3)
+  daily_target_quota      Int      @default(5)
   follow_up_cadence_days  Int      @default(4)
   tone_preference         String   @default("Professional, concise, and value-oriented")
   theme_preference        String   @default("dark")
-  message_templates       Json?
-  proposal_templates      Json?
-  invoice_branding        Json?
+  message_templates       String?  // JSON string
+  proposal_templates      String?  // JSON string
+  invoice_branding        String?  // JSON string
   updated_at              DateTime @updatedAt
 }
 
-/// Stores remembered CSV column-to-field mappings, keyed by a sorted header signature.
-/// Allows re-importing similarly structured CSVs without re-mapping from scratch.
 model CsvMappingTemplate {
   id                String   @id @default(uuid())
-  /// Sorted, pipe-joined list of all column headers in the CSV (e.g. "Address|Phone|Rating|Shop Name")
   header_signature  String   @unique
-  /// Friendly name to identify the template (e.g. "Google Maps Export")
   template_name     String   @default("Saved Mapping")
-  /// JSON map of csvHeader → systemField | "ignore"
-  /// e.g. { "Shop Name": "business_name", "Rating": "ignore" }
-  field_mappings    Json
+  field_mappings    String   // JSON string
   last_used_at      DateTime @default(now())
   created_at        DateTime @default(now())
 
   @@index([header_signature])
-}
-
-enum WorkspaceItemType {
-  NOTE
-  FILE
-  LINK
-  VIDEO
 }
 
 model WorkspaceItem {
@@ -265,14 +255,14 @@ model WorkspaceItem {
   leadId        String
   lead          Lead              @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
-  type          WorkspaceItemType
+  type          String
   title         String?
-  content       String?           @db.Text // long note text, or a caption/takeaway for file/video/link
+  content       String?
 
-  url           String?           // YouTube link, R2 file URL, or plain external link
-  provider      String?           // "YOUTUBE", "R2", "INSTAGRAM", "WEBSITE", etc. — simple string, auto-detected from URL pattern, no API calls
+  url           String?
+  provider      String?
 
-  fileKey       String?           // R2 storage key, for file items only
+  fileKey       String?
   mimeType      String?
   fileSizeBytes Int?
 
@@ -288,13 +278,10 @@ model WorkspaceItem {
 model Snippet {
   id        String   @id @default(cuid())
   title     String
-  category  String   @default("General") // e.g. "Cold Pitch", "Follow-up", "Audit Teardown", "WhatsApp"
-  body      String   @db.Text
+  category  String   @default("General")
+  body      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([category])
 }
-
-
-

@@ -71,11 +71,11 @@ export async function POST(req: NextRequest) {
 
       // FIX 12: Database duplicate check by website, phone, email, OR business_name
       const orConditions: any[] = [];
-      if (website) orConditions.push({ website: { equals: website, mode: "insensitive" } });
+      if (website) orConditions.push({ website: { equals: website } });
       if (phone) orConditions.push({ phone: { equals: phone } });
-      if (email) orConditions.push({ email: { equals: email, mode: "insensitive" } });
+      if (email) orConditions.push({ email: { equals: email } });
       if (business_name && business_name !== "Untitled Lead") {
-        orConditions.push({ business_name: { equals: business_name, mode: "insensitive" } });
+        orConditions.push({ business_name: { equals: business_name } });
       }
 
       let existing = null;

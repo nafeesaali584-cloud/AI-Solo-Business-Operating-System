@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { detectProvider, extractYouTubeId } from "@/lib/workspace/provider";
 import { uploadWorkspaceFile } from "@/lib/storage/r2";
-import { WorkspaceItemType } from "@prisma/client";
+const WorkspaceItemType = {
+  NOTE: "NOTE",
+  LINK: "LINK",
+  FILE: "FILE",
+  VIDEO: "VIDEO",
+} as const;
+type WorkspaceItemType = (typeof WorkspaceItemType)[keyof typeof WorkspaceItemType];
 
 // GET /api/leads/[id]/workspace
 // Returns all workspace items for a lead with counts and search/filter support
@@ -32,9 +38,9 @@ export async function GET(
     }
     if (search) {
       whereClause.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { content: { contains: search, mode: "insensitive" } },
-        { url: { contains: search, mode: "insensitive" } },
+        { title: { contains: search } },
+        { content: { contains: search } },
+        { url: { contains: search } },
       ];
     }
 

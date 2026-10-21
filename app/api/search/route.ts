@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
       ? {}
       : {
           OR: [
-            { business_name: { contains: q, mode: "insensitive" as const } },
-            { email: { contains: q, mode: "insensitive" as const } },
-            { primary_contact: { contains: q, mode: "insensitive" as const } },
+            { business_name: { contains: q } },
+            { email: { contains: q } },
+            { primary_contact: { contains: q } },
           ],
         };
 
@@ -56,10 +56,10 @@ export async function GET(req: NextRequest) {
           AND: [
             {
               OR: [
-                { business_name: { contains: q, mode: "insensitive" as const } },
-                { email: { contains: q, mode: "insensitive" as const } },
-                { niche_industry: { contains: q, mode: "insensitive" as const } },
-                { city_country: { contains: q, mode: "insensitive" as const } },
+                { business_name: { contains: q } },
+                { email: { contains: q } },
+                { niche_industry: { contains: q } },
+                { city_country: { contains: q } },
               ],
             },
             { converted_client_id: null },
@@ -78,13 +78,13 @@ export async function GET(req: NextRequest) {
       proposalWhere = {};
     } else {
       const proposalOrClauses: any[] = [
-        { client: { business_name: { contains: q, mode: "insensitive" } } },
-        { lead: { business_name: { contains: q, mode: "insensitive" } } },
-        { scope: { contains: q, mode: "insensitive" } },
-        { deliverables: { contains: q, mode: "insensitive" } },
+        { client: { business_name: { contains: q } } },
+        { lead: { business_name: { contains: q } } },
+        { scope: { contains: q } },
+        { deliverables: { contains: q } },
       ];
       if (uuidQ && uuidQ.length >= 2) {
-        proposalOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+        proposalOrClauses.push({ id: { contains: uuidQ } });
       }
       proposalWhere = { OR: proposalOrClauses };
     }
@@ -102,11 +102,11 @@ export async function GET(req: NextRequest) {
       invoiceWhere = {};
     } else {
       const invoiceOrClauses: any[] = [
-        { invoice_number: { contains: q, mode: "insensitive" } },
-        { client: { business_name: { contains: q, mode: "insensitive" } } },
+        { invoice_number: { contains: q } },
+        { client: { business_name: { contains: q } } },
       ];
       if (uuidQ && uuidQ.length >= 2) {
-        invoiceOrClauses.push({ id: { contains: uuidQ, mode: "insensitive" } });
+        invoiceOrClauses.push({ id: { contains: uuidQ } });
       }
       invoiceWhere = { OR: invoiceOrClauses };
     }
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
     if (!isClientKeyword && !isLeadKeyword && !isProposalKeyword && !isInvoiceKeyword) {
       interactions = await db.interaction.findMany({
         where: {
-          content: { contains: q, mode: "insensitive" },
+          content: { contains: q },
         },
         include: { client: true, lead: true },
         orderBy: { created_at: "desc" },
@@ -135,9 +135,9 @@ export async function GET(req: NextRequest) {
     const workspaceItems = await db.workspaceItem.findMany({
       where: {
         OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { content: { contains: q, mode: "insensitive" } },
-          { url: { contains: q, mode: "insensitive" } },
+          { title: { contains: q } },
+          { content: { contains: q } },
+          { url: { contains: q } },
         ],
       },
       include: {
